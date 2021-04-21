@@ -1,0 +1,89 @@
+[D 210420 18:20:50 pco_plan:259] get_service_types called
+[D 210420 18:20:53 pco_plan:280] get_services_from_service_type: Offset not specified! Using default 10.
+[D 210420 18:20:53 pco_plan:286] get_services_from_service_type: Making call to get total number of services in service type.
+[D 210420 18:20:54 pco_plan:293] get_services_from_service_type: getting services from, service type id: 824571, offset: 138
+[D 210420 18:20:56 main_2:68] SelectService: service_type_id: 824571, service_id: 52371712
+[D 210420 18:20:56 pco_plan:313] pco_plan_update.get_service_items called. service_type_id: 824571, service_id: 52371712
+[D 210420 18:20:57 pco_plan:346] pco_plan_upadte: received service items. [{'title': 'Rehearsal Recording', 'type': 'item', 'length': 0, 'service_position': 'pre', 'id': '706777173', 'sequence': 1, 'notes': {}}, {'title': '.........SUNDAY SOUND CK 8:30 am..........', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '706777174', 'sequence': 2, 'notes': {}}, {'title': 'Pre-Service', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '706777175', 'sequence': 3, 'notes': {}}, {'title': 'Pre-Service Playlist', 'type': 'item', 'length': 1500, 'service_position': 'pre', 'id': '706777176', 'sequence': 4, 'notes': {'App Cues': [{'device': 'CG3', 'playlist_index': 0, 'cue_index': 0, 'cue_name': 'JoelSims_V'}], 'Sound': 'CG1', 'Stage': 'clear', 'Video': 'Pre-Service Media'}}, {'title': 'Live Host Segment', 'type': 'item', 'length': 300, 'service_position': 'pre', 'id': '706777182', 'sequence': 5, 'notes': {'App Cues': []}}, {'title': 'Pre-Roll Countdown', 'type': 'item', 'length': 300, 'service_position': 'pre', 'id': '706777188', 'sequence': 6, 'notes': {'App Cues': [{'device': 'CG3', 'playlist_index': 0, 'cue_index': 0, 'cue_name': 'JoelSims_V'}], 'Sound': 'CG2', 'Video': 'Pre-Roll Video'}}, {'title': 'Worship', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '706777189', 'sequence': 7, 'notes': {}}, {'title': 'Song 1', 'type': 'item', 'length': 240, 'service_position': 'during', 'id': '706777190', 'sequence': 8, 'notes': {'App Cues': []}}, {'title': 'First Love', 'type': 'song', 'length': 360, 'service_position': 'during', 'id': '706777192', 'sequence': 9, 'notes': {'Service Producer': '- Guitar solo after bridge ', 'Person': 'Rebecca (spot 5)'}}, {'title': 'Giving Segment / VIDEO', 'type': 'item', 'length': 180, 'service_position': 'during', 'id': '708183002', 'sequence': 10, 'notes': {}}, {'title': 'SPECIAL: Fun song', 'type': 'item', 'length': 180, 'service_position': 'during', 'id': '706777194', 'sequence': 11, 'notes': {}}, {'title': 'Pastor comes up', 'type': 'item', 'length': 120, 'service_position': 'during', 'id': '706777193', 'sequence': 12, 'notes': {'App Cues': [], 'Timer': '35 min timer'}}, {'title': 'Message - 35 minutes', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '706777198', 'sequence': 13, 'notes': {}}, {'title': 'Message', 'type': 'item', 'length': 2400, 'service_position': 'during', 'id': '706777200', 'sequence': 14, 'notes': {'App Cues': [], 'Person': 'Pastor'}}, {'title': 'Prayer', 'type': 'item', 'length': 180, 'service_position': 'during', 'id': '706777203', 'sequence': 15, 'notes': {'App Cues': [], 'Person': 'Pastor'}}, {'title': 'Closing', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '706777206', 'sequence': 16, 'notes': {}}, {'title': 'Closing / Dismissal', 'type': 'item', 'length': 120, 'service_position': 'during', 'id': '706777209', 'sequence': 17, 'notes': {'App Cues': []}}, {'title': 'Post-Service', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '706777211', 'sequence': 18, 'notes': {}}, {'title': 'Live Host Segment', 'type': 'item', 'length': 300, 'service_position': 'post', 'id': '706777212', 'sequence': 19, 'notes': {'App Cues': []}}, {'title': 'Post-Service Playlist', 'type': 'item', 'length': 0, 'service_position': 'post', 'id': '706777213', 'sequence': 20, 'notes': {'Sound': 'CG1', 'Stage': 'clear stage'}}]
+[D 210420 18:20:57 pco_live:56] attempting to get current live item id
+[D 210420 18:20:57 pco_live:63] successfully got current live item id: 706777176
+[D 210420 18:20:57 main_2:437] Building current service time info
+[D 210420 18:20:57 pco_plan:138] get_plan_times. service_type: 824571, service_id: 52371712
+[D 210420 18:20:57 pco_plan:142] get_plan_times: response received: {'links': {'self': 'https://api.planningcenteronline.com/services/v2/service_types/824571/plans/52371712/plan_times'}, 'data': [{'type': 'PlanTime', 'id': '127128527', 'attributes': {'created_at': '2021-04-08T16:09:20Z', 'ends_at': '2021-05-09T14:30:00Z', 'live_ends_at': None, 'live_starts_at': None, 'name': 'Sound ck', 'recorded': False, 'starts_at': '2021-05-09T13:30:00Z', 'team_reminders': [{'team_id': '3120820', 'value': 1}, {'team_id': '3162763', 'value': 1}, {'team_id': '3162764', 'value': 1}], 'time_type': 'rehearsal', 'updated_at': '2021-04-08T16:09:20Z'}, 'relationships': {'assigned_teams': {'data': [{'type': 'Team', 'id': '3162763'}, {'type': 'Team', 'id': '3120820'}, {'type': 'Team', 'id': '3162764'}, {'type': 'Team', 'id': '3169787'}, {'type': 'Team', 'id': '3830008'}, {'type': 'Team', 'id': '3580014'}, {'type': 'Team', 'id': '3863377'}, {'type': 'Team', 'id': '3812283'}, {'type': 'Team', 'id': '3866941'}, {'type': 'Team', 'id': '3808958'}]}}, 'links': {'self': 'https://api.planningcenteronline.com/services/v2/service_types/824571/plans/52371712/plan_times/127128527'}}, {'type': 'PlanTime', 'id': '127128530', 'attributes': {'created_at': '2021-04-08T16:09:20Z', 'ends_at': '2021-05-09T16:00:00Z', 'live_ends_at': '2021-04-20T00:01:01Z', 'live_starts_at': '2021-04-20T00:01:01Z', 'name': None, 'recorded': False, 'starts_at': '2021-05-09T15:00:00Z', 'team_reminders': [{'team_id': '3162764', 'value': 2}], 'time_type': 'service', 'updated_at': '2021-04-20T00:01:01Z'}, 'relationships': {'assigned_teams': {'data': [{'type': 'Team', 'id': '3162763'}, {'type': 'Team', 'id': '3120820'}, {'type': 'Team', 'id': '3162764'}, {'type': 'Team', 'id': '3565805'}, {'type': 'Team', 'id': '3830008'}, {'type': 'Team', 'id': '3580014'}, {'type': 'Team', 'id': '3863377'}, {'type': 'Team', 'id': '3812283'}, {'type': 'Team', 'id': '3866941'}, {'type': 'Team', 'id': '3808958'}, {'type': 'Team', 'id': '3943972'}, {'type': 'Team', 'id': '4203313'}, {'type': 'Team', 'id': '4203315'}, {'type': 'Team', 'id': '4203317'}]}}, 'links': {'self': 'https://api.planningcenteronline.com/services/v2/service_types/824571/plans/52371712/plan_times/127128530'}}, {'type': 'PlanTime', 'id': '127128531', 'attributes': {'created_at': '2021-04-08T16:09:20Z', 'ends_at': '2021-05-09T17:30:00Z', 'live_ends_at': None, 'live_starts_at': None, 'name': None, 'recorded': False, 'starts_at': '2021-05-09T16:30:00Z', 'team_reminders': [], 'time_type': 'service', 'updated_at': '2021-04-20T00:00:35Z'}, 'relationships': {'assigned_teams': {'data': [{'type': 'Team', 'id': '3162763'}, {'type': 'Team', 'id': '3120820'}, {'type': 'Team', 'id': '3162764'}, {'type': 'Team', 'id': '3169787'}, {'type': 'Team', 'id': '3565805'}, {'type': 'Team', 'id': '3830008'}, {'type': 'Team', 'id': '3580014'}, {'type': 'Team', 'id': '3863377'}, {'type': 'Team', 'id': '3812283'}, {'type': 'Team', 'id': '3866941'}, {'type': 'Team', 'id': '3808958'}, {'type': 'Team', 'id': '3943972'}, {'type': 'Team', 'id': '4203313'}, {'type': 'Team', 'id': '4203315'}, {'type': 'Team', 'id': '4203317'}]}}, 'links': {'self': 'https://api.planningcenteronline.com/services/v2/service_types/824571/plans/52371712/plan_times/127128531'}}], 'included': [], 'meta': {'total_count': 3, 'count': 3, 'can_order_by': ['starts_at'], 'can_query_by': ['time_type'], 'can_include': ['split_team_rehearsal_assignments'], 'parent': {'id': '52371712', 'type': 'Plan'}}}
+[D 210420 18:20:57 pco_plan:153] Found plan times: [{'z': '2021-05-09T15:00:00Z', 'local': '2021-05-09  10:00', 'id': '127128530'}, {'z': '2021-05-09T16:30:00Z', 'local': '2021-05-09  11:30', 'id': '127128531'}]
+[D 210420 18:20:57 main_2:440] Live service info: {'z': '2021-05-09T15:00:00Z', 'local': '2021-05-09  10:00', 'id': '127128530'}
+[D 210420 18:20:57 cue_creator:81] creating verbose output from {'device': 'CG3', 'playlist_index': 0, 'cue_index': 0, 'cue_name': 'JoelSims_V'}
+[D 210420 18:20:57 cue_creator:81] creating verbose output from {'device': 'CG3', 'playlist_index': 0, 'cue_index': 0, 'cue_name': 'JoelSims_V'}
+[D 210420 18:20:57 kipro:40] Getting status of kipro 10.1.60.14
+[D 210420 18:20:57 kipro:43] Status of kipro 10.1.60.14 is 1
+[D 210420 18:20:57 main_2:761] update_kipro_status: status is 1 for kipro REC1_CAM1
+[D 210420 18:20:57 main_2:418] Got kipro status: unit: 0, status: 1
+[D 210420 18:20:57 kipro:50] Getting remaining storage for kipro 10.1.60.14
+[D 210420 18:20:57 kipro:53] Remaining storage on kipro 10.1.60.14 is 67 percent.
+[D 210420 18:20:57 main_2:765] update_kipro_status: storage is 67 percent for kipro REC1_CAM1
+[D 210420 18:20:57 kipro:40] Getting status of kipro 10.1.60.15
+[D 210420 18:20:57 kipro:43] Status of kipro 10.1.60.15 is 1
+[D 210420 18:20:57 main_2:761] update_kipro_status: status is 1 for kipro REC2_CAM2
+[D 210420 18:20:57 main_2:418] Got kipro status: unit: 1, status: 1
+[D 210420 18:20:57 kipro:50] Getting remaining storage for kipro 10.1.60.15
+[D 210420 18:20:57 kipro:53] Remaining storage on kipro 10.1.60.15 is 67 percent.
+[D 210420 18:20:57 main_2:765] update_kipro_status: storage is 67 percent for kipro REC2_CAM2
+[D 210420 18:20:57 kipro:40] Getting status of kipro 10.1.60.20
+[D 210420 18:20:57 kipro:43] Status of kipro 10.1.60.20 is 1
+[D 210420 18:20:57 main_2:761] update_kipro_status: status is 1 for kipro REC3_CAM3
+[D 210420 18:20:57 main_2:418] Got kipro status: unit: 2, status: 1
+[D 210420 18:20:57 kipro:50] Getting remaining storage for kipro 10.1.60.20
+[D 210420 18:20:57 kipro:53] Remaining storage on kipro 10.1.60.20 is 70 percent.
+[D 210420 18:20:57 main_2:765] update_kipro_status: storage is 70 percent for kipro REC3_CAM3
+[D 210420 18:20:57 kipro:40] Getting status of kipro 10.1.60.87
+[D 210420 18:20:57 kipro:43] Status of kipro 10.1.60.87 is 1
+[D 210420 18:20:57 main_2:761] update_kipro_status: status is 1 for kipro REC4_CAM4
+[D 210420 18:20:57 main_2:418] Got kipro status: unit: 3, status: 1
+[D 210420 18:20:57 kipro:50] Getting remaining storage for kipro 10.1.60.87
+[D 210420 18:20:57 kipro:53] Remaining storage on kipro 10.1.60.87 is 92 percent.
+[D 210420 18:20:57 main_2:765] update_kipro_status: storage is 92 percent for kipro REC4_CAM4
+[D 210420 18:20:57 kipro:40] Getting status of kipro 10.1.60.88
+[D 210420 18:20:57 kipro:43] Status of kipro 10.1.60.88 is 1
+[D 210420 18:20:57 main_2:761] update_kipro_status: status is 1 for kipro REC5_CAM5
+[D 210420 18:20:57 main_2:418] Got kipro status: unit: 4, status: 1
+[D 210420 18:20:57 kipro:50] Getting remaining storage for kipro 10.1.60.88
+[D 210420 18:20:57 kipro:53] Remaining storage on kipro 10.1.60.88 is 70 percent.
+[D 210420 18:20:57 main_2:765] update_kipro_status: storage is 70 percent for kipro REC5_CAM5
+[D 210420 18:20:57 kipro:40] Getting status of kipro 10.1.60.89
+[D 210420 18:20:58 kipro:43] Status of kipro 10.1.60.89 is 1
+[D 210420 18:20:58 main_2:761] update_kipro_status: status is 1 for kipro REC6_CAM6
+[D 210420 18:20:58 main_2:418] Got kipro status: unit: 5, status: 1
+[D 210420 18:20:58 kipro:50] Getting remaining storage for kipro 10.1.60.89
+[D 210420 18:20:58 kipro:53] Remaining storage on kipro 10.1.60.89 is 91 percent.
+[D 210420 18:20:58 main_2:765] update_kipro_status: storage is 91 percent for kipro REC6_CAM6
+[D 210420 18:20:58 kipro:40] Getting status of kipro 10.1.60.86
+[D 210420 18:20:58 kipro:43] Status of kipro 10.1.60.86 is 1
+[D 210420 18:20:58 main_2:761] update_kipro_status: status is 1 for kipro REC7_CAM7
+[D 210420 18:20:58 main_2:418] Got kipro status: unit: 6, status: 1
+[D 210420 18:20:58 kipro:50] Getting remaining storage for kipro 10.1.60.86
+[D 210420 18:20:58 kipro:53] Remaining storage on kipro 10.1.60.86 is 99 percent.
+[D 210420 18:20:58 main_2:765] update_kipro_status: storage is 99 percent for kipro REC7_CAM7
+[D 210420 18:20:58 kipro:40] Getting status of kipro 10.1.60.85
+[D 210420 18:20:58 kipro:43] Status of kipro 10.1.60.85 is 1
+[D 210420 18:20:58 main_2:761] update_kipro_status: status is 1 for kipro REC8_CAM8
+[D 210420 18:20:58 main_2:418] Got kipro status: unit: 7, status: 1
+[D 210420 18:20:58 kipro:50] Getting remaining storage for kipro 10.1.60.85
+[D 210420 18:20:58 kipro:53] Remaining storage on kipro 10.1.60.85 is 67 percent.
+[D 210420 18:20:58 main_2:765] update_kipro_status: storage is 67 percent for kipro REC8_CAM8
+[D 210420 18:20:58 main_2:771] KiProUi.__refresh: exit_event.is_set(): False
+[D 210420 18:20:58 pco_plan:213] check_if_plan_app_cue_exists: service type: 824571, plan: 52371712
+[D 210420 18:20:58 pco_plan:220] check_if_plan_app_cue_note_exists: found plan note with category_name of "App Cues". Content: [["John + Zach", [{"device": "CG3", "playlist_index": 0, "cue_index": 8, "cue_name": "John-Zach_V"}]], ["Joel Sims", [{"device": "CG3", "playlist_index": 0, "cue_index": 0, "cue_name": "JoelSims_V"}]], ["4 ways to Give", [{"device": "CG3", "playlist_index": 1, "cue_index": 0, "cue_name": "4WaysToGive_V"}]]]
+[D 210420 18:20:58 main_2:609] MainUI.__build_global_cue_buttons: adding global cue buttons
+[D 210420 18:20:58 pco_plan:112] PcoPlan.get_plan_app_cues called.
+[D 210420 18:20:58 pco_plan:213] check_if_plan_app_cue_exists: service type: 824571, plan: 52371712
+[D 210420 18:20:58 pco_plan:220] check_if_plan_app_cue_note_exists: found plan note with category_name of "App Cues". Content: [["John + Zach", [{"device": "CG3", "playlist_index": 0, "cue_index": 8, "cue_name": "John-Zach_V"}]], ["Joel Sims", [{"device": "CG3", "playlist_index": 0, "cue_index": 0, "cue_name": "JoelSims_V"}]], ["4 ways to Give", [{"device": "CG3", "playlist_index": 1, "cue_index": 0, "cue_name": "4WaysToGive_V"}]]]
+[D 210420 18:20:58 pco_plan:119] PcoPlan.get_plan_app_cues: found app cue note content: [["John + Zach", [{"device": "CG3", "playlist_index": 0, "cue_index": 8, "cue_name": "John-Zach_V"}]], ["Joel Sims", [{"device": "CG3", "playlist_index": 0, "cue_index": 0, "cue_name": "JoelSims_V"}]], ["4 ways to Give", [{"device": "CG3", "playlist_index": 1, "cue_index": 0, "cue_name": "4WaysToGive_V"}]]]
+[D 210420 18:20:58 main_2:615] Creating global cues button: John + Zach, cue_data = [{'device': 'CG3', 'playlist_index': 0, 'cue_index': 8, 'cue_name': 'John-Zach_V'}]
+[D 210420 18:20:58 main_2:615] Creating global cues button: Joel Sims, cue_data = [{'device': 'CG3', 'playlist_index': 0, 'cue_index': 0, 'cue_name': 'JoelSims_V'}]
+[D 210420 18:20:58 main_2:615] Creating global cues button: 4 ways to Give, cue_data = [{'device': 'CG3', 'playlist_index': 1, 'cue_index': 0, 'cue_name': '4WaysToGive_V'}]
+[D 210420 18:20:58 pco_live:56] attempting to get current live item id
+[D 210420 18:20:58 pco_live:63] successfully got current live item id: 706777176
+[D 210420 18:20:58 main_2:303] Current live item is index 4, Pre-Service Playlist
+[D 210420 18:20:58 main_2:327] __update_live: find_previous_item: returning 1
+[D 210420 18:20:58 main_2:334] __update_live: find_next_item: returning 3
+[D 210420 18:20:58 main_2:355] Previous item index: 0, Rehearsal Recording, Next item index: 4, Live Host Segment

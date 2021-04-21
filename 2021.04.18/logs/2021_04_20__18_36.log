@@ -1,0 +1,503 @@
+[D 210420 18:36:05 pco_plan:259] get_service_types called
+[D 210420 18:36:07 pco_plan:280] get_services_from_service_type: Offset not specified! Using default 10.
+[D 210420 18:36:07 pco_plan:286] get_services_from_service_type: Making call to get total number of services in service type.
+[D 210420 18:36:08 pco_plan:293] get_services_from_service_type: getting services from, service type id: 824571, offset: 138
+[D 210420 18:36:13 main_2:69] SelectService: service_type_id: 824571, service_id: 51974966
+[D 210420 18:36:13 pco_plan:313] pco_plan_update.get_service_items called. service_type_id: 824571, service_id: 51974966
+[D 210420 18:36:14 pco_plan:346] pco_plan_upadte: received service items. [{'title': 'Rehearsal Recording', 'type': 'item', 'length': 0, 'service_position': 'pre', 'id': '701496692', 'sequence': 1, 'notes': {}}, {'title': '.........SUNDAY SOUND CK 8:30 am..........', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496693', 'sequence': 2, 'notes': {}}, {'title': 'Pre-Service', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496694', 'sequence': 3, 'notes': {}}, {'title': 'Pre-Service Playlist', 'type': 'item', 'length': 1500, 'service_position': 'pre', 'id': '701496695', 'sequence': 4, 'notes': {'Sound': 'CG1', 'Stage': 'clear', 'Video': 'Pre-Service Media'}}, {'title': 'Live Host Segment', 'type': 'item', 'length': 300, 'service_position': 'pre', 'id': '701496696', 'sequence': 5, 'notes': {}}, {'title': 'Pre-Roll Countdown', 'type': 'item', 'length': 300, 'service_position': 'pre', 'id': '701496697', 'sequence': 6, 'notes': {'Sound': 'CG2', 'Video': 'Pre-Roll Video'}}, {'title': 'Worship', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496698', 'sequence': 7, 'notes': {}}, {'title': "You're Doing It All Again", 'type': 'song', 'length': 300, 'service_position': 'during', 'id': '701496699', 'sequence': 8, 'notes': {}}, {'title': 'TAG: Do It Again', 'type': 'song', 'length': 240, 'service_position': 'during', 'id': '701496700', 'sequence': 9, 'notes': {'Person': 'Marko (Spot 3)'}}, {'title': 'Giving Video', 'type': 'item', 'length': 120, 'service_position': 'during', 'id': '709347883', 'sequence': 10, 'notes': {}}, {'title': 'Pastor comes up', 'type': 'item', 'length': 120, 'service_position': 'during', 'id': '701496701', 'sequence': 11, 'notes': {'Timer': '35 min timer'}}, {'title': 'Message - 35 minutes', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496703', 'sequence': 12, 'notes': {}}, {'title': 'Message', 'type': 'item', 'length': 2400, 'service_position': 'during', 'id': '701496704', 'sequence': 13, 'notes': {'Person': 'Pastor'}}, {'title': 'Prayer', 'type': 'item', 'length': 180, 'service_position': 'during', 'id': '701496705', 'sequence': 14, 'notes': {'Person': 'Pastor'}}, {'title': 'ENDING SONG:', 'type': 'item', 'length': 0, 'service_position': 'during', 'id': '701496702', 'sequence': 15, 'notes': {}}, {'title': 'Closing', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496706', 'sequence': 16, 'notes': {}}, {'title': 'Closing / Dismissal', 'type': 'item', 'length': 120, 'service_position': 'during', 'id': '701496707', 'sequence': 17, 'notes': {}}, {'title': 'Post-Service', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496708', 'sequence': 18, 'notes': {}}, {'title': 'Live Host Segment', 'type': 'item', 'length': 300, 'service_position': 'post', 'id': '701496709', 'sequence': 19, 'notes': {}}, {'title': 'Post-Service Playlist', 'type': 'item', 'length': 0, 'service_position': 'post', 'id': '701496710', 'sequence': 20, 'notes': {'Sound': 'CG1', 'Stage': 'clear stage'}}]
+[D 210420 18:36:14 pco_live:56] attempting to get current live item id
+[E 210420 18:36:14 pco_live:69] Failed to get current live item id for service type 824571, plan 51974966. Is the plan live?
+[D 210420 18:36:14 main_2:446] Building current service time info
+[D 210420 18:36:14 pco_plan:138] get_plan_times. service_type: 824571, service_id: 51974966
+[D 210420 18:36:14 pco_plan:142] get_plan_times: response received: {'links': {'self': 'https://api.planningcenteronline.com/services/v2/service_types/824571/plans/51974966/plan_times'}, 'data': [{'type': 'PlanTime', 'id': '126119838', 'attributes': {'created_at': '2021-03-14T22:51:34Z', 'ends_at': '2021-05-02T14:30:00Z', 'live_ends_at': None, 'live_starts_at': None, 'name': 'Sound ck', 'recorded': False, 'starts_at': '2021-05-02T13:30:00Z', 'team_reminders': [{'team_id': '3120820', 'value': 1}, {'team_id': '3162763', 'value': 1}, {'team_id': '3162764', 'value': 1}], 'time_type': 'rehearsal', 'updated_at': '2021-03-14T22:51:34Z'}, 'relationships': {'assigned_teams': {'data': [{'type': 'Team', 'id': '3162763'}, {'type': 'Team', 'id': '3120820'}, {'type': 'Team', 'id': '3162764'}, {'type': 'Team', 'id': '3169787'}, {'type': 'Team', 'id': '3830008'}, {'type': 'Team', 'id': '3580014'}, {'type': 'Team', 'id': '3863377'}, {'type': 'Team', 'id': '3812283'}, {'type': 'Team', 'id': '3866941'}, {'type': 'Team', 'id': '3808958'}]}}, 'links': {'self': 'https://api.planningcenteronline.com/services/v2/service_types/824571/plans/51974966/plan_times/126119838'}}, {'type': 'PlanTime', 'id': '126119839', 'attributes': {'created_at': '2021-03-14T22:51:34Z', 'ends_at': '2021-05-02T16:00:00Z', 'live_ends_at': None, 'live_starts_at': None, 'name': None, 'recorded': False, 'starts_at': '2021-05-02T15:00:00Z', 'team_reminders': [{'team_id': '3162764', 'value': 2}], 'time_type': 'service', 'updated_at': '2021-03-14T22:51:34Z'}, 'relationships': {'assigned_teams': {'data': [{'type': 'Team', 'id': '3162763'}, {'type': 'Team', 'id': '3120820'}, {'type': 'Team', 'id': '3162764'}, {'type': 'Team', 'id': '3565805'}, {'type': 'Team', 'id': '3830008'}, {'type': 'Team', 'id': '3580014'}, {'type': 'Team', 'id': '3863377'}, {'type': 'Team', 'id': '3812283'}, {'type': 'Team', 'id': '3866941'}, {'type': 'Team', 'id': '3808958'}, {'type': 'Team', 'id': '3943972'}, {'type': 'Team', 'id': '4203313'}, {'type': 'Team', 'id': '4203315'}, {'type': 'Team', 'id': '4203317'}]}}, 'links': {'self': 'https://api.planningcenteronline.com/services/v2/service_types/824571/plans/51974966/plan_times/126119839'}}, {'type': 'PlanTime', 'id': '126119840', 'attributes': {'created_at': '2021-03-14T22:51:34Z', 'ends_at': '2021-05-02T17:30:00Z', 'live_ends_at': None, 'live_starts_at': None, 'name': None, 'recorded': False, 'starts_at': '2021-05-02T16:30:00Z', 'team_reminders': [], 'time_type': 'service', 'updated_at': '2021-03-14T22:51:34Z'}, 'relationships': {'assigned_teams': {'data': [{'type': 'Team', 'id': '3162763'}, {'type': 'Team', 'id': '3120820'}, {'type': 'Team', 'id': '3162764'}, {'type': 'Team', 'id': '3169787'}, {'type': 'Team', 'id': '3565805'}, {'type': 'Team', 'id': '3830008'}, {'type': 'Team', 'id': '3580014'}, {'type': 'Team', 'id': '3863377'}, {'type': 'Team', 'id': '3812283'}, {'type': 'Team', 'id': '3866941'}, {'type': 'Team', 'id': '3808958'}, {'type': 'Team', 'id': '3943972'}, {'type': 'Team', 'id': '4203313'}, {'type': 'Team', 'id': '4203315'}, {'type': 'Team', 'id': '4203317'}]}}, 'links': {'self': 'https://api.planningcenteronline.com/services/v2/service_types/824571/plans/51974966/plan_times/126119840'}}], 'included': [], 'meta': {'total_count': 3, 'count': 3, 'can_order_by': ['starts_at'], 'can_query_by': ['time_type'], 'can_include': ['split_team_rehearsal_assignments'], 'parent': {'id': '51974966', 'type': 'Plan'}}}
+[D 210420 18:36:14 pco_plan:153] Found plan times: [{'z': '2021-05-02T15:00:00Z', 'local': '2021-05-02  10:00', 'id': '126119839'}, {'z': '2021-05-02T16:30:00Z', 'local': '2021-05-02  11:30', 'id': '126119840'}]
+[D 210420 18:36:14 kipro:40] Getting status of kipro 10.1.60.14
+[D 210420 18:36:14 kipro:43] Status of kipro 10.1.60.14 is 1
+[D 210420 18:36:14 main_2:770] update_kipro_status: status is 1 for kipro REC1_CAM1
+[D 210420 18:36:14 main_2:427] Got kipro status: unit: 0, status: 1
+[D 210420 18:36:14 kipro:50] Getting remaining storage for kipro 10.1.60.14
+[D 210420 18:36:14 kipro:53] Remaining storage on kipro 10.1.60.14 is 67 percent.
+[D 210420 18:36:14 main_2:774] update_kipro_status: storage is 67 percent for kipro REC1_CAM1
+[D 210420 18:36:14 kipro:40] Getting status of kipro 10.1.60.15
+[D 210420 18:36:14 kipro:43] Status of kipro 10.1.60.15 is 1
+[D 210420 18:36:14 main_2:770] update_kipro_status: status is 1 for kipro REC2_CAM2
+[D 210420 18:36:14 main_2:427] Got kipro status: unit: 1, status: 1
+[D 210420 18:36:14 kipro:50] Getting remaining storage for kipro 10.1.60.15
+[D 210420 18:36:14 kipro:53] Remaining storage on kipro 10.1.60.15 is 67 percent.
+[D 210420 18:36:14 main_2:774] update_kipro_status: storage is 67 percent for kipro REC2_CAM2
+[D 210420 18:36:14 kipro:40] Getting status of kipro 10.1.60.20
+[D 210420 18:36:15 kipro:43] Status of kipro 10.1.60.20 is 1
+[D 210420 18:36:15 main_2:770] update_kipro_status: status is 1 for kipro REC3_CAM3
+[D 210420 18:36:15 main_2:427] Got kipro status: unit: 2, status: 1
+[D 210420 18:36:15 kipro:50] Getting remaining storage for kipro 10.1.60.20
+[D 210420 18:36:15 kipro:53] Remaining storage on kipro 10.1.60.20 is 70 percent.
+[D 210420 18:36:15 main_2:774] update_kipro_status: storage is 70 percent for kipro REC3_CAM3
+[D 210420 18:36:15 kipro:40] Getting status of kipro 10.1.60.87
+[D 210420 18:36:15 kipro:43] Status of kipro 10.1.60.87 is 1
+[D 210420 18:36:15 main_2:770] update_kipro_status: status is 1 for kipro REC4_CAM4
+[D 210420 18:36:15 main_2:427] Got kipro status: unit: 3, status: 1
+[D 210420 18:36:15 kipro:50] Getting remaining storage for kipro 10.1.60.87
+[D 210420 18:36:15 kipro:53] Remaining storage on kipro 10.1.60.87 is 92 percent.
+[D 210420 18:36:15 main_2:774] update_kipro_status: storage is 92 percent for kipro REC4_CAM4
+[D 210420 18:36:15 kipro:40] Getting status of kipro 10.1.60.88
+[D 210420 18:36:15 kipro:43] Status of kipro 10.1.60.88 is 1
+[D 210420 18:36:15 main_2:770] update_kipro_status: status is 1 for kipro REC5_CAM5
+[D 210420 18:36:15 main_2:427] Got kipro status: unit: 4, status: 1
+[D 210420 18:36:15 kipro:50] Getting remaining storage for kipro 10.1.60.88
+[D 210420 18:36:15 kipro:53] Remaining storage on kipro 10.1.60.88 is 70 percent.
+[D 210420 18:36:15 main_2:774] update_kipro_status: storage is 70 percent for kipro REC5_CAM5
+[D 210420 18:36:15 kipro:40] Getting status of kipro 10.1.60.89
+[D 210420 18:36:15 kipro:43] Status of kipro 10.1.60.89 is 1
+[D 210420 18:36:15 main_2:770] update_kipro_status: status is 1 for kipro REC6_CAM6
+[D 210420 18:36:15 main_2:427] Got kipro status: unit: 5, status: 1
+[D 210420 18:36:15 kipro:50] Getting remaining storage for kipro 10.1.60.89
+[D 210420 18:36:15 kipro:53] Remaining storage on kipro 10.1.60.89 is 91 percent.
+[D 210420 18:36:15 main_2:774] update_kipro_status: storage is 91 percent for kipro REC6_CAM6
+[D 210420 18:36:15 kipro:40] Getting status of kipro 10.1.60.86
+[D 210420 18:36:15 kipro:43] Status of kipro 10.1.60.86 is 1
+[D 210420 18:36:15 main_2:770] update_kipro_status: status is 1 for kipro REC7_CAM7
+[D 210420 18:36:15 main_2:427] Got kipro status: unit: 6, status: 1
+[D 210420 18:36:15 kipro:50] Getting remaining storage for kipro 10.1.60.86
+[D 210420 18:36:15 kipro:53] Remaining storage on kipro 10.1.60.86 is 99 percent.
+[D 210420 18:36:15 main_2:774] update_kipro_status: storage is 99 percent for kipro REC7_CAM7
+[D 210420 18:36:15 kipro:40] Getting status of kipro 10.1.60.85
+[D 210420 18:36:15 kipro:43] Status of kipro 10.1.60.85 is 1
+[D 210420 18:36:15 main_2:770] update_kipro_status: status is 1 for kipro REC8_CAM8
+[D 210420 18:36:15 main_2:427] Got kipro status: unit: 7, status: 1
+[D 210420 18:36:15 kipro:50] Getting remaining storage for kipro 10.1.60.85
+[D 210420 18:36:15 kipro:53] Remaining storage on kipro 10.1.60.85 is 67 percent.
+[D 210420 18:36:15 main_2:774] update_kipro_status: storage is 67 percent for kipro REC8_CAM8
+[D 210420 18:36:15 main_2:780] KiProUi.__refresh: exit_event.is_set(): False
+[D 210420 18:36:15 pco_plan:213] check_if_plan_app_cue_exists: service type: 824571, plan: 51974966
+[D 210420 18:36:15 pco_plan:220] check_if_plan_app_cue_note_exists: found plan note with category_name of "App Cues". Content: []
+[D 210420 18:36:15 main_2:618] MainUI.__build_global_cue_buttons: adding global cue buttons
+[D 210420 18:36:15 pco_plan:112] PcoPlan.get_plan_app_cues called.
+[D 210420 18:36:15 pco_plan:213] check_if_plan_app_cue_exists: service type: 824571, plan: 51974966
+[D 210420 18:36:15 pco_plan:220] check_if_plan_app_cue_note_exists: found plan note with category_name of "App Cues". Content: []
+[D 210420 18:36:15 pco_plan:119] PcoPlan.get_plan_app_cues: found app cue note content: []
+[D 210420 18:36:15 pco_live:56] attempting to get current live item id
+[E 210420 18:36:16 pco_live:69] Failed to get current live item id for service type 824571, plan 51974966. Is the plan live?
+[D 210420 18:36:16 main_2:336] __update_live: find_previous_item: returning -1
+[D 210420 18:36:16 main_2:343] __update_live: find_next_item: returning -1
+[D 210420 18:36:16 main_2:364] Previous item index: -2, Live Host Segment, Next item index: 0, Rehearsal Recording
+[D 210420 18:36:18 pco_plan:112] PcoPlan.get_plan_app_cues called.
+[D 210420 18:36:18 pco_plan:213] check_if_plan_app_cue_exists: service type: 824571, plan: 51974966
+[D 210420 18:36:18 pco_plan:220] check_if_plan_app_cue_note_exists: found plan note with category_name of "App Cues". Content: []
+[D 210420 18:36:18 pco_plan:119] PcoPlan.get_plan_app_cues: found app cue note content: []
+[D 210420 18:36:20 cue_creator:820] Updating Cues Display: Input []
+[D 210420 18:36:20 cue_creator:75] CueCreator.create_cues: Creating global cue, no input item
+[D 210420 18:36:25 kipro:40] Getting status of kipro 10.1.60.14
+[D 210420 18:36:25 kipro:43] Status of kipro 10.1.60.14 is 1
+[D 210420 18:36:25 main_2:770] update_kipro_status: status is 1 for kipro REC1_CAM1
+[D 210420 18:36:25 main_2:427] Got kipro status: unit: 0, status: 1
+[D 210420 18:36:25 kipro:50] Getting remaining storage for kipro 10.1.60.14
+[D 210420 18:36:25 kipro:53] Remaining storage on kipro 10.1.60.14 is 67 percent.
+[D 210420 18:36:25 main_2:774] update_kipro_status: storage is 67 percent for kipro REC1_CAM1
+[D 210420 18:36:25 kipro:40] Getting status of kipro 10.1.60.15
+[D 210420 18:36:25 kipro:43] Status of kipro 10.1.60.15 is 1
+[D 210420 18:36:25 main_2:770] update_kipro_status: status is 1 for kipro REC2_CAM2
+[D 210420 18:36:25 main_2:427] Got kipro status: unit: 1, status: 1
+[D 210420 18:36:25 kipro:50] Getting remaining storage for kipro 10.1.60.15
+[D 210420 18:36:25 kipro:53] Remaining storage on kipro 10.1.60.15 is 67 percent.
+[D 210420 18:36:25 main_2:774] update_kipro_status: storage is 67 percent for kipro REC2_CAM2
+[D 210420 18:36:25 kipro:40] Getting status of kipro 10.1.60.20
+[D 210420 18:36:25 kipro:43] Status of kipro 10.1.60.20 is 1
+[D 210420 18:36:25 main_2:770] update_kipro_status: status is 1 for kipro REC3_CAM3
+[D 210420 18:36:25 main_2:427] Got kipro status: unit: 2, status: 1
+[D 210420 18:36:25 kipro:50] Getting remaining storage for kipro 10.1.60.20
+[D 210420 18:36:25 kipro:53] Remaining storage on kipro 10.1.60.20 is 70 percent.
+[D 210420 18:36:25 main_2:774] update_kipro_status: storage is 70 percent for kipro REC3_CAM3
+[D 210420 18:36:25 kipro:40] Getting status of kipro 10.1.60.87
+[D 210420 18:36:25 kipro:43] Status of kipro 10.1.60.87 is 1
+[D 210420 18:36:25 main_2:770] update_kipro_status: status is 1 for kipro REC4_CAM4
+[D 210420 18:36:25 main_2:427] Got kipro status: unit: 3, status: 1
+[D 210420 18:36:25 kipro:50] Getting remaining storage for kipro 10.1.60.87
+[D 210420 18:36:25 kipro:53] Remaining storage on kipro 10.1.60.87 is 92 percent.
+[D 210420 18:36:25 main_2:774] update_kipro_status: storage is 92 percent for kipro REC4_CAM4
+[D 210420 18:36:25 kipro:40] Getting status of kipro 10.1.60.88
+[D 210420 18:36:25 kipro:43] Status of kipro 10.1.60.88 is 1
+[D 210420 18:36:25 main_2:770] update_kipro_status: status is 1 for kipro REC5_CAM5
+[D 210420 18:36:25 main_2:427] Got kipro status: unit: 4, status: 1
+[D 210420 18:36:25 kipro:50] Getting remaining storage for kipro 10.1.60.88
+[D 210420 18:36:25 kipro:53] Remaining storage on kipro 10.1.60.88 is 70 percent.
+[D 210420 18:36:25 main_2:774] update_kipro_status: storage is 70 percent for kipro REC5_CAM5
+[D 210420 18:36:25 kipro:40] Getting status of kipro 10.1.60.89
+[D 210420 18:36:25 kipro:43] Status of kipro 10.1.60.89 is 1
+[D 210420 18:36:25 main_2:770] update_kipro_status: status is 1 for kipro REC6_CAM6
+[D 210420 18:36:25 main_2:427] Got kipro status: unit: 5, status: 1
+[D 210420 18:36:25 kipro:50] Getting remaining storage for kipro 10.1.60.89
+[D 210420 18:36:25 kipro:53] Remaining storage on kipro 10.1.60.89 is 91 percent.
+[D 210420 18:36:25 main_2:774] update_kipro_status: storage is 91 percent for kipro REC6_CAM6
+[D 210420 18:36:25 kipro:40] Getting status of kipro 10.1.60.86
+[D 210420 18:36:25 kipro:43] Status of kipro 10.1.60.86 is 1
+[D 210420 18:36:25 main_2:770] update_kipro_status: status is 1 for kipro REC7_CAM7
+[D 210420 18:36:25 main_2:427] Got kipro status: unit: 6, status: 1
+[D 210420 18:36:25 kipro:50] Getting remaining storage for kipro 10.1.60.86
+[D 210420 18:36:25 kipro:53] Remaining storage on kipro 10.1.60.86 is 99 percent.
+[D 210420 18:36:25 main_2:774] update_kipro_status: storage is 99 percent for kipro REC7_CAM7
+[D 210420 18:36:25 kipro:40] Getting status of kipro 10.1.60.85
+[D 210420 18:36:25 kipro:43] Status of kipro 10.1.60.85 is 1
+[D 210420 18:36:25 main_2:770] update_kipro_status: status is 1 for kipro REC8_CAM8
+[D 210420 18:36:25 main_2:427] Got kipro status: unit: 7, status: 1
+[D 210420 18:36:25 kipro:50] Getting remaining storage for kipro 10.1.60.85
+[D 210420 18:36:25 kipro:53] Remaining storage on kipro 10.1.60.85 is 67 percent.
+[D 210420 18:36:25 main_2:774] update_kipro_status: storage is 67 percent for kipro REC8_CAM8
+[D 210420 18:36:25 main_2:780] KiProUi.__refresh: exit_event.is_set(): False
+[D 210420 18:36:27 cue_creator:820] Updating Cues Display: Input [{'device': 'CG3', 'playlist_index': 0, 'cue_index': 2, 'cue_name': 'John-Raffette_V'}]
+[D 210420 18:36:27 cue_creator:81] creating verbose output from {'device': 'CG3', 'playlist_index': 0, 'cue_index': 2, 'cue_name': 'John-Raffette_V'}
+[D 210420 18:36:27 pco_plan:213] check_if_plan_app_cue_exists: service type: 824571, plan: 51974966
+[D 210420 18:36:28 pco_plan:220] check_if_plan_app_cue_note_exists: found plan note with category_name of "App Cues". Content: []
+[D 210420 18:36:28 pco_plan:230] Updating plan app cues, plan id: 51974966, content: [["test 1", [{"device": "CG3", "playlist_index": 0, "cue_index": 2, "cue_name": "John-Raffette_V"}]]]
+[D 210420 18:36:28 pco_plan:100] Making api call to get note id for app cues in plan 51974966
+[D 210420 18:36:28 pco_plan:105] get_plan_app_cue_note_id: checking if contains app cue
+[D 210420 18:36:28 pco_plan:107] Found app cue note, id 5200757, content: []
+[D 210420 18:36:28 pco_plan:232] Update_plan_app_cue: app_cue_note_id is 5
+[D 210420 18:36:28 pco_plan:244] update_plan_app_cue: success on adding [["test 1", [{"device": "CG3", "playlist_index": 0, "cue_index": 2, "cue_name": "John-Raffette_V"}]]] to app_cue note category
+[D 210420 18:36:28 main_2:763] KiProUi.kill_threads: setting exit event
+[D 210420 18:36:28 pco_plan:313] pco_plan_update.get_service_items called. service_type_id: 824571, service_id: 51974966
+[D 210420 18:36:29 pco_plan:346] pco_plan_upadte: received service items. [{'title': 'Rehearsal Recording', 'type': 'item', 'length': 0, 'service_position': 'pre', 'id': '701496692', 'sequence': 1, 'notes': {}}, {'title': '.........SUNDAY SOUND CK 8:30 am..........', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496693', 'sequence': 2, 'notes': {}}, {'title': 'Pre-Service', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496694', 'sequence': 3, 'notes': {}}, {'title': 'Pre-Service Playlist', 'type': 'item', 'length': 1500, 'service_position': 'pre', 'id': '701496695', 'sequence': 4, 'notes': {'Sound': 'CG1', 'Stage': 'clear', 'Video': 'Pre-Service Media'}}, {'title': 'Live Host Segment', 'type': 'item', 'length': 300, 'service_position': 'pre', 'id': '701496696', 'sequence': 5, 'notes': {}}, {'title': 'Pre-Roll Countdown', 'type': 'item', 'length': 300, 'service_position': 'pre', 'id': '701496697', 'sequence': 6, 'notes': {'Sound': 'CG2', 'Video': 'Pre-Roll Video'}}, {'title': 'Worship', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496698', 'sequence': 7, 'notes': {}}, {'title': "You're Doing It All Again", 'type': 'song', 'length': 300, 'service_position': 'during', 'id': '701496699', 'sequence': 8, 'notes': {}}, {'title': 'TAG: Do It Again', 'type': 'song', 'length': 240, 'service_position': 'during', 'id': '701496700', 'sequence': 9, 'notes': {'Person': 'Marko (Spot 3)'}}, {'title': 'Giving Video', 'type': 'item', 'length': 120, 'service_position': 'during', 'id': '709347883', 'sequence': 10, 'notes': {}}, {'title': 'Pastor comes up', 'type': 'item', 'length': 120, 'service_position': 'during', 'id': '701496701', 'sequence': 11, 'notes': {'Timer': '35 min timer'}}, {'title': 'Message - 35 minutes', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496703', 'sequence': 12, 'notes': {}}, {'title': 'Message', 'type': 'item', 'length': 2400, 'service_position': 'during', 'id': '701496704', 'sequence': 13, 'notes': {'Person': 'Pastor'}}, {'title': 'Prayer', 'type': 'item', 'length': 180, 'service_position': 'during', 'id': '701496705', 'sequence': 14, 'notes': {'Person': 'Pastor'}}, {'title': 'ENDING SONG:', 'type': 'item', 'length': 0, 'service_position': 'during', 'id': '701496702', 'sequence': 15, 'notes': {}}, {'title': 'Closing', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496706', 'sequence': 16, 'notes': {}}, {'title': 'Closing / Dismissal', 'type': 'item', 'length': 120, 'service_position': 'during', 'id': '701496707', 'sequence': 17, 'notes': {}}, {'title': 'Post-Service', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496708', 'sequence': 18, 'notes': {}}, {'title': 'Live Host Segment', 'type': 'item', 'length': 300, 'service_position': 'post', 'id': '701496709', 'sequence': 19, 'notes': {}}, {'title': 'Post-Service Playlist', 'type': 'item', 'length': 0, 'service_position': 'post', 'id': '701496710', 'sequence': 20, 'notes': {'Sound': 'CG1', 'Stage': 'clear stage'}}]
+[D 210420 18:36:29 pco_live:56] attempting to get current live item id
+[E 210420 18:36:29 pco_live:69] Failed to get current live item id for service type 824571, plan 51974966. Is the plan live?
+[D 210420 18:36:29 main_2:446] Building current service time info
+[D 210420 18:36:29 pco_plan:138] get_plan_times. service_type: 824571, service_id: 51974966
+[D 210420 18:36:29 pco_plan:142] get_plan_times: response received: {'links': {'self': 'https://api.planningcenteronline.com/services/v2/service_types/824571/plans/51974966/plan_times'}, 'data': [{'type': 'PlanTime', 'id': '126119838', 'attributes': {'created_at': '2021-03-14T22:51:34Z', 'ends_at': '2021-05-02T14:30:00Z', 'live_ends_at': None, 'live_starts_at': None, 'name': 'Sound ck', 'recorded': False, 'starts_at': '2021-05-02T13:30:00Z', 'team_reminders': [{'team_id': '3120820', 'value': 1}, {'team_id': '3162763', 'value': 1}, {'team_id': '3162764', 'value': 1}], 'time_type': 'rehearsal', 'updated_at': '2021-03-14T22:51:34Z'}, 'relationships': {'assigned_teams': {'data': [{'type': 'Team', 'id': '3162763'}, {'type': 'Team', 'id': '3120820'}, {'type': 'Team', 'id': '3162764'}, {'type': 'Team', 'id': '3169787'}, {'type': 'Team', 'id': '3830008'}, {'type': 'Team', 'id': '3580014'}, {'type': 'Team', 'id': '3863377'}, {'type': 'Team', 'id': '3812283'}, {'type': 'Team', 'id': '3866941'}, {'type': 'Team', 'id': '3808958'}]}}, 'links': {'self': 'https://api.planningcenteronline.com/services/v2/service_types/824571/plans/51974966/plan_times/126119838'}}, {'type': 'PlanTime', 'id': '126119839', 'attributes': {'created_at': '2021-03-14T22:51:34Z', 'ends_at': '2021-05-02T16:00:00Z', 'live_ends_at': None, 'live_starts_at': None, 'name': None, 'recorded': False, 'starts_at': '2021-05-02T15:00:00Z', 'team_reminders': [{'team_id': '3162764', 'value': 2}], 'time_type': 'service', 'updated_at': '2021-03-14T22:51:34Z'}, 'relationships': {'assigned_teams': {'data': [{'type': 'Team', 'id': '3162763'}, {'type': 'Team', 'id': '3120820'}, {'type': 'Team', 'id': '3162764'}, {'type': 'Team', 'id': '3565805'}, {'type': 'Team', 'id': '3830008'}, {'type': 'Team', 'id': '3580014'}, {'type': 'Team', 'id': '3863377'}, {'type': 'Team', 'id': '3812283'}, {'type': 'Team', 'id': '3866941'}, {'type': 'Team', 'id': '3808958'}, {'type': 'Team', 'id': '3943972'}, {'type': 'Team', 'id': '4203313'}, {'type': 'Team', 'id': '4203315'}, {'type': 'Team', 'id': '4203317'}]}}, 'links': {'self': 'https://api.planningcenteronline.com/services/v2/service_types/824571/plans/51974966/plan_times/126119839'}}, {'type': 'PlanTime', 'id': '126119840', 'attributes': {'created_at': '2021-03-14T22:51:34Z', 'ends_at': '2021-05-02T17:30:00Z', 'live_ends_at': None, 'live_starts_at': None, 'name': None, 'recorded': False, 'starts_at': '2021-05-02T16:30:00Z', 'team_reminders': [], 'time_type': 'service', 'updated_at': '2021-03-14T22:51:34Z'}, 'relationships': {'assigned_teams': {'data': [{'type': 'Team', 'id': '3162763'}, {'type': 'Team', 'id': '3120820'}, {'type': 'Team', 'id': '3162764'}, {'type': 'Team', 'id': '3169787'}, {'type': 'Team', 'id': '3565805'}, {'type': 'Team', 'id': '3830008'}, {'type': 'Team', 'id': '3580014'}, {'type': 'Team', 'id': '3863377'}, {'type': 'Team', 'id': '3812283'}, {'type': 'Team', 'id': '3866941'}, {'type': 'Team', 'id': '3808958'}, {'type': 'Team', 'id': '3943972'}, {'type': 'Team', 'id': '4203313'}, {'type': 'Team', 'id': '4203315'}, {'type': 'Team', 'id': '4203317'}]}}, 'links': {'self': 'https://api.planningcenteronline.com/services/v2/service_types/824571/plans/51974966/plan_times/126119840'}}], 'included': [], 'meta': {'total_count': 3, 'count': 3, 'can_order_by': ['starts_at'], 'can_query_by': ['time_type'], 'can_include': ['split_team_rehearsal_assignments'], 'parent': {'id': '51974966', 'type': 'Plan'}}}
+[D 210420 18:36:29 pco_plan:153] Found plan times: [{'z': '2021-05-02T15:00:00Z', 'local': '2021-05-02  10:00', 'id': '126119839'}, {'z': '2021-05-02T16:30:00Z', 'local': '2021-05-02  11:30', 'id': '126119840'}]
+[D 210420 18:36:29 kipro:40] Getting status of kipro 10.1.60.14
+[D 210420 18:36:29 kipro:43] Status of kipro 10.1.60.14 is 1
+[D 210420 18:36:29 main_2:770] update_kipro_status: status is 1 for kipro REC1_CAM1
+[D 210420 18:36:29 main_2:427] Got kipro status: unit: 0, status: 1
+[D 210420 18:36:29 kipro:50] Getting remaining storage for kipro 10.1.60.14
+[D 210420 18:36:29 kipro:53] Remaining storage on kipro 10.1.60.14 is 67 percent.
+[D 210420 18:36:29 main_2:774] update_kipro_status: storage is 67 percent for kipro REC1_CAM1
+[D 210420 18:36:29 kipro:40] Getting status of kipro 10.1.60.15
+[D 210420 18:36:29 kipro:43] Status of kipro 10.1.60.15 is 1
+[D 210420 18:36:29 main_2:770] update_kipro_status: status is 1 for kipro REC2_CAM2
+[D 210420 18:36:29 main_2:427] Got kipro status: unit: 1, status: 1
+[D 210420 18:36:29 kipro:50] Getting remaining storage for kipro 10.1.60.15
+[D 210420 18:36:30 kipro:53] Remaining storage on kipro 10.1.60.15 is 67 percent.
+[D 210420 18:36:30 main_2:774] update_kipro_status: storage is 67 percent for kipro REC2_CAM2
+[D 210420 18:36:30 kipro:40] Getting status of kipro 10.1.60.20
+[D 210420 18:36:30 kipro:43] Status of kipro 10.1.60.20 is 1
+[D 210420 18:36:30 main_2:770] update_kipro_status: status is 1 for kipro REC3_CAM3
+[D 210420 18:36:30 main_2:427] Got kipro status: unit: 2, status: 1
+[D 210420 18:36:30 kipro:50] Getting remaining storage for kipro 10.1.60.20
+[D 210420 18:36:30 kipro:53] Remaining storage on kipro 10.1.60.20 is 70 percent.
+[D 210420 18:36:30 main_2:774] update_kipro_status: storage is 70 percent for kipro REC3_CAM3
+[D 210420 18:36:30 kipro:40] Getting status of kipro 10.1.60.87
+[D 210420 18:36:30 kipro:43] Status of kipro 10.1.60.87 is 1
+[D 210420 18:36:30 main_2:770] update_kipro_status: status is 1 for kipro REC4_CAM4
+[D 210420 18:36:30 main_2:427] Got kipro status: unit: 3, status: 1
+[D 210420 18:36:30 kipro:50] Getting remaining storage for kipro 10.1.60.87
+[D 210420 18:36:30 kipro:53] Remaining storage on kipro 10.1.60.87 is 92 percent.
+[D 210420 18:36:30 main_2:774] update_kipro_status: storage is 92 percent for kipro REC4_CAM4
+[D 210420 18:36:30 kipro:40] Getting status of kipro 10.1.60.88
+[D 210420 18:36:30 kipro:43] Status of kipro 10.1.60.88 is 1
+[D 210420 18:36:30 main_2:770] update_kipro_status: status is 1 for kipro REC5_CAM5
+[D 210420 18:36:30 main_2:427] Got kipro status: unit: 4, status: 1
+[D 210420 18:36:30 kipro:50] Getting remaining storage for kipro 10.1.60.88
+[D 210420 18:36:30 kipro:53] Remaining storage on kipro 10.1.60.88 is 70 percent.
+[D 210420 18:36:30 main_2:774] update_kipro_status: storage is 70 percent for kipro REC5_CAM5
+[D 210420 18:36:30 kipro:40] Getting status of kipro 10.1.60.89
+[D 210420 18:36:30 kipro:43] Status of kipro 10.1.60.89 is 1
+[D 210420 18:36:30 main_2:770] update_kipro_status: status is 1 for kipro REC6_CAM6
+[D 210420 18:36:30 main_2:427] Got kipro status: unit: 5, status: 1
+[D 210420 18:36:30 kipro:50] Getting remaining storage for kipro 10.1.60.89
+[D 210420 18:36:30 kipro:53] Remaining storage on kipro 10.1.60.89 is 91 percent.
+[D 210420 18:36:30 main_2:774] update_kipro_status: storage is 91 percent for kipro REC6_CAM6
+[D 210420 18:36:30 kipro:40] Getting status of kipro 10.1.60.86
+[D 210420 18:36:30 kipro:43] Status of kipro 10.1.60.86 is 1
+[D 210420 18:36:30 main_2:770] update_kipro_status: status is 1 for kipro REC7_CAM7
+[D 210420 18:36:30 main_2:427] Got kipro status: unit: 6, status: 1
+[D 210420 18:36:30 kipro:50] Getting remaining storage for kipro 10.1.60.86
+[D 210420 18:36:30 kipro:53] Remaining storage on kipro 10.1.60.86 is 99 percent.
+[D 210420 18:36:30 main_2:774] update_kipro_status: storage is 99 percent for kipro REC7_CAM7
+[D 210420 18:36:30 kipro:40] Getting status of kipro 10.1.60.85
+[D 210420 18:36:30 kipro:43] Status of kipro 10.1.60.85 is 1
+[D 210420 18:36:30 main_2:770] update_kipro_status: status is 1 for kipro REC8_CAM8
+[D 210420 18:36:30 main_2:427] Got kipro status: unit: 7, status: 1
+[D 210420 18:36:30 kipro:50] Getting remaining storage for kipro 10.1.60.85
+[D 210420 18:36:30 kipro:53] Remaining storage on kipro 10.1.60.85 is 67 percent.
+[D 210420 18:36:30 main_2:774] update_kipro_status: storage is 67 percent for kipro REC8_CAM8
+[D 210420 18:36:30 main_2:780] KiProUi.__refresh: exit_event.is_set(): False
+[D 210420 18:36:30 pco_plan:213] check_if_plan_app_cue_exists: service type: 824571, plan: 51974966
+[D 210420 18:36:30 pco_plan:220] check_if_plan_app_cue_note_exists: found plan note with category_name of "App Cues". Content: [["test 1", [{"device": "CG3", "playlist_index": 0, "cue_index": 2, "cue_name": "John-Raffette_V"}]]]
+[D 210420 18:36:30 main_2:618] MainUI.__build_global_cue_buttons: adding global cue buttons
+[D 210420 18:36:30 pco_plan:112] PcoPlan.get_plan_app_cues called.
+[D 210420 18:36:30 pco_plan:213] check_if_plan_app_cue_exists: service type: 824571, plan: 51974966
+[D 210420 18:36:30 pco_plan:220] check_if_plan_app_cue_note_exists: found plan note with category_name of "App Cues". Content: [["test 1", [{"device": "CG3", "playlist_index": 0, "cue_index": 2, "cue_name": "John-Raffette_V"}]]]
+[D 210420 18:36:30 pco_plan:119] PcoPlan.get_plan_app_cues: found app cue note content: [["test 1", [{"device": "CG3", "playlist_index": 0, "cue_index": 2, "cue_name": "John-Raffette_V"}]]]
+[D 210420 18:36:30 main_2:624] Creating global cues button: test 1, cue_data = [{'device': 'CG3', 'playlist_index': 0, 'cue_index': 2, 'cue_name': 'John-Raffette_V'}]
+[D 210420 18:36:30 pco_live:56] attempting to get current live item id
+[E 210420 18:36:31 pco_live:69] Failed to get current live item id for service type 824571, plan 51974966. Is the plan live?
+[D 210420 18:36:31 main_2:336] __update_live: find_previous_item: returning -1
+[D 210420 18:36:31 main_2:343] __update_live: find_next_item: returning -1
+[D 210420 18:36:31 main_2:364] Previous item index: -2, Live Host Segment, Next item index: 0, Rehearsal Recording
+[D 210420 18:36:32 pco_plan:112] PcoPlan.get_plan_app_cues called.
+[D 210420 18:36:32 pco_plan:213] check_if_plan_app_cue_exists: service type: 824571, plan: 51974966
+[D 210420 18:36:33 pco_plan:220] check_if_plan_app_cue_note_exists: found plan note with category_name of "App Cues". Content: [["test 1", [{"device": "CG3", "playlist_index": 0, "cue_index": 2, "cue_name": "John-Raffette_V"}]]]
+[D 210420 18:36:33 pco_plan:119] PcoPlan.get_plan_app_cues: found app cue note content: [["test 1", [{"device": "CG3", "playlist_index": 0, "cue_index": 2, "cue_name": "John-Raffette_V"}]]]
+[D 210420 18:36:34 pco_plan:213] check_if_plan_app_cue_exists: service type: 824571, plan: 51974966
+[D 210420 18:36:35 pco_plan:220] check_if_plan_app_cue_note_exists: found plan note with category_name of "App Cues". Content: [["test 1", [{"device": "CG3", "playlist_index": 0, "cue_index": 2, "cue_name": "John-Raffette_V"}]]]
+[D 210420 18:36:35 pco_plan:112] PcoPlan.get_plan_app_cues called.
+[D 210420 18:36:35 pco_plan:213] check_if_plan_app_cue_exists: service type: 824571, plan: 51974966
+[D 210420 18:36:35 pco_plan:220] check_if_plan_app_cue_note_exists: found plan note with category_name of "App Cues". Content: [["test 1", [{"device": "CG3", "playlist_index": 0, "cue_index": 2, "cue_name": "John-Raffette_V"}]]]
+[D 210420 18:36:35 main_2:786] KiProUi.__refresh: exit event set, stopping loop
+[D 210420 18:36:35 pco_plan:119] PcoPlan.get_plan_app_cues: found app cue note content: [["test 1", [{"device": "CG3", "playlist_index": 0, "cue_index": 2, "cue_name": "John-Raffette_V"}]]]
+[D 210420 18:36:37 pco_plan:213] check_if_plan_app_cue_exists: service type: 824571, plan: 51974966
+[D 210420 18:36:38 pco_plan:220] check_if_plan_app_cue_note_exists: found plan note with category_name of "App Cues". Content: [["test 1", [{"device": "CG3", "playlist_index": 0, "cue_index": 2, "cue_name": "John-Raffette_V"}]]]
+[D 210420 18:36:38 pco_plan:230] Updating plan app cues, plan id: 51974966, content: []
+[D 210420 18:36:38 pco_plan:100] Making api call to get note id for app cues in plan 51974966
+[D 210420 18:36:38 pco_plan:105] get_plan_app_cue_note_id: checking if contains app cue
+[D 210420 18:36:38 pco_plan:107] Found app cue note, id 5200757, content: [["test 1", [{"device": "CG3", "playlist_index": 0, "cue_index": 2, "cue_name": "John-Raffette_V"}]]]
+[D 210420 18:36:38 pco_plan:232] Update_plan_app_cue: app_cue_note_id is 5
+[D 210420 18:36:39 pco_plan:244] update_plan_app_cue: success on adding [] to app_cue note category
+[D 210420 18:36:39 main_2:763] KiProUi.kill_threads: setting exit event
+[D 210420 18:36:39 pco_plan:313] pco_plan_update.get_service_items called. service_type_id: 824571, service_id: 51974966
+[D 210420 18:36:39 pco_plan:346] pco_plan_upadte: received service items. [{'title': 'Rehearsal Recording', 'type': 'item', 'length': 0, 'service_position': 'pre', 'id': '701496692', 'sequence': 1, 'notes': {}}, {'title': '.........SUNDAY SOUND CK 8:30 am..........', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496693', 'sequence': 2, 'notes': {}}, {'title': 'Pre-Service', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496694', 'sequence': 3, 'notes': {}}, {'title': 'Pre-Service Playlist', 'type': 'item', 'length': 1500, 'service_position': 'pre', 'id': '701496695', 'sequence': 4, 'notes': {'Sound': 'CG1', 'Stage': 'clear', 'Video': 'Pre-Service Media'}}, {'title': 'Live Host Segment', 'type': 'item', 'length': 300, 'service_position': 'pre', 'id': '701496696', 'sequence': 5, 'notes': {}}, {'title': 'Pre-Roll Countdown', 'type': 'item', 'length': 300, 'service_position': 'pre', 'id': '701496697', 'sequence': 6, 'notes': {'Sound': 'CG2', 'Video': 'Pre-Roll Video'}}, {'title': 'Worship', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496698', 'sequence': 7, 'notes': {}}, {'title': "You're Doing It All Again", 'type': 'song', 'length': 300, 'service_position': 'during', 'id': '701496699', 'sequence': 8, 'notes': {}}, {'title': 'TAG: Do It Again', 'type': 'song', 'length': 240, 'service_position': 'during', 'id': '701496700', 'sequence': 9, 'notes': {'Person': 'Marko (Spot 3)'}}, {'title': 'Giving Video', 'type': 'item', 'length': 120, 'service_position': 'during', 'id': '709347883', 'sequence': 10, 'notes': {}}, {'title': 'Pastor comes up', 'type': 'item', 'length': 120, 'service_position': 'during', 'id': '701496701', 'sequence': 11, 'notes': {'Timer': '35 min timer'}}, {'title': 'Message - 35 minutes', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496703', 'sequence': 12, 'notes': {}}, {'title': 'Message', 'type': 'item', 'length': 2400, 'service_position': 'during', 'id': '701496704', 'sequence': 13, 'notes': {'Person': 'Pastor'}}, {'title': 'Prayer', 'type': 'item', 'length': 180, 'service_position': 'during', 'id': '701496705', 'sequence': 14, 'notes': {'Person': 'Pastor'}}, {'title': 'ENDING SONG:', 'type': 'item', 'length': 0, 'service_position': 'during', 'id': '701496702', 'sequence': 15, 'notes': {}}, {'title': 'Closing', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496706', 'sequence': 16, 'notes': {}}, {'title': 'Closing / Dismissal', 'type': 'item', 'length': 120, 'service_position': 'during', 'id': '701496707', 'sequence': 17, 'notes': {}}, {'title': 'Post-Service', 'type': 'header', 'length': 0, 'service_position': 'during', 'id': '701496708', 'sequence': 18, 'notes': {}}, {'title': 'Live Host Segment', 'type': 'item', 'length': 300, 'service_position': 'post', 'id': '701496709', 'sequence': 19, 'notes': {}}, {'title': 'Post-Service Playlist', 'type': 'item', 'length': 0, 'service_position': 'post', 'id': '701496710', 'sequence': 20, 'notes': {'Sound': 'CG1', 'Stage': 'clear stage'}}]
+[D 210420 18:36:39 pco_live:56] attempting to get current live item id
+[E 210420 18:36:39 pco_live:69] Failed to get current live item id for service type 824571, plan 51974966. Is the plan live?
+[D 210420 18:36:39 main_2:446] Building current service time info
+[D 210420 18:36:39 pco_plan:138] get_plan_times. service_type: 824571, service_id: 51974966
+[D 210420 18:36:40 pco_plan:142] get_plan_times: response received: {'links': {'self': 'https://api.planningcenteronline.com/services/v2/service_types/824571/plans/51974966/plan_times'}, 'data': [{'type': 'PlanTime', 'id': '126119838', 'attributes': {'created_at': '2021-03-14T22:51:34Z', 'ends_at': '2021-05-02T14:30:00Z', 'live_ends_at': None, 'live_starts_at': None, 'name': 'Sound ck', 'recorded': False, 'starts_at': '2021-05-02T13:30:00Z', 'team_reminders': [{'team_id': '3120820', 'value': 1}, {'team_id': '3162763', 'value': 1}, {'team_id': '3162764', 'value': 1}], 'time_type': 'rehearsal', 'updated_at': '2021-03-14T22:51:34Z'}, 'relationships': {'assigned_teams': {'data': [{'type': 'Team', 'id': '3162763'}, {'type': 'Team', 'id': '3120820'}, {'type': 'Team', 'id': '3162764'}, {'type': 'Team', 'id': '3169787'}, {'type': 'Team', 'id': '3830008'}, {'type': 'Team', 'id': '3580014'}, {'type': 'Team', 'id': '3863377'}, {'type': 'Team', 'id': '3812283'}, {'type': 'Team', 'id': '3866941'}, {'type': 'Team', 'id': '3808958'}]}}, 'links': {'self': 'https://api.planningcenteronline.com/services/v2/service_types/824571/plans/51974966/plan_times/126119838'}}, {'type': 'PlanTime', 'id': '126119839', 'attributes': {'created_at': '2021-03-14T22:51:34Z', 'ends_at': '2021-05-02T16:00:00Z', 'live_ends_at': None, 'live_starts_at': None, 'name': None, 'recorded': False, 'starts_at': '2021-05-02T15:00:00Z', 'team_reminders': [{'team_id': '3162764', 'value': 2}], 'time_type': 'service', 'updated_at': '2021-03-14T22:51:34Z'}, 'relationships': {'assigned_teams': {'data': [{'type': 'Team', 'id': '3162763'}, {'type': 'Team', 'id': '3120820'}, {'type': 'Team', 'id': '3162764'}, {'type': 'Team', 'id': '3565805'}, {'type': 'Team', 'id': '3830008'}, {'type': 'Team', 'id': '3580014'}, {'type': 'Team', 'id': '3863377'}, {'type': 'Team', 'id': '3812283'}, {'type': 'Team', 'id': '3866941'}, {'type': 'Team', 'id': '3808958'}, {'type': 'Team', 'id': '3943972'}, {'type': 'Team', 'id': '4203313'}, {'type': 'Team', 'id': '4203315'}, {'type': 'Team', 'id': '4203317'}]}}, 'links': {'self': 'https://api.planningcenteronline.com/services/v2/service_types/824571/plans/51974966/plan_times/126119839'}}, {'type': 'PlanTime', 'id': '126119840', 'attributes': {'created_at': '2021-03-14T22:51:34Z', 'ends_at': '2021-05-02T17:30:00Z', 'live_ends_at': None, 'live_starts_at': None, 'name': None, 'recorded': False, 'starts_at': '2021-05-02T16:30:00Z', 'team_reminders': [], 'time_type': 'service', 'updated_at': '2021-03-14T22:51:34Z'}, 'relationships': {'assigned_teams': {'data': [{'type': 'Team', 'id': '3162763'}, {'type': 'Team', 'id': '3120820'}, {'type': 'Team', 'id': '3162764'}, {'type': 'Team', 'id': '3169787'}, {'type': 'Team', 'id': '3565805'}, {'type': 'Team', 'id': '3830008'}, {'type': 'Team', 'id': '3580014'}, {'type': 'Team', 'id': '3863377'}, {'type': 'Team', 'id': '3812283'}, {'type': 'Team', 'id': '3866941'}, {'type': 'Team', 'id': '3808958'}, {'type': 'Team', 'id': '3943972'}, {'type': 'Team', 'id': '4203313'}, {'type': 'Team', 'id': '4203315'}, {'type': 'Team', 'id': '4203317'}]}}, 'links': {'self': 'https://api.planningcenteronline.com/services/v2/service_types/824571/plans/51974966/plan_times/126119840'}}], 'included': [], 'meta': {'total_count': 3, 'count': 3, 'can_order_by': ['starts_at'], 'can_query_by': ['time_type'], 'can_include': ['split_team_rehearsal_assignments'], 'parent': {'id': '51974966', 'type': 'Plan'}}}
+[D 210420 18:36:40 pco_plan:153] Found plan times: [{'z': '2021-05-02T15:00:00Z', 'local': '2021-05-02  10:00', 'id': '126119839'}, {'z': '2021-05-02T16:30:00Z', 'local': '2021-05-02  11:30', 'id': '126119840'}]
+[D 210420 18:36:40 kipro:40] Getting status of kipro 10.1.60.14
+[D 210420 18:36:40 kipro:43] Status of kipro 10.1.60.14 is 1
+[D 210420 18:36:40 main_2:770] update_kipro_status: status is 1 for kipro REC1_CAM1
+[D 210420 18:36:40 main_2:427] Got kipro status: unit: 0, status: 1
+[D 210420 18:36:40 kipro:50] Getting remaining storage for kipro 10.1.60.14
+[D 210420 18:36:40 kipro:53] Remaining storage on kipro 10.1.60.14 is 67 percent.
+[D 210420 18:36:40 main_2:774] update_kipro_status: storage is 67 percent for kipro REC1_CAM1
+[D 210420 18:36:40 kipro:40] Getting status of kipro 10.1.60.15
+[D 210420 18:36:40 main_2:786] KiProUi.__refresh: exit event set, stopping loop
+[D 210420 18:36:40 kipro:43] Status of kipro 10.1.60.15 is 1
+[D 210420 18:36:40 main_2:770] update_kipro_status: status is 1 for kipro REC2_CAM2
+[D 210420 18:36:40 main_2:427] Got kipro status: unit: 1, status: 1
+[D 210420 18:36:40 kipro:50] Getting remaining storage for kipro 10.1.60.15
+[D 210420 18:36:40 kipro:53] Remaining storage on kipro 10.1.60.15 is 67 percent.
+[D 210420 18:36:40 main_2:774] update_kipro_status: storage is 67 percent for kipro REC2_CAM2
+[D 210420 18:36:40 kipro:40] Getting status of kipro 10.1.60.20
+[D 210420 18:36:40 kipro:43] Status of kipro 10.1.60.20 is 1
+[D 210420 18:36:40 main_2:770] update_kipro_status: status is 1 for kipro REC3_CAM3
+[D 210420 18:36:40 main_2:427] Got kipro status: unit: 2, status: 1
+[D 210420 18:36:40 kipro:50] Getting remaining storage for kipro 10.1.60.20
+[D 210420 18:36:40 kipro:53] Remaining storage on kipro 10.1.60.20 is 70 percent.
+[D 210420 18:36:40 main_2:774] update_kipro_status: storage is 70 percent for kipro REC3_CAM3
+[D 210420 18:36:40 kipro:40] Getting status of kipro 10.1.60.87
+[D 210420 18:36:40 kipro:43] Status of kipro 10.1.60.87 is 1
+[D 210420 18:36:40 main_2:770] update_kipro_status: status is 1 for kipro REC4_CAM4
+[D 210420 18:36:40 main_2:427] Got kipro status: unit: 3, status: 1
+[D 210420 18:36:40 kipro:50] Getting remaining storage for kipro 10.1.60.87
+[D 210420 18:36:40 kipro:53] Remaining storage on kipro 10.1.60.87 is 92 percent.
+[D 210420 18:36:40 main_2:774] update_kipro_status: storage is 92 percent for kipro REC4_CAM4
+[D 210420 18:36:40 kipro:40] Getting status of kipro 10.1.60.88
+[D 210420 18:36:40 kipro:43] Status of kipro 10.1.60.88 is 1
+[D 210420 18:36:40 main_2:770] update_kipro_status: status is 1 for kipro REC5_CAM5
+[D 210420 18:36:40 main_2:427] Got kipro status: unit: 4, status: 1
+[D 210420 18:36:40 kipro:50] Getting remaining storage for kipro 10.1.60.88
+[D 210420 18:36:40 kipro:53] Remaining storage on kipro 10.1.60.88 is 70 percent.
+[D 210420 18:36:40 main_2:774] update_kipro_status: storage is 70 percent for kipro REC5_CAM5
+[D 210420 18:36:40 kipro:40] Getting status of kipro 10.1.60.89
+[D 210420 18:36:40 kipro:43] Status of kipro 10.1.60.89 is 1
+[D 210420 18:36:40 main_2:770] update_kipro_status: status is 1 for kipro REC6_CAM6
+[D 210420 18:36:40 main_2:427] Got kipro status: unit: 5, status: 1
+[D 210420 18:36:40 kipro:50] Getting remaining storage for kipro 10.1.60.89
+[D 210420 18:36:40 kipro:53] Remaining storage on kipro 10.1.60.89 is 91 percent.
+[D 210420 18:36:40 main_2:774] update_kipro_status: storage is 91 percent for kipro REC6_CAM6
+[D 210420 18:36:40 kipro:40] Getting status of kipro 10.1.60.86
+[D 210420 18:36:40 kipro:43] Status of kipro 10.1.60.86 is 1
+[D 210420 18:36:40 main_2:770] update_kipro_status: status is 1 for kipro REC7_CAM7
+[D 210420 18:36:40 main_2:427] Got kipro status: unit: 6, status: 1
+[D 210420 18:36:40 kipro:50] Getting remaining storage for kipro 10.1.60.86
+[D 210420 18:36:40 kipro:53] Remaining storage on kipro 10.1.60.86 is 99 percent.
+[D 210420 18:36:40 main_2:774] update_kipro_status: storage is 99 percent for kipro REC7_CAM7
+[D 210420 18:36:40 kipro:40] Getting status of kipro 10.1.60.85
+[D 210420 18:36:40 kipro:43] Status of kipro 10.1.60.85 is 1
+[D 210420 18:36:40 main_2:770] update_kipro_status: status is 1 for kipro REC8_CAM8
+[D 210420 18:36:40 main_2:427] Got kipro status: unit: 7, status: 1
+[D 210420 18:36:40 kipro:50] Getting remaining storage for kipro 10.1.60.85
+[D 210420 18:36:40 kipro:53] Remaining storage on kipro 10.1.60.85 is 67 percent.
+[D 210420 18:36:40 main_2:774] update_kipro_status: storage is 67 percent for kipro REC8_CAM8
+[D 210420 18:36:40 main_2:780] KiProUi.__refresh: exit_event.is_set(): False
+[D 210420 18:36:40 pco_plan:213] check_if_plan_app_cue_exists: service type: 824571, plan: 51974966
+[D 210420 18:36:40 pco_plan:220] check_if_plan_app_cue_note_exists: found plan note with category_name of "App Cues". Content: []
+[D 210420 18:36:40 main_2:618] MainUI.__build_global_cue_buttons: adding global cue buttons
+[D 210420 18:36:40 pco_plan:112] PcoPlan.get_plan_app_cues called.
+[D 210420 18:36:40 pco_plan:213] check_if_plan_app_cue_exists: service type: 824571, plan: 51974966
+[D 210420 18:36:40 pco_plan:220] check_if_plan_app_cue_note_exists: found plan note with category_name of "App Cues". Content: []
+[D 210420 18:36:41 pco_plan:119] PcoPlan.get_plan_app_cues: found app cue note content: []
+[D 210420 18:36:41 pco_live:56] attempting to get current live item id
+[E 210420 18:36:41 pco_live:69] Failed to get current live item id for service type 824571, plan 51974966. Is the plan live?
+[D 210420 18:36:41 main_2:336] __update_live: find_previous_item: returning -1
+[D 210420 18:36:41 main_2:343] __update_live: find_next_item: returning -1
+[D 210420 18:36:41 main_2:364] Previous item index: -2, Live Host Segment, Next item index: 0, Rehearsal Recording
+[D 210420 18:36:50 kipro:40] Getting status of kipro 10.1.60.14
+[D 210420 18:36:50 kipro:43] Status of kipro 10.1.60.14 is 1
+[D 210420 18:36:50 main_2:770] update_kipro_status: status is 1 for kipro REC1_CAM1
+[D 210420 18:36:50 main_2:427] Got kipro status: unit: 0, status: 1
+[D 210420 18:36:50 kipro:50] Getting remaining storage for kipro 10.1.60.14
+[D 210420 18:36:50 kipro:53] Remaining storage on kipro 10.1.60.14 is 67 percent.
+[D 210420 18:36:50 main_2:774] update_kipro_status: storage is 67 percent for kipro REC1_CAM1
+[D 210420 18:36:50 kipro:40] Getting status of kipro 10.1.60.15
+[D 210420 18:36:50 kipro:43] Status of kipro 10.1.60.15 is 1
+[D 210420 18:36:50 main_2:770] update_kipro_status: status is 1 for kipro REC2_CAM2
+[D 210420 18:36:50 main_2:427] Got kipro status: unit: 1, status: 1
+[D 210420 18:36:50 kipro:50] Getting remaining storage for kipro 10.1.60.15
+[D 210420 18:36:50 kipro:53] Remaining storage on kipro 10.1.60.15 is 67 percent.
+[D 210420 18:36:50 main_2:774] update_kipro_status: storage is 67 percent for kipro REC2_CAM2
+[D 210420 18:36:50 kipro:40] Getting status of kipro 10.1.60.20
+[D 210420 18:36:50 kipro:43] Status of kipro 10.1.60.20 is 1
+[D 210420 18:36:50 main_2:770] update_kipro_status: status is 1 for kipro REC3_CAM3
+[D 210420 18:36:50 main_2:427] Got kipro status: unit: 2, status: 1
+[D 210420 18:36:50 kipro:50] Getting remaining storage for kipro 10.1.60.20
+[D 210420 18:36:50 kipro:53] Remaining storage on kipro 10.1.60.20 is 70 percent.
+[D 210420 18:36:50 main_2:774] update_kipro_status: storage is 70 percent for kipro REC3_CAM3
+[D 210420 18:36:50 kipro:40] Getting status of kipro 10.1.60.87
+[D 210420 18:36:50 kipro:43] Status of kipro 10.1.60.87 is 1
+[D 210420 18:36:50 main_2:770] update_kipro_status: status is 1 for kipro REC4_CAM4
+[D 210420 18:36:50 main_2:427] Got kipro status: unit: 3, status: 1
+[D 210420 18:36:50 kipro:50] Getting remaining storage for kipro 10.1.60.87
+[D 210420 18:36:50 kipro:53] Remaining storage on kipro 10.1.60.87 is 92 percent.
+[D 210420 18:36:50 main_2:774] update_kipro_status: storage is 92 percent for kipro REC4_CAM4
+[D 210420 18:36:50 kipro:40] Getting status of kipro 10.1.60.88
+[D 210420 18:36:50 kipro:43] Status of kipro 10.1.60.88 is 1
+[D 210420 18:36:50 main_2:770] update_kipro_status: status is 1 for kipro REC5_CAM5
+[D 210420 18:36:50 main_2:427] Got kipro status: unit: 4, status: 1
+[D 210420 18:36:50 kipro:50] Getting remaining storage for kipro 10.1.60.88
+[D 210420 18:36:50 kipro:53] Remaining storage on kipro 10.1.60.88 is 70 percent.
+[D 210420 18:36:50 main_2:774] update_kipro_status: storage is 70 percent for kipro REC5_CAM5
+[D 210420 18:36:50 kipro:40] Getting status of kipro 10.1.60.89
+[D 210420 18:36:50 kipro:43] Status of kipro 10.1.60.89 is 1
+[D 210420 18:36:50 main_2:770] update_kipro_status: status is 1 for kipro REC6_CAM6
+[D 210420 18:36:50 main_2:427] Got kipro status: unit: 5, status: 1
+[D 210420 18:36:50 kipro:50] Getting remaining storage for kipro 10.1.60.89
+[D 210420 18:36:50 kipro:53] Remaining storage on kipro 10.1.60.89 is 91 percent.
+[D 210420 18:36:50 main_2:774] update_kipro_status: storage is 91 percent for kipro REC6_CAM6
+[D 210420 18:36:50 kipro:40] Getting status of kipro 10.1.60.86
+[D 210420 18:36:50 kipro:43] Status of kipro 10.1.60.86 is 1
+[D 210420 18:36:50 main_2:770] update_kipro_status: status is 1 for kipro REC7_CAM7
+[D 210420 18:36:50 main_2:427] Got kipro status: unit: 6, status: 1
+[D 210420 18:36:50 kipro:50] Getting remaining storage for kipro 10.1.60.86
+[D 210420 18:36:50 kipro:53] Remaining storage on kipro 10.1.60.86 is 99 percent.
+[D 210420 18:36:50 main_2:774] update_kipro_status: storage is 99 percent for kipro REC7_CAM7
+[D 210420 18:36:50 kipro:40] Getting status of kipro 10.1.60.85
+[D 210420 18:36:50 kipro:43] Status of kipro 10.1.60.85 is 1
+[D 210420 18:36:50 main_2:770] update_kipro_status: status is 1 for kipro REC8_CAM8
+[D 210420 18:36:50 main_2:427] Got kipro status: unit: 7, status: 1
+[D 210420 18:36:50 kipro:50] Getting remaining storage for kipro 10.1.60.85
+[D 210420 18:36:50 kipro:53] Remaining storage on kipro 10.1.60.85 is 67 percent.
+[D 210420 18:36:50 main_2:774] update_kipro_status: storage is 67 percent for kipro REC8_CAM8
+[D 210420 18:36:50 main_2:780] KiProUi.__refresh: exit_event.is_set(): False
+[D 210420 18:37:00 kipro:40] Getting status of kipro 10.1.60.14
+[D 210420 18:37:00 kipro:43] Status of kipro 10.1.60.14 is 1
+[D 210420 18:37:00 main_2:770] update_kipro_status: status is 1 for kipro REC1_CAM1
+[D 210420 18:37:00 main_2:427] Got kipro status: unit: 0, status: 1
+[D 210420 18:37:00 kipro:50] Getting remaining storage for kipro 10.1.60.14
+[D 210420 18:37:00 kipro:53] Remaining storage on kipro 10.1.60.14 is 67 percent.
+[D 210420 18:37:00 main_2:774] update_kipro_status: storage is 67 percent for kipro REC1_CAM1
+[D 210420 18:37:00 kipro:40] Getting status of kipro 10.1.60.15
+[D 210420 18:37:00 kipro:43] Status of kipro 10.1.60.15 is 1
+[D 210420 18:37:00 main_2:770] update_kipro_status: status is 1 for kipro REC2_CAM2
+[D 210420 18:37:00 main_2:427] Got kipro status: unit: 1, status: 1
+[D 210420 18:37:00 kipro:50] Getting remaining storage for kipro 10.1.60.15
+[D 210420 18:37:00 kipro:53] Remaining storage on kipro 10.1.60.15 is 67 percent.
+[D 210420 18:37:00 main_2:774] update_kipro_status: storage is 67 percent for kipro REC2_CAM2
+[D 210420 18:37:00 kipro:40] Getting status of kipro 10.1.60.20
+[D 210420 18:37:00 kipro:43] Status of kipro 10.1.60.20 is 1
+[D 210420 18:37:00 main_2:770] update_kipro_status: status is 1 for kipro REC3_CAM3
+[D 210420 18:37:00 main_2:427] Got kipro status: unit: 2, status: 1
+[D 210420 18:37:00 kipro:50] Getting remaining storage for kipro 10.1.60.20
+[D 210420 18:37:00 kipro:53] Remaining storage on kipro 10.1.60.20 is 70 percent.
+[D 210420 18:37:00 main_2:774] update_kipro_status: storage is 70 percent for kipro REC3_CAM3
+[D 210420 18:37:00 kipro:40] Getting status of kipro 10.1.60.87
+[D 210420 18:37:00 kipro:43] Status of kipro 10.1.60.87 is 1
+[D 210420 18:37:00 main_2:770] update_kipro_status: status is 1 for kipro REC4_CAM4
+[D 210420 18:37:00 main_2:427] Got kipro status: unit: 3, status: 1
+[D 210420 18:37:00 kipro:50] Getting remaining storage for kipro 10.1.60.87
+[D 210420 18:37:00 kipro:53] Remaining storage on kipro 10.1.60.87 is 92 percent.
+[D 210420 18:37:00 main_2:774] update_kipro_status: storage is 92 percent for kipro REC4_CAM4
+[D 210420 18:37:00 kipro:40] Getting status of kipro 10.1.60.88
+[D 210420 18:37:00 kipro:43] Status of kipro 10.1.60.88 is 1
+[D 210420 18:37:00 main_2:770] update_kipro_status: status is 1 for kipro REC5_CAM5
+[D 210420 18:37:00 main_2:427] Got kipro status: unit: 4, status: 1
+[D 210420 18:37:00 kipro:50] Getting remaining storage for kipro 10.1.60.88
+[D 210420 18:37:00 kipro:53] Remaining storage on kipro 10.1.60.88 is 70 percent.
+[D 210420 18:37:00 main_2:774] update_kipro_status: storage is 70 percent for kipro REC5_CAM5
+[D 210420 18:37:00 kipro:40] Getting status of kipro 10.1.60.89
+[D 210420 18:37:00 kipro:43] Status of kipro 10.1.60.89 is 1
+[D 210420 18:37:00 main_2:770] update_kipro_status: status is 1 for kipro REC6_CAM6
+[D 210420 18:37:00 main_2:427] Got kipro status: unit: 5, status: 1
+[D 210420 18:37:00 kipro:50] Getting remaining storage for kipro 10.1.60.89
+[D 210420 18:37:00 kipro:53] Remaining storage on kipro 10.1.60.89 is 91 percent.
+[D 210420 18:37:00 main_2:774] update_kipro_status: storage is 91 percent for kipro REC6_CAM6
+[D 210420 18:37:00 kipro:40] Getting status of kipro 10.1.60.86
+[D 210420 18:37:00 kipro:43] Status of kipro 10.1.60.86 is 1
+[D 210420 18:37:00 main_2:770] update_kipro_status: status is 1 for kipro REC7_CAM7
+[D 210420 18:37:00 main_2:427] Got kipro status: unit: 6, status: 1
+[D 210420 18:37:00 kipro:50] Getting remaining storage for kipro 10.1.60.86
+[D 210420 18:37:00 kipro:53] Remaining storage on kipro 10.1.60.86 is 99 percent.
+[D 210420 18:37:00 main_2:774] update_kipro_status: storage is 99 percent for kipro REC7_CAM7
+[D 210420 18:37:00 kipro:40] Getting status of kipro 10.1.60.85
+[D 210420 18:37:01 kipro:43] Status of kipro 10.1.60.85 is 1
+[D 210420 18:37:01 main_2:770] update_kipro_status: status is 1 for kipro REC8_CAM8
+[D 210420 18:37:01 main_2:427] Got kipro status: unit: 7, status: 1
+[D 210420 18:37:01 kipro:50] Getting remaining storage for kipro 10.1.60.85
+[D 210420 18:37:01 kipro:53] Remaining storage on kipro 10.1.60.85 is 67 percent.
+[D 210420 18:37:01 main_2:774] update_kipro_status: storage is 67 percent for kipro REC8_CAM8
+[D 210420 18:37:01 main_2:780] KiProUi.__refresh: exit_event.is_set(): False
+[D 210420 18:37:11 kipro:40] Getting status of kipro 10.1.60.14
+[D 210420 18:37:11 kipro:43] Status of kipro 10.1.60.14 is 1
+[D 210420 18:37:11 main_2:770] update_kipro_status: status is 1 for kipro REC1_CAM1
+[D 210420 18:37:11 main_2:427] Got kipro status: unit: 0, status: 1
+[D 210420 18:37:11 kipro:50] Getting remaining storage for kipro 10.1.60.14
+[D 210420 18:37:11 kipro:53] Remaining storage on kipro 10.1.60.14 is 67 percent.
+[D 210420 18:37:11 main_2:774] update_kipro_status: storage is 67 percent for kipro REC1_CAM1
+[D 210420 18:37:11 kipro:40] Getting status of kipro 10.1.60.15
+[D 210420 18:37:11 kipro:43] Status of kipro 10.1.60.15 is 1
+[D 210420 18:37:11 main_2:770] update_kipro_status: status is 1 for kipro REC2_CAM2
+[D 210420 18:37:11 main_2:427] Got kipro status: unit: 1, status: 1
+[D 210420 18:37:11 kipro:50] Getting remaining storage for kipro 10.1.60.15
+[D 210420 18:37:11 kipro:53] Remaining storage on kipro 10.1.60.15 is 67 percent.
+[D 210420 18:37:11 main_2:774] update_kipro_status: storage is 67 percent for kipro REC2_CAM2
+[D 210420 18:37:11 kipro:40] Getting status of kipro 10.1.60.20
+[D 210420 18:37:11 kipro:43] Status of kipro 10.1.60.20 is 1
+[D 210420 18:37:11 main_2:770] update_kipro_status: status is 1 for kipro REC3_CAM3
+[D 210420 18:37:11 main_2:427] Got kipro status: unit: 2, status: 1
+[D 210420 18:37:11 kipro:50] Getting remaining storage for kipro 10.1.60.20
+[D 210420 18:37:11 kipro:53] Remaining storage on kipro 10.1.60.20 is 70 percent.
+[D 210420 18:37:11 main_2:774] update_kipro_status: storage is 70 percent for kipro REC3_CAM3
+[D 210420 18:37:11 kipro:40] Getting status of kipro 10.1.60.87
+[D 210420 18:37:11 kipro:43] Status of kipro 10.1.60.87 is 1
+[D 210420 18:37:11 main_2:770] update_kipro_status: status is 1 for kipro REC4_CAM4
+[D 210420 18:37:11 main_2:427] Got kipro status: unit: 3, status: 1
+[D 210420 18:37:11 kipro:50] Getting remaining storage for kipro 10.1.60.87
+[D 210420 18:37:11 kipro:53] Remaining storage on kipro 10.1.60.87 is 92 percent.
+[D 210420 18:37:11 main_2:774] update_kipro_status: storage is 92 percent for kipro REC4_CAM4
+[D 210420 18:37:11 kipro:40] Getting status of kipro 10.1.60.88
+[D 210420 18:37:11 kipro:43] Status of kipro 10.1.60.88 is 1
+[D 210420 18:37:11 main_2:770] update_kipro_status: status is 1 for kipro REC5_CAM5
+[D 210420 18:37:11 main_2:427] Got kipro status: unit: 4, status: 1
+[D 210420 18:37:11 kipro:50] Getting remaining storage for kipro 10.1.60.88
+[D 210420 18:37:11 kipro:53] Remaining storage on kipro 10.1.60.88 is 70 percent.
+[D 210420 18:37:11 main_2:774] update_kipro_status: storage is 70 percent for kipro REC5_CAM5
+[D 210420 18:37:11 kipro:40] Getting status of kipro 10.1.60.89
+[D 210420 18:37:11 kipro:43] Status of kipro 10.1.60.89 is 1
+[D 210420 18:37:11 main_2:770] update_kipro_status: status is 1 for kipro REC6_CAM6
+[D 210420 18:37:11 main_2:427] Got kipro status: unit: 5, status: 1
+[D 210420 18:37:11 kipro:50] Getting remaining storage for kipro 10.1.60.89
+[D 210420 18:37:11 kipro:53] Remaining storage on kipro 10.1.60.89 is 91 percent.
+[D 210420 18:37:11 main_2:774] update_kipro_status: storage is 91 percent for kipro REC6_CAM6
+[D 210420 18:37:11 kipro:40] Getting status of kipro 10.1.60.86
+[D 210420 18:37:11 kipro:43] Status of kipro 10.1.60.86 is 1
+[D 210420 18:37:11 main_2:770] update_kipro_status: status is 1 for kipro REC7_CAM7
+[D 210420 18:37:11 main_2:427] Got kipro status: unit: 6, status: 1
+[D 210420 18:37:11 kipro:50] Getting remaining storage for kipro 10.1.60.86
+[D 210420 18:37:11 kipro:53] Remaining storage on kipro 10.1.60.86 is 99 percent.
+[D 210420 18:37:11 main_2:774] update_kipro_status: storage is 99 percent for kipro REC7_CAM7
+[D 210420 18:37:11 kipro:40] Getting status of kipro 10.1.60.85
+[D 210420 18:37:11 kipro:43] Status of kipro 10.1.60.85 is 1
+[D 210420 18:37:11 main_2:770] update_kipro_status: status is 1 for kipro REC8_CAM8
+[D 210420 18:37:11 main_2:427] Got kipro status: unit: 7, status: 1
+[D 210420 18:37:11 kipro:50] Getting remaining storage for kipro 10.1.60.85
+[D 210420 18:37:11 kipro:53] Remaining storage on kipro 10.1.60.85 is 67 percent.
+[D 210420 18:37:11 main_2:774] update_kipro_status: storage is 67 percent for kipro REC8_CAM8
+[D 210420 18:37:11 main_2:780] KiProUi.__refresh: exit_event.is_set(): False
