@@ -11,6 +11,14 @@ I'm developing this for MY needs, so some naming schemes(like CG3/CG4) may not a
 - Edit ip addresses of applicable devices in settings.py. I'm working on better documentation and easy addition of devices, but CG3/CG4 is ProVideoPlayer, Rosstalk is our Carbonite+ video swithcer. Device naming will stay the same unless you want to dive into the code. Settings is a mess right now and I recommend not playing with font sizes, but you do you boo.
 - Run the program by running "main.py" (Python 3.7)
 
+## Running a Service
+The idea of this app is to simplify a live service production **as much as possible** by moving all of the thought into equipment cues/actions to BEFORE the service.
+During a serivce, the only thing you should have to do is press the "NEXT" button. 
+- Next: Advances to the next item, cueing any cues on the next item
+- Previous: Goes to previous item, cueing any cues on the previous item
+- Next (No actions) Advances to next item only. No cues are activated.
+- Previous (No actions) Goes to previous item only. No cues are activated.
+
 ## Actions/Cues can be in 2 forms:
 ### Global Cues
 Cue/list of cues that is saved as a button at the bottom of the plan and is accessable at any time
@@ -58,11 +66,3 @@ Not working yet
 As referenced above, add a action or set of actions with a custom name to a button at the bottom of the screen that can be accessed at any time
 ### Remove Global Cue
 Remove a global cue after it's been added, if desired
-
-## Running a Service
-The idea of this app is to simplify a live service production **as much as possible** by moving all of the thought into equipment cues/actions to BEFORE the service.
-During a serivce, the only thing you should have to do is press the "NEXT" button. 
-- Next: Advances to the next item, cueing any cues on the next item
-- Previous: Goes to previous item, cueing any cues on the previous item
-- Next (No actions) Advances to next item only. No cues are activated.
-- Previous (No actions) Goes to previous item only. No cues are activated.
