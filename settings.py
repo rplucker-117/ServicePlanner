@@ -1,6 +1,3 @@
-APP_ID = '10b467989a18dea7fea1c705fb0137bd707005803296580c3df7e96d6d718684'
-SECRET = 'dfebbffd40ce49ee7a511c400c612808899b35c2a61fc3c8ba1ddbb6fd906ef7'
-
 
 log_level = 10
 
