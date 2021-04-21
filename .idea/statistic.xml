@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Statistic">
+    <option name="excludedDirectories">
+      <list>
+        <option value="$PROJECT_DIR$/2021.03" />
+        <option value="$PROJECT_DIR$/v0.1" />
+        <option value="$PROJECT_DIR$/v0.2" />
+        <option value="$PROJECT_DIR$/v0.3" />
+        <option value="$PROJECT_DIR$/venv" />
+        <option value="$PROJECT_DIR$/.idea" />
+      </list>
+    </option>
+  </component>
+</project>
