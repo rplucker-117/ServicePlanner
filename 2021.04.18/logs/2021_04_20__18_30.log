@@ -1,4 +1,0 @@
-[D 210420 18:30:29 pco_plan:259] get_service_types called
-[D 210420 18:30:30 pco_plan:280] get_services_from_service_type: Offset not specified! Using default 10.
-[D 210420 18:30:30 pco_plan:286] get_services_from_service_type: Making call to get total number of services in service type.
-[D 210420 18:30:32 pco_plan:293] get_services_from_service_type: getting services from, service type id: 824571, offset: 138
