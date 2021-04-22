@@ -7,7 +7,7 @@ I'm developing this for MY needs, so some naming schemes(like CG3/CG4) may not a
 - Run initial_setup.bat 
 - Item cues are stored in a planning center item app category named "App Cues". For each service category that you intend to use this with, create a item note category named "App Cues".
 - Global cues are stored in a plan note named "App Cues". Same as before, for each service category, create a plan note category named "App Cues".
-- Create a file in the main app directory named "creds.py". It should contain: `APP_ID = '<app id>'` and `SECRET = '<secret>'`, obtained from [Personal Access Tokens](https://api.planningcenteronline.com/oauth/applications)
+- Get an Application ID and Secret [Personal Access Tokens](https://api.planningcenteronline.com/oauth/applications). You will be asked to enter this info upon first launch.
 - Edit ip addresses of applicable devices in settings.py. I'm working on better documentation and easy addition of devices, but CG3/CG4 is ProVideoPlayer, Rosstalk is our Carbonite+ video swithcer. Device naming will stay the same unless you want to dive into the code. Settings is a mess right now and I recommend not playing with font sizes, but you do you boo.
 - Run the program by running "main.py" (Python 3.7)
 
