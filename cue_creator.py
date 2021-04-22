@@ -94,7 +94,7 @@ class CueCreator:
                     if cue['start'] is False:
                         mode = 'Stop'
                     device_index = cue['kipro']
-                    device_name = kipro_data[device_index]['name']
+                    device_name = kipros[device_index]['name']
                     cue_verbose = f"{cue['device']}:   " \
                                   f"{mode} {device_name}"
                     cues_verbose_list.append(cue_verbose)
@@ -150,23 +150,23 @@ class CueCreator:
                 if cue['start']:
                     if not cue['kipro'] == 0:
                         logger.debug('activate_cues: starting single kipro %s', cue['kipro'])
-                        kipro.start_absolute(ip=kipro_data[cue['kipro']]['ip'],
-                                             name=kipro_data[cue['kipro']]['name'],
+                        kipro.start_absolute(ip=kipros[cue['kipro']]['ip'],
+                                             name=kipros[cue['kipro']]['name'],
                                              include_date=True)
                     if cue['kipro'] == 0:
                         logger.debug('activate_cues: starting all kipros')
-                        for kipro_number in range(1, len(kipro_data)):
-                            kipro.start_absolute(ip=kipro_data[kipro_number]['ip'],
-                                                 name=kipro_data[kipro_number]['name'],
+                        for kipro_number in range(1, len(kipros)):
+                            kipro.start_absolute(ip=kipros[kipro_number]['ip'],
+                                                 name=kipros[kipro_number]['name'],
                                                  include_date=True)
                 if not cue['start']:
                     if not cue['kipro'] == 0:
                         logger.debug('activate_cues: stopping single kipro: %s', cue['kipro'])
-                        kipro.transport_stop(ip=kipro_data[cue['kipro']]['ip'])
+                        kipro.transport_stop(ip=kipros[cue['kipro']]['ip'])
                     if cue['kipro'] == 0:
                         logger.debug('activate_cues: stopping all kipros')
-                        for kipro_number in range(1, len(kipro_data)):
-                            kipro.transport_stop(ip=kipro_data[kipro_number]['ip'])
+                        for kipro_number in range(1, len(kipros)):
+                            kipro.transport_stop(ip=kipros[kipro_number]['ip'])
             # Resi
             elif cue['device'] == 'Resi':
                 logger.debug('activate_cues: resi: %s', cue['command'])
@@ -719,17 +719,17 @@ class CueCreator:
 
         # create group of radiobuttons from kipro_data in settings.py and add them to list
         kipros = []
-        for kipro in kipro_data:
+        for kipro in kipros:
             kipros.append(Radiobutton(kipro_select_frame,
                                       bg=bg_color,
                                       fg=text_color,
-                                      text=kipro_data[kipro]['name'],
+                                      text=kipros[kipro]['name'],
                                       font=(font, current_cues_text_size),
                                       selectcolor=bg_color,
                                       padx=20,
                                       variable=kipro_selected,
                                       value=kipro,
-                                      command=lambda: logger.debug('kipro button pressed: %s', kipro_data[kipro]['name'])))
+                                      command=lambda: logger.debug('kipro button pressed: %s', kipros[kipro]['name'])))
         for radiobutton in kipros:
             radiobutton.pack()
 
