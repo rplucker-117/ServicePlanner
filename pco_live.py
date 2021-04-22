@@ -5,6 +5,11 @@ from settings import *
 from logzero import logger
 from pco_plan import PcoPlan
 import time
+from creds import Creds
+
+creds = Creds().read()
+APP_ID = creds['APP_ID']
+SECRET = creds['SECRET']
 
 class PcoLive:
     def __init__(self, service_type_id, plan_id):

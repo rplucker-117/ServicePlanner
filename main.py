@@ -11,6 +11,13 @@ from kipro import kipro
 from cue_creator import CueCreator
 import logging
 import json
+import os
+from creds import Creds
+
+
+creds = Creds().read()
+APP_ID = creds['APP_ID']
+SECRET = creds['SECRET']
 
 #logging
 file_name = 'logs\\' + time.strftime('%Y_%m_%d__%H_%M') + '.log'
@@ -83,7 +90,7 @@ class Utilities:
 
     def open_utilities_menu(self):
         self.utilities_menu.geometry('400x250')
-        self.utilities_menu.configure(bg=bg_color)
+        self.utilities_menu.configure(bg=bg_color) #
 
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Start Live Service', font=(font, other_text_size), command=self.__start_live).pack()
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Advance to Next Service', font=(font, other_text_size), command=self.__advance_to_next_service).pack()
@@ -272,7 +279,8 @@ class MainUI:
         self.__build_item_timer()
         self.__build_items_view()
         self.__build_aux_controls()
-        self.__build_kipro_status()
+        if display_kipros:
+            self.__build_kipro_status()
         self.__build_global_cue_buttons()
 
         self.update_live()

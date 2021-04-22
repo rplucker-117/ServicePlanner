@@ -4,7 +4,11 @@ import pprint
 from settings import *
 from logzero import logger
 import zulu
+from creds import Creds
 
+creds = Creds().read()
+APP_ID = creds['APP_ID']
+SECRET = creds['SECRET']
 
 class PcoPlan:
     def __init__(self, **kwargs):
@@ -15,7 +19,7 @@ class PcoPlan:
 
 
     def create_app_cues(self, item_id, item_note_category_id, app_cue):
-        logging.debug('received new app cue. Item id: %s, app cue: %s. Attempting creation', item_id, app_cue)
+        logger.debug('received new app cue. Item id: %s, app cue: %s. Attempting creation', item_id, app_cue)
 
         request_headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         payload = {'data': {'attributes': {'content': app_cue, 'item_note_category_id': item_note_category_id}}}
