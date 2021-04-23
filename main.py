@@ -13,13 +13,13 @@ import logging
 import json
 import os
 
-
+abs_path = os.path.dirname(__file__)
 
 #logging: absolute paths
-if not os.path.exists(os.path.join(os.path.dirname(__file__), 'logs')):
-    os.mkdir(os.path.join(os.path.dirname(__file__), 'logs'))
+if not os.path.exists(os.path.join(abs_path, 'logs')):
+    os.mkdir(os.path.join(abs_path, 'logs'))
 
-log_file_name = os.path.join(os.path.join(os.path.dirname(__file__), 'logs'),time.strftime('%Y_%m_%d__%H_%M') + '.log')
+log_file_name = os.path.join(os.path.join(abs_path, 'logs'),time.strftime('%Y_%m_%d__%H_%M') + '.log')
 logfile(log_file_name)
 logging.getLogger('urllib3').setLevel(logging.INFO)
 
@@ -252,7 +252,7 @@ class MainUI:
         self.service_controls_frame = Frame(self.plan_window, bg=bg_color)
         self.next_previous_frame = Frame(self.service_controls_frame, bg=bg_color)
 
-        self.gear_icon = PhotoImage(file=r"gear_icon_gray.png")
+        self.gear_icon = PhotoImage(file=os.path.join(abs_path, 'gear_icon_gray.png'))
         self.gear_icon = self.gear_icon.subsample(12, 12)
 
         self.item_frames = []
