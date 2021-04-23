@@ -12,18 +12,17 @@ from cue_creator import CueCreator
 import logging
 import json
 import os
-from creds import Creds
 
 
-creds = Creds().read()
-APP_ID = creds['APP_ID']
-SECRET = creds['SECRET']
 
-#logging
-file_name = 'logs\\' + time.strftime('%Y_%m_%d__%H_%M') + '.log'
-logfile(file_name)
+#logging: absolute paths
+if not os.path.exists(os.path.join(os.path.dirname(__file__), 'logs')):
+    os.mkdir(os.path.join(os.path.dirname(__file__), 'logs'))
 
-logging.getLogger('urllib3').setLevel(logging.ERROR)
+log_file_name = os.path.join(os.path.join(os.path.dirname(__file__), 'logs'),time.strftime('%Y_%m_%d__%H_%M') + '.log')
+logfile(log_file_name)
+logging.getLogger('urllib3').setLevel(logging.INFO)
+
 
 class SelectService:
     def __init__(self, send_to):
@@ -164,7 +163,7 @@ class Utilities:
     def __format(self):
         yes_no = messagebox.askyesno('Format KiPros', message="Are you sure you want to format ALL KiPros?")
         if yes_no:
-            for kipro_unit in kipros_new[1:]:
+            for kipro_unit in kipros[1:]:
                 kipro.format_current_slot(ip=kipro_unit['ip'])
 
         self.utilities_menu.destroy()
@@ -201,7 +200,6 @@ class Utilities:
                    command=lambda: (current_cues.pop(listbox.curselection()[0]), listbox.delete(first=listbox.curselection()[0]))).pack(side=LEFT)
             Button(remove_global_menu, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Okay',
                    command=okay).pack(side=RIGHT)
-
 
 class MainUI:
     def __init__(self, service_type_id, service_id):
@@ -595,7 +593,7 @@ class MainUI:
                 label = Label(frame, bg=bg_color, fg=text_color, text=label_text, justify=LEFT,
                       font=(font, app_cue_font_size))
                 self.item_app_cue_labels.append(label)
-                label.place(anchor='nw', x=650)
+                label.place(anchor='nw', x=750)
             else:
                 self.item_app_cue_labels.append(None)
 
@@ -611,13 +609,13 @@ class MainUI:
         self.kipro_control_frame.grid(row=2, column=1, sticky='n')
 
         # Buttons
-        for kipro_unit in kipros_new[1:]:
+        for kipro_unit in kipros[1:]:
             button = Button(self.kipro_control_frame, text=kipro_unit['name'], font=(font, other_text_size), fg=text_color, height=2, relief=FLAT,
                             command=lambda kipro_unit=kipro_unit: kipro.toggle_start_stop(ip=kipro_unit['ip'], name=kipro_unit['name'], include_date=True))
             self.kipro_buttons.append(button)
 
         # Storage remaining bars
-        for kipro_unit in kipros_new[1:]:
+        for kipro_unit in kipros[1:]:
             progress = ttk.Progressbar(self.kipro_control_frame, length=110, mode='determinate', maximum=100)
             self.kipro_storage_remaining_bars.append(progress)
 
@@ -778,7 +776,7 @@ class KiProUi:
         self.exit_event.set()
 
     def update_kipro_status(self, ui):
-        for iteration, kipro_unit in enumerate(kipros_new[1:]):
+        for iteration, kipro_unit in enumerate(kipros[1:]):
 
             status = int(kipro.get_status(ip=kipro_unit['ip']))
             logger.debug('update_kipro_status: status is %s for kipro %s', status, kipro_unit['name'])
