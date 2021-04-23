@@ -84,41 +84,41 @@ kipro_timeout_threshold = 1 #in seconds
 # how often to refresh live adjacent plan
 adjacent_plan_refresh_interval = 5
 
-kipro_data = {
-    0: {
-         'name': 'ALL',
+kipros = [
+    {
+        'name': 'ALL',
          'ip': '*'
     },
-    1: {
+    {
         'name': 'REC1_CAM1',
         'ip': '10.1.60.14'
     },
-    2: {
+    {
         'name': 'REC2_CAM2',
         'ip': '10.1.60.15'
     },
-    3: {
+    {
         'name': 'REC3_CAM3',
         'ip': '10.1.60.20'
     },
-    4: {
+    {
         'name': 'REC4_CAM4',
         'ip': '10.1.60.87'
     },
-    5: {
+    {
         'name': 'REC5_CAM5',
         'ip': '10.1.60.88'
     },
-    6: {
+    {
         'name': 'REC6_CAM6',
         'ip': '10.1.60.89'
     },
-    7: {
+    {
         'name': 'REC7_CAM7',
         'ip': '10.1.60.86'
     },
-    8: {
+    {
         'name': 'REC8_CAM8',
         'ip': '10.1.60.85'
     }
-}
+]

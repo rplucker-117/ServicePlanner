@@ -687,29 +687,29 @@ class CueCreator:
 
         # add start/stop buttons. Changes value of start_stop_selected variable above.
         # TRUE means start, FALSE means stop.
-        start_selected = Radiobutton(start_stop_frame,
-                                     bg=bg_color,
-                                     fg=text_color,
-                                     text='Start',
-                                     font=(font, current_cues_text_size),
-                                     selectcolor=bg_color,
-                                     padx=20,
-                                     variable=start_stop_selected,
-                                     value=True,
-                                     command=lambda: logger.debug('Start_selected button pressed')
-                                     ).pack()
+        Radiobutton(start_stop_frame,
+             bg=bg_color,
+             fg=text_color,
+             text='Start',
+             font=(font, current_cues_text_size),
+             selectcolor=bg_color,
+             padx=20,
+             variable=start_stop_selected,
+             value=True,
+             command=lambda: logger.debug('Start_selected button pressed')
+             ).pack()
 
-        stop_selected = Radiobutton(start_stop_frame,
-                                     bg=bg_color,
-                                     fg=text_color,
-                                     text='Stop',
-                                     font=(font, current_cues_text_size),
-                                     selectcolor=bg_color,
-                                     padx=20,
-                                     variable=start_stop_selected,
-                                     value=False,
-                                     command=lambda: logger.debug('Stop_selected button pressed.')
-                                     ).pack()
+        Radiobutton(start_stop_frame,
+             bg=bg_color,
+             fg=text_color,
+             text='Stop',
+             font=(font, current_cues_text_size),
+             selectcolor=bg_color,
+             padx=20,
+             variable=start_stop_selected,
+             value=False,
+             command=lambda: logger.debug('Stop_selected button pressed.')
+             ).pack()
 
         kipro_select_frame = Frame(add_kipro_cue_window)
         kipro_select_frame.config(bg=bg_color)
@@ -718,27 +718,27 @@ class CueCreator:
         kipro_selected = IntVar(kipro_select_frame, value=0)
 
         # create group of radiobuttons from kipro_data in settings.py and add them to list
-        kipros = []
-        for kipro in kipros:
-            kipros.append(Radiobutton(kipro_select_frame,
+        kipro_buttons = []
+        for iteration, kipro in enumerate(kipros):
+            kipro_buttons.append(Radiobutton(kipro_select_frame,
                                       bg=bg_color,
                                       fg=text_color,
-                                      text=kipros[kipro]['name'],
+                                      text=kipro['name'],
                                       font=(font, current_cues_text_size),
                                       selectcolor=bg_color,
                                       padx=20,
                                       variable=kipro_selected,
-                                      value=kipro,
-                                      command=lambda: logger.debug('kipro button pressed: %s', kipros[kipro]['name'])))
-        for radiobutton in kipros:
+                                      value=iteration,
+                                      command=lambda kipro=kipro: logger.debug('kipro button pressed: %s', kipro['name'])))
+        for radiobutton in kipro_buttons:
             radiobutton.pack()
 
-        okay_button = Button(add_kipro_cue_window,
-                             text='okay',
-                             bg=bg_color,
-                             fg=text_color,
-                             font=(font, plan_text_size),
-                             command=okay_pressed).grid(row=1, column=0)
+            Button(add_kipro_cue_window,
+                         text='okay',
+                         bg=bg_color,
+                         fg=text_color,
+                         font=(font, plan_text_size),
+                         command=okay_pressed).grid(row=1, column=0)
 
     def __add_pause_cue_clicked(self):
         add_pause_window = Tk()
