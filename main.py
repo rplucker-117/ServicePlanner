@@ -7,11 +7,11 @@ from pco_plan import PcoPlan
 from pco_live import PcoLive
 from tkinter import ttk
 import threading
-from kipro import kipro
 from cue_creator import CueCreator
 import logging
 import json
 import os
+from kipro import KiPro
 
 abs_path = os.path.dirname(__file__)
 
@@ -87,9 +87,11 @@ class Utilities:
 
         self.utilities_menu = Tk()
 
+        self.kipro = KiPro()
+
     def open_utilities_menu(self):
         self.utilities_menu.geometry('400x250')
-        self.utilities_menu.configure(bg=bg_color) #
+        self.utilities_menu.configure(bg=bg_color)
 
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Start Live Service', font=(font, other_text_size), command=self.__start_live).pack()
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Advance to Next Service', font=(font, other_text_size), command=self.__advance_to_next_service).pack()
@@ -164,12 +166,14 @@ class Utilities:
         yes_no = messagebox.askyesno('Format KiPros', message="Are you sure you want to format ALL KiPros?")
         if yes_no:
             for kipro_unit in kipros[1:]:
-                kipro.format_current_slot(ip=kipro_unit['ip'])
+                self.kipro.format_current_slot(ip=kipro_unit['ip'])
 
         self.utilities_menu.destroy()
 
     def __download(self):
-        pass
+        self.utilities_menu.destroy()
+        threading.Thread(target=self.kipro.download_clips)
+
 
     def __add_global(self):
         self.utilities_menu.destroy()
@@ -212,7 +216,8 @@ class MainUI:
         self.pco_live = PcoLive(service_type_id=service_type_id, plan_id=service_id)
         self.pco_plan = PcoPlan(service_type=service_type_id, plan_id=service_id)
         self.cue_handler = CueCreator(service_type_id=service_type_id, plan_id=service_id, ui=self)
-        self.kipro = KiProUi()
+        self.kipro_ui = KiProUi()
+        self.kipro = KiPro()
 
         self.plan_items = self.pco_plan.get_service_items()[1]
 
@@ -294,7 +299,9 @@ class MainUI:
         self.update_item_timer(time=self.plan_items[self.next_item_index]['length'])
 
         if cue_items:
-            self.__cue()
+            t = threading.Thread(target=self.__cue)
+            t.start()
+            t.join()
 
         self.pco_live.go_to_next_item()
         self.update_live()
@@ -303,7 +310,9 @@ class MainUI:
         self.update_item_timer(time=self.plan_items[self.previous_item_index]['length'])
 
         if cue_items:
-            self.__cue(next=False)
+            t = threading.Thread(target=lambda: self.__cue(next=False))
+            t.start()
+            t.join()
 
         self.pco_live.go_to_previous_item()
         self.update_live()
@@ -450,7 +459,7 @@ class MainUI:
 
     def reload(self):
         self.plan_window.destroy()
-        self.kipro.kill_threads()
+        self.kipro_ui.kill_threads()
         reloaded_ui = MainUI(service_type_id=main_service.service_type_id, service_id=main_service.service_id)
         reloaded_ui.build_plan_window()
 
@@ -611,7 +620,7 @@ class MainUI:
         # Buttons
         for kipro_unit in kipros[1:]:
             button = Button(self.kipro_control_frame, text=kipro_unit['name'], font=(font, other_text_size), fg=text_color, height=2, relief=FLAT,
-                            command=lambda kipro_unit=kipro_unit: kipro.toggle_start_stop(ip=kipro_unit['ip'], name=kipro_unit['name'], include_date=True))
+                            command=lambda kipro_unit=kipro_unit: self.kipro.toggle_start_stop(ip=kipro_unit['ip'], name=kipro_unit['name'], include_date=True))
             self.kipro_buttons.append(button)
 
         # Storage remaining bars
@@ -623,7 +632,7 @@ class MainUI:
             button.pack()
             progress.pack()
 
-        self.kipro.update_kipro_status(ui=self)
+        self.kipro_ui.update_kipro_status(ui=self)
 
     def __build_global_cue_buttons(self):
         if not self.pco_plan.check_if_plan_app_cue_exists() is False:
@@ -769,6 +778,7 @@ class AdjacentPlanView:
 
 class KiProUi:
     def __init__(self):
+        self.kipro = KiPro()
         self.exit_event = threading.Event()
 
     def kill_threads(self):
@@ -778,11 +788,11 @@ class KiProUi:
     def update_kipro_status(self, ui):
         for iteration, kipro_unit in enumerate(kipros[1:]):
 
-            status = int(kipro.get_status(ip=kipro_unit['ip']))
+            status = int(self.kipro.get_status(ip=kipro_unit['ip']))
             logger.debug('update_kipro_status: status is %s for kipro %s', status, kipro_unit['name'])
             ui.update_kipro_status(kipro_unit=iteration, status=status)
 
-            percent = int(kipro.get_remaining_storage(ip=kipro_unit['ip']))
+            percent = int(self.kipro.get_remaining_storage(ip=kipro_unit['ip']))
             logger.debug('update_kipro_status: storage is %s percent for kipro %s', percent, kipro_unit['name'])
             ui.update_kipro_storage(kipro_unit=iteration, percent=percent)
 
