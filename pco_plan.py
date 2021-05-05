@@ -17,18 +17,24 @@ class PcoPlan:
         if 'plan_id' in kwargs:
             self.plan_id = kwargs['plan_id']
 
-
     def create_app_cues(self, item_id, item_note_category_id, app_cue):
         logger.debug('received new app cue. Item id: %s, app cue: %s. Attempting creation', item_id, app_cue)
 
         request_headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-        payload = {'data': {'attributes': {'content': app_cue, 'item_note_category_id': item_note_category_id}}}
+        payload = {'data':
+                       {'attributes':
+                            {'content': app_cue,
+                             'item_note_category_id': item_note_category_id}
+                        }
+                   }
 
         r = requests.post(f'https://api.planningcenteronline.com/services/v2/service_types/'
                       f'{self.service_type}/plans/{self.plan_id}/items/{item_id}/item_notes/',
                           headers=request_headers,
                           data=json.dumps(payload),
                           auth=(APP_ID, SECRET))
+        if not r.status_code == '200':
+            logger.error('PcoPlan.create_app_cues FAILED: response received: %s', json.loads(r.text))
         return json.loads(r.text)
 
     def update_item_app_cues(self, item_id, item_note_id, app_cue):
@@ -78,7 +84,7 @@ class PcoPlan:
         else:
             try:
                 self.create_app_cues(item_id=item_id,
-                                         item_note_category_id=app_cue_note_category_id,
+                                         item_note_category_id=self.get_service_category_app_cue_note_category_id(),
                                          app_cue=app_cue)
             except NameError:
                 logger.error('create_and_update_item_app_cue: error. Likely no app cue note category exists')
@@ -169,7 +175,7 @@ class PcoPlan:
             except KeyError:
                 return None
 
-    def get_service_cateogry_app_cue_note_category_id(self):
+    def get_service_category_app_cue_note_category_id(self):
         logger.debug('get_app_ceu_note_category_id called. service type: %s', self.service_type)
         r = requests.get(f'https://api.planningcenteronline.com/services/v2/service_types/{self.service_type}/item_note_categories',
                          auth=(APP_ID, SECRET))
@@ -343,6 +349,7 @@ class PcoPlan:
                     note_content = note['attributes']['content']
 
                     if dict_key == 'App Cues':
+                        logger.debug('pco_plan.get_service_items: content: %s', note_content)
                         note_content = json.loads(note_content)
 
                     item['notes'][dict_key] = note_content
