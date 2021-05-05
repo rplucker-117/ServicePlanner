@@ -388,10 +388,26 @@ class PcoPlan:
                       service_details['date'], service_details['series_title'], service_details['title'])
         return data, service_details
 
+    def get_assigned_people(self):
+        # return list of dicts of all people assigned to plan. Dict includes name, position name, and accept status
+        logger.debug('PcoPlan.get_assigned_people: Getting people assigned to plan id %s', self.plan_id)
 
+        r = requests.get(f"https://api.planningcenteronline.com/services/v2/service_types/"
+                         f"{self.service_type}/plans/{self.plan_id}/team_members", auth=(APP_ID, SECRET))
+        r = json.loads(r.text)
 
+        team_members = []
+
+        for person in r['data']:
+            team_members.append({
+                'name': person['attributes']['name'],
+                'position': person['attributes']['team_position_name'],
+                'status': person['attributes']['status']
+            })
+
+        return team_members
 
 if __name__ == '__main__':
-    plan = PcoPlan(service_type=1039564, plan_id=51824158)
-    print(plan.check_if_plan_app_cue_exists())
+    plan = PcoPlan(service_type=824571, plan_id=52371712)
+    pprint.pprint(plan.get_assigned_people())
 
