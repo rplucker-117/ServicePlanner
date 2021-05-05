@@ -12,6 +12,7 @@ import logging
 import json
 import os
 from kipro import KiPro
+from rosstalk import rosstalk as rt
 
 abs_path = os.path.dirname(__file__)
 
@@ -85,12 +86,13 @@ class Utilities:
         self.pco_live = PcoLive(service_type_id = self.main_ui_window.service_type_id, plan_id=self.main_ui_window.service_id)
         self.pco_plan = PcoPlan(service_type = self.main_ui_window.service_type_id, plan_id=self.main_ui_window.service_id)
 
+
         self.utilities_menu = Tk()
 
         self.kipro = KiPro()
 
     def open_utilities_menu(self):
-        self.utilities_menu.geometry('400x250')
+        self.utilities_menu.geometry('400x300')
         self.utilities_menu.configure(bg=bg_color)
 
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Start Live Service', font=(font, other_text_size), command=self.__start_live).pack()
@@ -101,6 +103,7 @@ class Utilities:
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Download Kipro Clips', font=(font, other_text_size), command=self.__download).pack()
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Add Global Cue', font=(font, other_text_size), command=self.__add_global).pack()
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Remove Global Cue', font=(font, other_text_size), command=self.__remove_global).pack()
+        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Update switcher cam names from PCO positions', font=(font, other_text_size), command=self.__update_cam_names).pack()
 
         self.utilities_menu.mainloop()
 
@@ -173,6 +176,22 @@ class Utilities:
     def __download(self):
         self.utilities_menu.destroy()
         threading.Thread(target=self.kipro.download_clips)
+
+    def __update_cam_names(self):
+        people = self.pco_plan.get_assigned_people()
+
+        for person in people:
+            cam_pos = None
+            if person['position'].startswith('Cam') and person['status'] != 'D':
+                for char in person['position'].split():
+                    try:
+                        cam_pos = int(char)
+                    except Exception:
+                        pass
+            if cam_pos is not None:
+                name = person['name'].upper()
+                logger.debug('Updating camera position name via rosstalk: %s, %s', person['position'], name[0:6])
+                rt(rosstalk_ip=rosstalk_ip, rosstalk_port=rosstalk_port, command=f"MNEM IN:{cam_pos}:{cam_pos} {name[0:6]}")
 
 
     def __add_global(self):
@@ -620,7 +639,7 @@ class MainUI:
         # Buttons
         for kipro_unit in kipros[1:]:
             button = Button(self.kipro_control_frame, text=kipro_unit['name'], font=(font, other_text_size), fg=text_color, height=2, relief=FLAT,
-                            command=lambda kipro_unit=kipro_unit: self.kipro.toggle_start_stop(ip=kipro_unit['ip'], name=kipro_unit['name'], include_date=True))
+                            command=lambda kipro_unit=kipro_unit: (self.kipro.toggle_start_stop(ip=kipro_unit['ip'], name=kipro_unit['name']), self.kipro_ui.update_kipro_status(ui=self)))
             self.kipro_buttons.append(button)
 
         # Storage remaining bars
@@ -796,7 +815,8 @@ class KiProUi:
             logger.debug('update_kipro_status: storage is %s percent for kipro %s', percent, kipro_unit['name'])
             ui.update_kipro_storage(kipro_unit=iteration, percent=percent)
 
-        threading.Thread(name='kipro_refresh', target=lambda: self.__refresh(interval=10, ui=ui)).start()
+        if interval_update_kipros:
+            threading.Thread(name='kipro_refresh', target=lambda: self.__refresh(interval=kipro_update_interval, ui=ui)).start()
 
     def __refresh(self, interval, ui):
         logger.debug(f'KiProUi.__refresh: exit_event.is_set(): {self.exit_event.is_set()}')
