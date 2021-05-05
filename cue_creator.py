@@ -45,6 +45,10 @@ class CueCreator:
         self.cues_display_text = str()
         self.current_cues = []
 
+        self.kipro = KiPro()
+        self.cg3 = pvp(ip=cg3_ip, port=cg3_port)
+        self.cg4 = pvp(ip=cg4_ip, port=cg4_port)
+
         # runs if input cue is global
         if self.cue_type == 'global':
             self.imported_cues = self.pco_plan.get_plan_app_cues()
@@ -128,52 +132,49 @@ class CueCreator:
         for cue in cues:
             # pvp
             if cue['device'] in ('CG3', 'CG4'):
+                logger.info('activate_cues: cueing PVP %s cue, %s', cue['device'], cue['cue_name'])
                 if cue['device'] == 'CG3':
-                    ip = cg3_ip
-                    port = cg3_port
+                    self.cg3.cue_clip(playlist=cue['playlist_index'], clip_number=cue['cue_index'])
                 if cue['device'] == 'CG4':
-                    ip = cg4_ip
-                    port = cg4_port
-                logger.debug('activate_cues: cueing PVP %s cue, %s', cue['device'], cue['cue_name'])
-                pvp.cue_clip(ip=ip, port=port, playlist=cue['playlist_index'], clip_number=cue['cue_index'])
+                    self.cg4.cue_clip(playlist=cue['playlist_index'], clip_number=cue['cue_index'])
             # rosstalk
             elif cue['device'] == 'Rosstalk':
                 if cue['type'] == 'CC':
                     command = f"CC {cue['bank']}:{cue['CC']}"
-                    logger.debug('activate_cues: cueing rosstalk: %s', command)
+                    logger.info('activate_cues: cueing rosstalk: %s', command)
                     rt(rosstalk_ip=rosstalk_ip, rosstalk_port=rosstalk_port, command=command)
             # kipro
             elif cue['device'] == 'Kipro':
                 if cue['start']:
                     if not cue['kipro'] == 0:
-                        logger.debug('activate_cues: starting single kipro %s', cue['kipro'])
-                        kipro.start_absolute(ip=kipros[cue['kipro']]['ip'],
+                        logger.info('activate_cues: starting single kipro %s', cue['kipro'])
+                        self.kipro.start_absolute(ip=kipros[cue['kipro']]['ip'],
                                              name=kipros[cue['kipro']]['name'],
                                              include_date=True)
                     if cue['kipro'] == 0:
-                        logger.debug('activate_cues: starting all kipros')
+                        logger.info('activate_cues: starting all kipros')
                         for kipro_number in range(1, len(kipros)):
-                            kipro.start_absolute(ip=kipros[kipro_number]['ip'],
+                            self.kipro.start_absolute(ip=kipros[kipro_number]['ip'],
                                                  name=kipros[kipro_number]['name'],
                                                  include_date=True)
                 if not cue['start']:
                     if not cue['kipro'] == 0:
-                        logger.debug('activate_cues: stopping single kipro: %s', cue['kipro'])
-                        kipro.transport_stop(ip=kipros[cue['kipro']]['ip'])
+                        logger.info('activate_cues: stopping single kipro: %s', cue['kipro'])
+                        self.kipro.transport_stop(ip=kipros[cue['kipro']]['ip'])
                     if cue['kipro'] == 0:
-                        logger.debug('activate_cues: stopping all kipros')
+                        logger.info('activate_cues: stopping all kipros')
                         for kipro_number in range(1, len(kipros)):
-                            kipro.transport_stop(ip=kipros[kipro_number]['ip'])
+                            self.kipro.transport_stop(ip=kipros[kipro_number]['ip'])
             # Resi
             elif cue['device'] == 'Resi':
-                logger.debug('activate_cues: resi: %s', cue['command'])
+                logger.info('activate_cues: resi: %s', cue['command'])
                 rt(rosstalk_ip=resi_ip, rosstalk_port=resi_port, command=cue['command'])
             # pause
             elif cue['device'] == 'Pause':
-                logger.debug('pausing %s seconds', cue['time'])
+                logger.info('pausing %s seconds', cue['time'])
                 time.sleep(cue['time'])
             else:
-                logger.debug('Received cue not in activate_cues list: %s', cue)
+                logger.warning('Received cue not in activate_cues list: %s', cue)
                 pass
 
     def __open_cue_creator(self, overwrite):
@@ -224,7 +225,7 @@ class CueCreator:
     def __add_cg3_cue_clicked(self):
             add_cg3_cue_window = Tk()
             add_cg3_cue_window.config(bg=bg_color)
-            data = pvp.get_pvp_data(ip=cg3_ip, port=cg3_port)
+            data = self.cg3.get_pvp_data()
 
             playlist_names = []
             for playlist in data['playlist']['children']:
@@ -278,7 +279,7 @@ class CueCreator:
     def __add_cg4_cue_clicked(self):
             add_cg4_cue_window = Tk()
             add_cg4_cue_window.config(bg=bg_color)
-            data = pvp.get_pvp_data(ip=cg4_ip, port=cg4_port)
+            data = self.cg4.get_pvp_data()
 
             playlist_names = []
             for playlist in data['playlist']['children']:
