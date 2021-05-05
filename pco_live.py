@@ -68,10 +68,10 @@ class PcoLive:
             logger.debug('successfully got current live item id: %s', data['data']['relationships']['item']['data']['id'])
             return data['data']['relationships']['item']['data']['id']
         except TypeError:
-            logger.error('Failed to get current live item id for service type %s, plan %s. Is the plan live?', self.service_type_id, self.plan_id)
+            logger.info('Failed to get current live item id for service type %s, plan %s. Is the plan live?', self.service_type_id, self.plan_id)
             return None
         except KeyError:
-            logger.error('Failed to get current live item id for service type %s, plan %s. Is the plan live?', self.service_type_id, self.plan_id)
+            logger.info('Failed to get current live item id for service type %s, plan %s. Is the plan live?', self.service_type_id, self.plan_id)
             return None
 
     # TODO check during a live service. length and length_offset are both 0 when called when out of service time
