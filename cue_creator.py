@@ -10,7 +10,6 @@ import datetime
 from pvp import pvp
 from pco_plan import PcoPlan
 from tkinter import ttk
-from cue_coder import cue_coder
 from rosstalk import rosstalk as rt
 from kipro import *
 
@@ -137,14 +136,12 @@ class CueCreator:
                     port = cg4_port
                 logger.debug('activate_cues: cueing PVP %s cue, %s', cue['device'], cue['cue_name'])
                 pvp.cue_clip(ip=ip, port=port, playlist=cue['playlist_index'], clip_number=cue['cue_index'])
-
             # rosstalk
             elif cue['device'] == 'Rosstalk':
                 if cue['type'] == 'CC':
                     command = f"CC {cue['bank']}:{cue['CC']}"
                     logger.debug('activate_cues: cueing rosstalk: %s', command)
                     rt(rosstalk_ip=rosstalk_ip, rosstalk_port=rosstalk_port, command=command)
-
             # kipro
             elif cue['device'] == 'Kipro':
                 if cue['start']:
@@ -171,6 +168,10 @@ class CueCreator:
             elif cue['device'] == 'Resi':
                 logger.debug('activate_cues: resi: %s', cue['command'])
                 rt(rosstalk_ip=resi_ip, rosstalk_port=resi_port, command=cue['command'])
+            # pause
+            elif cue['device'] == 'Pause':
+                logger.debug('pausing %s seconds', cue['time'])
+                time.sleep(cue['time'])
             else:
                 logger.debug('Received cue not in activate_cues list: %s', cue)
                 pass
@@ -848,4 +849,6 @@ class CueCreator:
         self.main_ui.reload()
 
     def __test(self):
-        self.activate_cues(cues=self.current_cues)
+        t = threading.Thread(target=lambda: self.activate_cues(cues=self.current_cues))
+        t.start()
+        t.join()
