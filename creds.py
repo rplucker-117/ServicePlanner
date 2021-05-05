@@ -8,7 +8,8 @@ class Creds:
         self.creds_file = os.path.join(os.path.dirname(__file__), 'creds.json')
 
     def create(self):
-        print('Please create a PCO Personal Access Token from https://api.planningcenteronline.com/oauth/applications')
+        print('Please create a PCO Personal Access Token from https://api.planningcenteronline.com/oauth/applications.'
+              'This is strictly stored locally on your computer.')
         id = input('Application ID:')
         secret = input('Secret:')
 
