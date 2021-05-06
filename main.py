@@ -1,18 +1,26 @@
-from tkinter import *
-from tkinter import messagebox
-from settings import *
-import time
-from logzero import logger, logfile
-from pco_plan import PcoPlan
-from pco_live import PcoLive
-from tkinter import ttk
-import threading
-from cue_creator import CueCreator
-import logging
-import json
-import os
-from kipro import KiPro
-from rosstalk import rosstalk as rt
+try:
+    from tkinter import *
+    from tkinter import messagebox
+    from settings import *
+    import time
+    from logzero import logger, logfile
+    from pco_plan import PcoPlan
+    from pco_live import PcoLive
+    from tkinter import ttk
+    import threading
+    from cue_creator import CueCreator
+    import logging
+    import json
+    import os
+    from kipro import KiPro
+    from rosstalk import rosstalk as rt
+    import wget
+
+except Exception as e:
+    from setup import *
+    import os
+    os.system("Python main.py")
+
 
 abs_path = os.path.dirname(__file__)
 
@@ -174,8 +182,10 @@ class Utilities:
         self.utilities_menu.destroy()
 
     def __download(self):
+        logger.debug('download kipro clips button pressed')
         self.utilities_menu.destroy()
-        threading.Thread(target=self.kipro.download_clips)
+        threading.Thread(target=self.kipro.download_clips).start()
+        self.main_ui_window.kipro_ui.kill_threads()
 
     def __update_cam_names(self):
         people = self.pco_plan.get_assigned_people()
@@ -192,7 +202,6 @@ class Utilities:
                 name = person['name'].upper()
                 logger.debug('Updating camera position name via rosstalk: %s, %s', person['position'], name[0:6])
                 rt(rosstalk_ip=rosstalk_ip, rosstalk_port=rosstalk_port, command=f"MNEM IN:{cam_pos}:{cam_pos} {name[0:6]}")
-
 
     def __add_global(self):
         self.utilities_menu.destroy()
@@ -258,7 +267,6 @@ class MainUI:
         self.adjacent_plan_next_item = None
         self.adjacent_plan_timer_input = 0
         self.adjacent_plan_time_remaining_is_positive = True
-
 
         # plan windows
         self.plan_window = Toplevel()
@@ -464,7 +472,7 @@ class MainUI:
         tick()
 
     def update_kipro_status(self, kipro_unit, status):
-        logger.debug('Got kipro status: unit: %s, status: %s', kipro_unit, status)
+        # logger.debug('Got kipro status: unit: %s, status: %s', kipro_unit, status)
 
         if status == 1:
             self.kipro_buttons[kipro_unit].configure(bg=kipro_idle_color)
@@ -808,18 +816,18 @@ class KiProUi:
         for iteration, kipro_unit in enumerate(kipros[1:]):
 
             status = int(self.kipro.get_status(ip=kipro_unit['ip']))
-            logger.debug('update_kipro_status: status is %s for kipro %s', status, kipro_unit['name'])
+            # logger.debug('update_kipro_status: status is %s for kipro %s', status, kipro_unit['name'])
             ui.update_kipro_status(kipro_unit=iteration, status=status)
 
             percent = int(self.kipro.get_remaining_storage(ip=kipro_unit['ip']))
-            logger.debug('update_kipro_status: storage is %s percent for kipro %s', percent, kipro_unit['name'])
+            # logger.debug('update_kipro_status: storage is %s percent for kipro %s', percent, kipro_unit['name'])
             ui.update_kipro_storage(kipro_unit=iteration, percent=percent)
 
         if interval_update_kipros:
             threading.Thread(name='kipro_refresh', target=lambda: self.__refresh(interval=kipro_update_interval, ui=ui)).start()
 
     def __refresh(self, interval, ui):
-        logger.debug(f'KiProUi.__refresh: exit_event.is_set(): {self.exit_event.is_set()}')
+        # logger.debug(f'KiProUi.__refresh: exit_event.is_set(): {self.exit_event.is_set()}')
 
         time.sleep(interval)
         if not self.exit_event.is_set():
