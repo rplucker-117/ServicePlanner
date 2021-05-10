@@ -1,7 +1,7 @@
 import subprocess
 import sys
 
-packages = ['logzero', 'requests', 'zulu', 'demjson', 'pymidi']
+packages = ['logzero', 'requests', 'zulu', 'demjson', 'pymidi', 'wget', 'Flask','ezodf']
 
 
 def update_pip():
