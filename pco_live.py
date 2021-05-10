@@ -28,7 +28,9 @@ class PcoLive:
         # Look at response, if it contains errors>0>status>403, you're either not logged in or haven't taken control
         try:
             if json.loads(r.text)['errors'][0]['status'] == '403':
-                logger.error("You haven't taken pco live control!")
+                logger.error("You haven't taken pco live control! Attempting to take control and retry...")
+                self.take_control()
+                self.go_to_next_item()
         except KeyError:
             logger.info('go_to_next_item: success')
 
@@ -39,7 +41,9 @@ class PcoLive:
                       auth=(APP_ID, SECRET))
         try:
             if json.loads(r.text)['errors'][0]['status'] == '403':
-                logger.error("You haven't taken pco live control!")
+                logger.error("You haven't taken pco live control! Attempting to take control and retry...")
+                self.take_control()
+                self.go_to_previous_item()
         except KeyError:
             logger.info('go_to_previous_item: success')
 
