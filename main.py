@@ -15,6 +15,9 @@ try:
     from kipro import KiPro
     from rosstalk import rosstalk as rt
     import wget
+    from flask_server import flask_server as fs
+    import pprint
+    from sheet_reader import *
 
 except Exception as e:
     from setup import *
@@ -89,7 +92,7 @@ class Utilities:
     def __init__(self, main_ui_window_init):
         self.main_ui_window = main_ui_window_init
         self.cue_handler = CueCreator(service_type_id = self.main_ui_window.service_type_id, plan_id=self.main_ui_window.service_id, ui=main_ui_window_init)
-        self.cue_handler_global = CueCreator(service_type_id = self.main_ui_window.service_type_id, plan_id=self.main_ui_window.service_id, ui=main_ui_window_init, cue_type='global')
+        self.cue_handler_global = CueCreator(service_type_id = self.main_ui_window.service_type_id, plan_id=self.main_ui_window.service_id, ui=main_ui_window_init, cue_type='global', carbonite_labels=carbonite_cc_labels)
 
         self.pco_live = PcoLive(service_type_id = self.main_ui_window.service_type_id, plan_id=self.main_ui_window.service_id)
         self.pco_plan = PcoPlan(service_type = self.main_ui_window.service_type_id, plan_id=self.main_ui_window.service_id)
@@ -233,6 +236,9 @@ class Utilities:
             Button(remove_global_menu, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Okay',
                    command=okay).pack(side=RIGHT)
 
+    def __add_device(self):
+        pass
+
 class MainUI:
     def __init__(self, service_type_id, service_id):
 
@@ -243,7 +249,7 @@ class MainUI:
         # class initiations
         self.pco_live = PcoLive(service_type_id=service_type_id, plan_id=service_id)
         self.pco_plan = PcoPlan(service_type=service_type_id, plan_id=service_id)
-        self.cue_handler = CueCreator(service_type_id=service_type_id, plan_id=service_id, ui=self)
+        self.cue_handler = CueCreator(service_type_id=service_type_id, plan_id=service_id, ui=self, carbonite_labels=carbonite_cc_labels)
         self.kipro_ui = KiProUi()
         self.kipro = KiPro()
 
@@ -298,6 +304,12 @@ class MainUI:
         self.kipro_buttons = []
         self.kipro_storage_remaining_bars = []
 
+        # control webserver
+
+        # self.webserver = fs.web_server
+        # self.webserver.plan_data = self.plan_items
+        # self.webserver.live_index = self.current_item_index
+
     def build_plan_window(self):
 
         self.plan_window.title('Service Control')
@@ -316,6 +328,7 @@ class MainUI:
         self.update_live()
 
         self.plan_window.mainloop()
+        # self.__start_webserver()
 
     def update_item_timer(self, time):
         self.time_remaining_is_positive = True
@@ -326,9 +339,11 @@ class MainUI:
         self.update_item_timer(time=self.plan_items[self.next_item_index]['length'])
 
         if cue_items:
-            t = threading.Thread(target=self.__cue)
-            t.start()
-            t.join()
+            self.__cue()
+
+            # t = threading.Thread(target=self.__cue)
+            # t.start()
+            # t.join()
 
         self.pco_live.go_to_next_item()
         self.update_live()
@@ -337,9 +352,11 @@ class MainUI:
         self.update_item_timer(time=self.plan_items[self.previous_item_index]['length'])
 
         if cue_items:
-            t = threading.Thread(target=lambda: self.__cue(next=False))
-            t.start()
-            t.join()
+            self.__cue(next=False)
+
+            # t = threading.Thread(target=lambda: self.__cue(next=False))
+            # t.start()
+            # t.join()
 
         self.pco_live.go_to_previous_item()
         self.update_live()
@@ -489,6 +506,9 @@ class MainUI:
         self.kipro_ui.kill_threads()
         reloaded_ui = MainUI(service_type_id=main_service.service_type_id, service_id=main_service.service_id)
         reloaded_ui.build_plan_window()
+
+    def __start_webserver(self):
+        self.webserver.serve()
 
     def __build_current_service_time(self):
         logger.debug('Building current service time info')
@@ -838,6 +858,10 @@ class KiProUi:
 def startup():
     global main_service
     global main_ui
+    global carbonite_cc_labels
+
+    carbonite_cc_reader = read_sheet(spreadsheet_path='flowood.ods')
+    carbonite_cc_labels = carbonite_cc_reader.read_cc_sheet()
 
     main_service = SelectService(send_to=None)
     main_service.ask_service_info()
