@@ -5,17 +5,14 @@ import json
 import time
 import requests
 from logzero import logger
+import logzero
 from datetime import datetime
 import demjson
 import os
 from tkinter import filedialog
 from tkinter import *
 import wget
-import pprint
-import threading
 
-
-# logger.basicConfig(level=log_level)
 
 class KiPro:
     def __init__(self):
@@ -53,20 +50,20 @@ class KiPro:
 
     # Returns 1 if idle, 2 if recording, 17 if error in record, 18 if unable to communicate
     def get_status(self, ip):
-        logger.debug('Getting status of kipro %s', ip)
+        # logger.debug('Getting status of kipro %s', ip)
         try:
             r = json.loads(requests.get(f'http://{ip}/config?action=get&paramid=eParamID_TransportState', timeout=kipro_timeout_threshold).text)
-            logger.debug('Status of kipro %s is %s', ip, r['value'])
+            # logger.debug('Status of kipro %s is %s', ip, r['value'])
             return r['value']
         except requests.exceptions.RequestException as e:
-            logger.error('Error with kipro %s. \n %s', ip, e)
+            # logger.error('Error with kipro %s. \n %s', ip, e)
             return '18'
 
     def get_remaining_storage(self, ip):
-        logger.debug('Getting remaining storage for kipro %s', ip)
+        # logger.debug('Getting remaining storage for kipro %s', ip)
         try:
             r = json.loads(requests.get(f'http://{ip}/config?action=get&paramid=eParamID_CurrentMediaAvailable', timeout=kipro_timeout_threshold).text)
-            logger.debug('Remaining storage on kipro %s is %s percent.', ip, r['value'])
+            # logger.debug('Remaining storage on kipro %s is %s percent.', ip, r['value'])
             return r['value']
         except requests.exceptions.RequestException as e:
             return 0
@@ -79,12 +76,13 @@ class KiPro:
         self.set_rec_play_mode(ip=ip)
         self.transport_record(ip=ip)
 
-    def toggle_start_stop(self, ip, name, include_date):
+    def toggle_start_stop(self, ip, name, include_date=True, delay=.3):
         status = self.get_status(ip=ip)
         if status == '1':
             self.start_absolute(ip=ip, name=name, include_date=include_date)
         if status == '2':
             self.transport_stop(ip=ip)
+        time.sleep(delay)
 
     def download_clips(self):
         root = Tk()
