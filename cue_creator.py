@@ -12,10 +12,11 @@ from pco_plan import PcoPlan
 from tkinter import ttk
 from rosstalk import rosstalk as rt
 from kipro import *
+import threading
 
 
 class CueCreator:
-    def __init__(self, service_type_id, plan_id, ui, cue_type='item'):
+    def __init__(self, service_type_id, plan_id, ui, carbonite_labels=None, cue_type='item'):
         self.service_type_id = service_type_id
         self.plan_id = plan_id
         self.cue_type = cue_type
@@ -44,6 +45,8 @@ class CueCreator:
         self.input_item = None
         self.cues_display_text = str()
         self.current_cues = []
+
+        self.carbonite_labels = carbonite_labels
 
         self.kipro = KiPro()
         self.cg3 = pvp(ip=cg3_ip, port=cg3_port)
@@ -347,6 +350,25 @@ class CueCreator:
             for button in buttons:
                 button.destroy()
 
+            def update_cc_names(bank_int):
+                # This will update the CC radiobutton names with the names from the spreadsheet when a bank is selected
+                # pass an int to this function
+                if not self.carbonite_labels is None:
+                    logger.debug('Carbonite labels are set, recreating CC radiobuttons')
+                    bank = 'bank' + str(bank_int)
+                    pos = 1
+                    for cc, label in zip(CCs, self.carbonite_labels[bank]):
+                        if label is not None:
+                            new_title =  'CC '+ str(pos) + ': ' + label
+                            cc.configure(text=new_title)
+                            pos += 1
+                        else:
+                            cc.configure(text='CC ' + str(pos))
+                            pos += 1
+                else:
+                    logger.debug('Carbonite labels are None, passing')
+                    pass
+
             # Create banks for bank ints to live in, add 8 bank option radiobuttons to list
             # create intvar for banks. When a radiobutton is clicked, intvar banks_var is updated. Same for CCs below
             banks = []
@@ -359,6 +381,7 @@ class CueCreator:
                                          selectcolor=bg_color,
                                          padx=20,
                                          variable=banks_var,
+                                         command=lambda bank = bank: update_cc_names(bank_int = bank+1),
                                          value=(bank + 1)))
 
             CCs = []
