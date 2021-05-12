@@ -18,7 +18,7 @@ class ScpaViaIP2SL:
             self.socket.connect((self.ip, self.port))
             logger.debug('socket connected')
         except socket.timeout:
-            logger.error('IP2SL did not respond. Do you have the right host address?')
+            logger.error('IP2SL did not respond. Do you have the right host address, or is something using port %s?', self.port)
 
     def __listen(self):
         response = []
@@ -35,25 +35,25 @@ class ScpaViaIP2SL:
         self.socket.close()
 
     def __send_data(self, data, cr=True):
-        # data = '\r' + data + '\r' if cr else data
+        logger.debug('__send_data: sending %s', data)
+
         data = data.encode('ascii')
 
         try:
             self.socket.sendall(data)
             if cr:
-                self.socket.sendall('\r\n'.encode('ascii'))
+                self.socket.sendall('\r'.encode('ascii'))
         except socket.timeout:
             logger.error('IP2SL did not respond. Do you have the right host address?')
 
     def get_status(self, output, recursive=False):
-        time.sleep(2)
         self.__create_socket()
         self.__connect()
 
         if not recursive:
             output -= 1
         else:
-            time.sleep(3.5)
+            time.sleep(6)
 
         for _ in range(3 - len(str(output))):
             output = '0' + str(output)
@@ -69,10 +69,13 @@ class ScpaViaIP2SL:
         self.__close()
 
         try:
-            return response
+            return int(response)+1
         except UnboundLocalError:
             logger.warning('Did not receive a valid response. Retrying.')
             return self.get_status(output=output, recursive=True)
+        except ValueError:
+            logger.info('No input assigned to output %s', int(output)+1)
+            return 0
 
     def switch_output(self, input, output, breakaway=1):
         input -= 1
@@ -93,5 +96,4 @@ class ScpaViaIP2SL:
 
 if __name__ == '__main__':
     scp = ScpaViaIP2SL(ip='10.1.60.128')
-    while True:
-        scp.get_status(output=5)
+    print(scp.get_status(output=37))
