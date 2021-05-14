@@ -13,12 +13,13 @@ from tkinter import ttk
 from rosstalk import rosstalk as rt
 from kipro import *
 import threading
-
+from sheet_reader import ReadSheet
 
 class CueCreator:
-    def __init__(self, service_type_id, plan_id, ui, carbonite_labels=None, cue_type='item'):
-        self.service_type_id = service_type_id
-        self.plan_id = plan_id
+    def __init__(self, startup, ui, cue_type='item', devices=None):
+
+        self.service_type_id = startup.service_type_id
+        self.plan_id = startup.service_id
         self.cue_type = cue_type
 
         self.pco_plan = PcoPlan(service_type=self.service_type_id, plan_id=self.plan_id)
@@ -46,11 +47,13 @@ class CueCreator:
         self.cues_display_text = str()
         self.current_cues = []
 
-        self.carbonite_labels = carbonite_labels
+        self.devices = devices
 
-        self.kipro = KiPro()
-        self.cg3 = pvp(ip=cg3_ip, port=cg3_port)
-        self.cg4 = pvp(ip=cg4_ip, port=cg4_port)
+        self.all_kipros = []
+        for device in self.devices:
+            if device['type'] == 'kipro' and not device['uuid'] == '07af78bf-9149-4a12-80fc-0fa61abc0a5c':
+                logger.debug('adding kipro %s to all_kipros', device['user_name'])
+                self.all_kipros.append(device)
 
         # runs if input cue is global
         if self.cue_type == 'global':
@@ -85,100 +88,86 @@ class CueCreator:
         if cuelist is not None:
             for cue in cuelist:
                 logger.debug('creating verbose output from %s', cue)
-                # cg3/cg4
-                if cue['device'] in ('CG3', 'CG4'):
-                    cue_verbose = f"{cue['device']}:   Cue {cue['cue_name']}"
+                device = self.__get_device_user_name_from_uuid(uuid=cue['uuid'])
+
+                if device['type'] == 'pvp':
+                    cue_verbose = f"{device['user_name']}:   Cue {cue['cue_name']}"
                     cues_verbose_list.append(cue_verbose)
-                # pause/hold
-                if cue['device'] == 'Pause':
+
+                if device['type'] == 'Pause':
                     cue_verbose = f"{cue['device']}:   {cue['time']} seconds."
                     cues_verbose_list.append(cue_verbose)
-                # kipro
-                if cue['device'] == 'Kipro':
+
+                if device['type'] == 'kipro':
                     if cue['start'] is True:
                         mode = 'Start'
-                    if cue['start'] is False:
+                    else:
                         mode = 'Stop'
-                    device_index = cue['kipro']
-                    device_name = kipros[device_index]['name']
-                    cue_verbose = f"{cue['device']}:   " \
-                                  f"{mode} {device_name}"
+                    cue_verbose = f"KiPro:   " \
+                                  f"{mode} {cue['name']}"
                     cues_verbose_list.append(cue_verbose)
-                # resi
-                if cue['device'] == 'Resi':
+
+                if device['type'] == 'resi':
                     cue_verbose = f"{cue['device']}:   {cue['name']}"
                     cues_verbose_list.append(cue_verbose)
-                # reminder
-                if cue['device'] == 'Reminder':
+
+                if device['type'] == 'reminder':
                     reminder_to_display = cue['reminder'][0:40]
-                    cue_verbose = f"{cue['device']}:   {cue['minutes']}m, {cue['seconds']}s: " \
+                    cue_verbose = f"{device['user_name']}:   {cue['minutes']}m, {cue['seconds']}s: " \
                                   f"{reminder_to_display}"
                     cues_verbose_list.append(cue_verbose)
-                # rosstalk
-                if cue['device'] == 'Rosstalk':
+
+                if device['type'] == 'ross_carbonite':
                     if cue['type'] == 'CC':
-                        cue_verbose = f"{cue['device']}:" \
+                        cue_verbose = f"{device['user_name']}:" \
                                       f"   {cue['type']}:{cue['bank']}:{cue['CC']}"
-                        cues_verbose_list.append(cue_verbose)
-                    if cue['type'] == 'KEYCUT':
-                        cue_verbose = f"{cue['device']}:   KeyAuto:" \
-                                      f" {cue['bus']}: Key {cue['key']}"
-                        cues_verbose_list.append(cue_verbose)
-                    if cue['type'] == 'KEYAUTO':
-                        cue_verbose = f"{cue['device']}:   KeyAuto:" \
-                                      f" {cue['bus']}: Key {cue['key']}"
                         cues_verbose_list.append(cue_verbose)
             return cues_verbose_list
 
     def activate_cues(self, cues):
         logger.debug('activate_cues called, cues input: %s', cues)
         for cue in cues:
-            # pvp
-            if cue['device'] in ('CG3', 'CG4'):
-                logger.info('activate_cues: cueing PVP %s cue, %s', cue['device'], cue['cue_name'])
-                if cue['device'] == 'CG3':
-                    self.cg3.cue_clip(playlist=cue['playlist_index'], clip_number=cue['cue_index'])
-                if cue['device'] == 'CG4':
-                    self.cg4.cue_clip(playlist=cue['playlist_index'], clip_number=cue['cue_index'])
-            # rosstalk
-            elif cue['device'] == 'Rosstalk':
-                if cue['type'] == 'CC':
-                    command = f"CC {cue['bank']}:{cue['CC']}"
-                    logger.info('activate_cues: cueing rosstalk: %s', command)
-                    rt(rosstalk_ip=rosstalk_ip, rosstalk_port=rosstalk_port, command=command)
-            # kipro
-            elif cue['device'] == 'Kipro':
-                if cue['start']:
-                    if not cue['kipro'] == 0:
-                        logger.info('activate_cues: starting single kipro %s', cue['kipro'])
-                        self.kipro.start_absolute(ip=kipros[cue['kipro']]['ip'],
-                                             name=kipros[cue['kipro']]['name'],
-                                             include_date=True)
-                    if cue['kipro'] == 0:
-                        logger.info('activate_cues: starting all kipros')
-                        for kipro_number in range(1, len(kipros)):
-                            self.kipro.start_absolute(ip=kipros[kipro_number]['ip'],
-                                                 name=kipros[kipro_number]['name'],
-                                                 include_date=True)
-                if not cue['start']:
-                    if not cue['kipro'] == 0:
-                        logger.info('activate_cues: stopping single kipro: %s', cue['kipro'])
-                        self.kipro.transport_stop(ip=kipros[cue['kipro']]['ip'])
-                    if cue['kipro'] == 0:
-                        logger.info('activate_cues: stopping all kipros')
-                        for kipro_number in range(1, len(kipros)):
-                            self.kipro.transport_stop(ip=kipros[kipro_number]['ip'])
-            # Resi
-            elif cue['device'] == 'Resi':
-                logger.info('activate_cues: resi: %s', cue['command'])
-                rt(rosstalk_ip=resi_ip, rosstalk_port=resi_port, command=cue['command'])
-            # pause
-            elif cue['device'] == 'Pause':
-                logger.info('pausing %s seconds', cue['time'])
-                time.sleep(cue['time'])
-            else:
-                logger.warning('Received cue not in activate_cues list: %s', cue)
-                pass
+            for device in self.devices:
+                if cue['uuid'] == device['uuid']:
+                    if device['type'] == 'pvp':
+                        pvp(device['ip_address'], device['port']).cue_clip_via_uuid(uuid=cue['cue_uuid'])
+
+                    elif device['type'] == 'ross_carbonite':
+                        if cue['type'] == 'CC':
+                            command = f"CC {cue['bank']}:{cue['CC']}"
+                            logger.info('activate_cues: cueing rosstalk: %s', command)
+                            rt(rosstalk_ip=device['ip_address'], rosstalk_port=device['port'], command=command)
+
+                    elif device['type'] == 'kipro':
+                        if device['uuid'] == '07af78bf-9149-4a12-80fc-0fa61abc0a5c':
+                            if cue['start']:
+                                for kipro in self.all_kipros:
+                                    KiPro().start_absolute(ip=kipro['ip_address'], name=kipro['user_name'])
+                            if not cue['start']:
+                                for kipro in self.all_kipros:
+                                    KiPro().transport_stop(ip=kipro['ip_address'])
+                        else:
+                            if cue['start']:
+                                KiPro().start_absolute(ip=device['ip_address'], name=device['user_name'])
+                            if not cue['start']:
+                                KiPro().transport_stop(ip=device['ip_address'])
+
+                    elif device['type'] == 'resi':
+                        rt(rosstalk_ip=device['ip_address'], rosstalk_port=device['port'], command=cue['command'])
+
+                    elif device['type'] == 'pause':
+                        time.sleep(cue['time'])
+
+                    # todo add nk
+
+                    else:
+                        logger.warning('Received cue not in activate_cues list: %s', cue)
+                        pass
+
+    def __get_device_user_name_from_uuid(self, uuid):
+        for device in self.devices:
+            if device['uuid'] == uuid:
+                return device
 
     def __open_cue_creator(self, overwrite):
 
@@ -209,12 +198,34 @@ class CueCreator:
             Label(self.custom_name_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Global Cue Name').pack()
             self.custom_name_entry.pack()
 
-        # Cue type buttons
-        Button(self.cue_type_buttons_frame, text='Add CG3 PVP cue', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_cg3_cue_clicked).pack()
-        Button(self.cue_type_buttons_frame, text='Add CG4 PVP cue', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_cg4_cue_clicked).pack()
-        Button(self.cue_type_buttons_frame, text='Add Rosstalk cue', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_rosstalk_cue_clicked).pack()
-        Button(self.cue_type_buttons_frame, text='Add KiPro cue', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_kipro_cue_clicked).pack()
-        Button(self.cue_type_buttons_frame, text='Add Resi cue', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_resi_cue_clicked).pack()
+        def add_cue_clicked(device):
+            logger.debug('Add cue button clicked: %s, %s', device['user_name'], device['uuid'])
+
+            if device['type'] == 'nk_scpa_ip2sl':
+                self.__add_nk_scpa_ip2sl_cue(device)
+            elif device['type'] == 'pvp':
+                self.__add_pvp_cue(device)
+            elif device['type'] == 'ross_carbonite':
+                if 'cc_labels' in device.keys():
+                    cc_labels = ReadSheet(device['cc_labels']).read_cc_sheet()
+                else:
+                    cc_labels = None
+                self.__add_carbonite_cue(device, cc_labels=cc_labels)
+            elif device['type'] == 'resi':
+                self.__add_resi_cue(device)
+
+        includes_kipro = None
+
+        if self.devices is not None:
+            for device in self.devices:
+                if not device['type'] == 'kipro':
+                    if not device['type'] in ('pause', 'reminder', 'kipro_all'):
+                        button_name = 'Add ' + device['user_name'] + '(' + device['type'] + ')' + ' cue'
+                        Button(self.cue_type_buttons_frame, text=button_name, font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=lambda device=device: add_cue_clicked(device)).pack()
+                elif device['type'] == 'kipro' and includes_kipro is not True:
+                    Button(self.cue_type_buttons_frame, text='Add KiPro Cue', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_kipro_cue).pack()
+                    includes_kipro = True
+
         Button(self.cue_type_buttons_frame, text='Add Pause', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_pause_cue_clicked).pack()
         Button(self.cue_type_buttons_frame, text='Add Reminder', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_reminder_cue_clicked).pack()
 
@@ -225,25 +236,30 @@ class CueCreator:
 
         self.__update_cues_display()
 
-    def __add_cg3_cue_clicked(self):
-            add_cg3_cue_window = Tk()
-            add_cg3_cue_window.config(bg=bg_color)
-            data = self.cg3.get_pvp_data()
+    def __add_nk_scpa_ip2sl_cue(self, device):
+        logger.debug('__add_nk_scpa_ip2sl_cue: received. device: %s', device)
+        pass
+
+    def __add_pvp_cue(self, device):
+            add_pvp_cue_window = Tk()
+            add_pvp_cue_window.config(bg=bg_color)
+
+            pvp_data = pvp(ip=device['ip_address'], port=device['port']).get_pvp_data()
 
             playlist_names = []
-            for playlist in data['playlist']['children']:
+            for playlist in pvp_data['playlist']['children']:
                 playlist_names.append(playlist['name'])
 
             playlist_buttons = []
             for iteration, playlist in enumerate(playlist_names):
-                playlist_buttons.append(Button(add_cg3_cue_window,
+                playlist_buttons.append(Button(add_pvp_cue_window,
                                                text=playlist,
                                                font=(font, plan_text_size),
                                                bg=bg_color,
                                                fg=text_color,
                                                command=lambda iteration=iteration:
                                                (playlist_button_clicked(playlist_index=iteration),
-                                                add_cg3_cue_window.destroy())))
+                                                add_pvp_cue_window.destroy())))
             for button in playlist_buttons:
                 button.pack()
 
@@ -252,88 +268,87 @@ class CueCreator:
                 add_cg3_cue_buttons_window.config(bg=bg_color)
 
                 cue_names = []
-                for cue_name in data['playlist']['children'][playlist_index]['items']:
+                for cue_name in pvp_data['playlist']['children'][playlist_index]['items']:
                     cue_names.append(cue_name['name'])
 
+                cue_uuids = []
+                for cue_name in pvp_data['playlist']['children'][playlist_index]['items']:
+                    cue_uuids.append(cue_name['uuid'])
+
                 cue_buttons = []
-                for iteration, cue_name in enumerate(cue_names):
+                for  name, uuid in zip(cue_names, cue_uuids):
                     cue_buttons.append(Button(add_cg3_cue_buttons_window,
-                                              text=cue_name,
+                                              text=name,
                                               font=(font, plan_text_size),
                                               bg=bg_color,
                                               fg=text_color,
-                                              command=lambda iteration=iteration, cue_name=cue_name:
-                                              (cue_button_clicked(playlist_index=playlist_index, cue_index=iteration,
-                                                                  cue_name=cue_name),
+                                              command=lambda name=name, uuid=uuid:
+                                              (cue_button_clicked(cue_name=name, cue_uuid=uuid),
                                                add_cg3_cue_buttons_window.destroy())))
 
                 for button in cue_buttons:
                     button.pack()
 
-            def cue_button_clicked(playlist_index, cue_index, cue_name):
+            def cue_button_clicked(cue_name, cue_uuid):
                 self.current_cues.append({
-                    'device': 'CG3',
-                    'playlist_index': playlist_index,
-                    'cue_index': cue_index,
-                    'cue_name': cue_name}
-                )
+                    'uuid': device['uuid'],
+                    'cue_uuid': cue_uuid,
+                    'cue_name': cue_name
+                })
                 self.__update_cues_display()
 
-    def __add_cg4_cue_clicked(self):
-            add_cg4_cue_window = Tk()
-            add_cg4_cue_window.config(bg=bg_color)
-            data = self.cg4.get_pvp_data()
+    def __add_resi_cue(self, device):
+        add_resi_cue_window = Tk()
+        add_resi_cue_window.config(bg=bg_color)
 
-            playlist_names = []
-            for playlist in data['playlist']['children']:
-                playlist_names.append(playlist['name'])
+        def button_pressed(command):
+            add_resi_cue_window.destroy()
+            self.current_cues.append({
+                'uuid': device['uuid'],
+                'name': commands[command]['name'],
+                'command': commands[command]['command']
+            })
+            self.__update_cues_display()
 
-            playlist_buttons = []
-            for iteration, playlist in enumerate(playlist_names):
-                playlist_buttons.append(Button(add_cg4_cue_window,
-                                               text=playlist,
-                                               font=(font, plan_text_size),
-                                               bg=bg_color,
-                                               fg=text_color,
-                                               command=lambda iteration=iteration:
-                                               (playlist_button_clicked(playlist_index=iteration),
-                                                add_cg4_cue_window.destroy())))
-            for button in playlist_buttons:
-                button.pack()
+        commands={
+            1: {
+                'name': 'Play',
+                'command': 'CC play'
+            },
+            2: {
+                'name': 'Pause',
+                'command': 'CC pause'
+            },
+            3: {
+                'name': 'Play and fade from black',
+                'command': 'CC PAFFB'
+            },
+            4: {
+                'name': 'Fade to black and pause',
+                'command': 'CC FTBAP'
+            },
+            5: {
+                'name': 'Fade from black (no change in playing state)',
+                'command': 'CC FFB'
+            },
+            6: {
+                'name': 'Fade to black (no change in playing state)',
+                'command': 'CC FTB'
+            }
+        }
 
-            def playlist_button_clicked(playlist_index):
-                add_cg4_cue_buttons_window = Tk()
-                add_cg4_cue_buttons_window.config(bg=bg_color)
+        resi_buttons = []
+        for iteration in commands:
+            resi_buttons.append(Button(add_resi_cue_window,
+                                       text=commands[iteration]['name'],
+                                       bg=bg_color,
+                                       fg=text_color,
+                                       font=(font, plan_text_size),
+                                       command=lambda iteration = iteration: button_pressed(command=iteration)))
+        for button in resi_buttons:
+            button.pack()
 
-                cue_names = []
-                for cue_name in data['playlist']['children'][playlist_index]['items']:
-                    cue_names.append(cue_name['name'])
-
-                cue_buttons = []
-                for iteration, cue_name in enumerate(cue_names):
-                    cue_buttons.append(Button(add_cg4_cue_buttons_window,
-                                              text=cue_name,
-                                              font=(font, plan_text_size),
-                                              bg=bg_color,
-                                              fg=text_color,
-                                              command=lambda iteration=iteration, cue_name=cue_name:
-                                              (cue_button_clicked(playlist_index=playlist_index, cue_index=iteration,
-                                                                  cue_name=cue_name),
-                                               add_cg4_cue_buttons_window.destroy())))
-
-                for button in cue_buttons:
-                    button.pack()
-
-            def cue_button_clicked(playlist_index, cue_index, cue_name):
-                self.current_cues.append({
-                    'device': 'CG4',
-                    'playlist_index': playlist_index,
-                    'cue_index': cue_index,
-                    'cue_name': cue_name}
-                )
-                self.__update_cues_display()
-
-    def __add_rosstalk_cue_clicked(self):
+    def __add_carbonite_cue(self, device, cc_labels):
         add_rosstalk_cue_window = Tk()
         add_rosstalk_cue_window.config(bg=bg_color)
 
@@ -353,11 +368,11 @@ class CueCreator:
             def update_cc_names(bank_int):
                 # This will update the CC radiobutton names with the names from the spreadsheet when a bank is selected
                 # pass an int to this function
-                if not self.carbonite_labels is None:
+                if cc_labels is not None:
                     logger.debug('Carbonite labels are set, recreating CC radiobuttons')
                     bank = 'bank' + str(bank_int)
                     pos = 1
-                    for cc, label in zip(CCs, self.carbonite_labels[bank]):
+                    for cc, label in zip(CCs, cc_labels[bank]):
                         if label is not None:
                             new_title =  'CC '+ str(pos) + ': ' + label
                             cc.configure(text=new_title)
@@ -406,12 +421,14 @@ class CueCreator:
             # Gets banks intvar and CCs intvar values, assigns them to cues dict
             def okay_pressed(bank, CC):
                 add_rosstalk_cue_window.destroy()
+
                 if bank == 0:
                     bank = 1
                 if CC == 0:
                     CC = 1
+
                 self.current_cues.append({
-                    'device': 'Rosstalk',
+                    'uuid': device['uuid'],
                     'type': 'CC',
                     'bank': bank,
                     'CC': CC
@@ -437,73 +454,19 @@ class CueCreator:
         for iteration, button in enumerate(buttons):
             button.grid(row=iteration + 2, column=0)
 
-    def __add_reminder_cue_clicked(self):
-        # creates a new window for adding a reminder with minutes, seconds, reminder text, and okay.
-        logger.debug('add reminder button clicked')
-        add_reminder_window = Tk()
-        add_reminder_window.config(bg=bg_color)
-
-        def okay_pressed():
-            minutes = minutes_entry.get()
-            seconds = seconds_entry.get()
-            reminder = reminder_entry.get()
-            if minutes == '':
-                minutes = 0
-            if seconds == '':
-                seconds = 0
-
-            self.current_cues.append({
-                'device': 'Reminder',
-                'minutes': int(minutes),
-                'seconds': int(seconds),
-                'reminder': str(reminder)
-            })
-            self.__update_cues_display()
-
-            logger.debug('Okay button pressed on add_reminder_window. Minutes: %s, '
-                          'Seconds: %s, Str: %s', minutes, seconds, reminder)
-            add_reminder_window.destroy()
-
-        time_entry_frame = Frame(add_reminder_window)
-        time_entry_frame.config(bg=bg_color)
-        time_entry_frame.grid(row=1, column=0)
-
-        add_reminder_text_label = Label(add_reminder_window, bg=bg_color, fg=text_color,
-                                  font=(font, current_cues_text_size), anchor='w',
-                                  text='Add reminder after x time:').grid(row=0, column=0)
-
-        add_reminder_in_label = Label(time_entry_frame, bg=bg_color, fg=text_color,
-                                  font=(font, current_cues_text_size), anchor='w',
-                                  text='Add reminder in: ').grid(row=1, column=0)
-
-        minutes_entry = Entry(time_entry_frame, width=2, bg=text_entry_box_bg_color, fg=text_color,
-                                  font=(font, current_cues_text_size))
-        minutes_entry.grid(row=1, column=2)
-
-        minutes_seconds_label = Label(time_entry_frame, bg=bg_color, fg=text_color,
-                                  font=(font, current_cues_text_size), anchor='w',
-                                  text='minutes, ').grid(row=1, column=3)
-
-        seconds_entry = Entry(time_entry_frame, width=2, bg=text_entry_box_bg_color, fg=text_color,
-                                  font=(font, current_cues_text_size))
-        seconds_entry.grid(row=1, column=4)
-
-        seconds_label = Label(time_entry_frame, bg=bg_color, fg=text_color,
-                                  font=(font, current_cues_text_size), anchor='w',
-                                  text='seconds.').grid(row=1, column=5)
-
-        reminder_entry = Entry(add_reminder_window, width=100, bg=text_entry_box_bg_color, fg=text_color,
-                                  font=(font, plan_text_size))
-        reminder_entry.grid(row=2, column=0)
-
-        okay = Button(add_reminder_window, bg=bg_color, fg=text_color, font=(font, plan_text_size),
-                              anchor='w', text='okay',
-                              command=okay_pressed).grid(row=3, column=0)
-
-    def __add_kipro_cue_clicked(self):
+    def __add_kipro_cue(self):
         # creates new window for starting/stopping kipros. Either all or single.
         add_kipro_cue_window = Tk()
         add_kipro_cue_window.config(bg=bg_color)
+
+        kipros = []
+
+        for device in self.devices:
+            if device['type'] == 'kipro':
+                kipros.append({
+                    'name': device['user_name'],
+                    'uuid': device['uuid']
+                })
 
         def okay_pressed():
             # when okay button in add_kipro_cue_window is pressed. start is true when command is to start recording,
@@ -514,9 +477,9 @@ class CueCreator:
             kipro = kipro_selected.get()
             logger.debug('okay_button pressed in add_kipro_cue_window. start = %s, kipro = %s', start, kipro)
             self.current_cues.append({
-                'device': 'Kipro',
                 'start': start,
-                'kipro': kipro
+                'uuid': kipros[kipro]['uuid'],
+                'name': kipros[kipro]['name']
             })
             add_kipro_cue_window.destroy()
             self.__update_cues_display()
@@ -582,6 +545,69 @@ class CueCreator:
                          font=(font, plan_text_size),
                          command=okay_pressed).grid(row=1, column=0)
 
+    def __add_reminder_cue_clicked(self):
+        # creates a new window for adding a reminder with minutes, seconds, reminder text, and okay.
+        logger.debug('add reminder button clicked')
+        add_reminder_window = Tk()
+        add_reminder_window.config(bg=bg_color)
+
+        def okay_pressed():
+            minutes = minutes_entry.get()
+            seconds = seconds_entry.get()
+            reminder = reminder_entry.get()
+            if minutes == '':
+                minutes = 0
+            if seconds == '':
+                seconds = 0
+
+            self.current_cues.append({
+                'device': 'reminder',
+                'minutes': int(minutes),
+                'seconds': int(seconds),
+                'reminder': str(reminder)
+            })
+            self.__update_cues_display()
+
+            logger.debug('Okay button pressed on add_reminder_window. Minutes: %s, '
+                          'Seconds: %s, Str: %s', minutes, seconds, reminder)
+            add_reminder_window.destroy()
+
+        time_entry_frame = Frame(add_reminder_window)
+        time_entry_frame.config(bg=bg_color)
+        time_entry_frame.grid(row=1, column=0)
+
+        add_reminder_text_label = Label(add_reminder_window, bg=bg_color, fg=text_color,
+                                  font=(font, current_cues_text_size), anchor='w',
+                                  text='Add reminder after x time:').grid(row=0, column=0)
+
+        add_reminder_in_label = Label(time_entry_frame, bg=bg_color, fg=text_color,
+                                  font=(font, current_cues_text_size), anchor='w',
+                                  text='Add reminder in: ').grid(row=1, column=0)
+
+        minutes_entry = Entry(time_entry_frame, width=2, bg=text_entry_box_bg_color, fg=text_color,
+                                  font=(font, current_cues_text_size))
+        minutes_entry.grid(row=1, column=2)
+
+        minutes_seconds_label = Label(time_entry_frame, bg=bg_color, fg=text_color,
+                                  font=(font, current_cues_text_size), anchor='w',
+                                  text='minutes, ').grid(row=1, column=3)
+
+        seconds_entry = Entry(time_entry_frame, width=2, bg=text_entry_box_bg_color, fg=text_color,
+                                  font=(font, current_cues_text_size))
+        seconds_entry.grid(row=1, column=4)
+
+        seconds_label = Label(time_entry_frame, bg=bg_color, fg=text_color,
+                                  font=(font, current_cues_text_size), anchor='w',
+                                  text='seconds.').grid(row=1, column=5)
+
+        reminder_entry = Entry(add_reminder_window, width=100, bg=text_entry_box_bg_color, fg=text_color,
+                                  font=(font, plan_text_size))
+        reminder_entry.grid(row=2, column=0)
+
+        okay = Button(add_reminder_window, bg=bg_color, fg=text_color, font=(font, plan_text_size),
+                              anchor='w', text='okay',
+                              command=okay_pressed).grid(row=3, column=0)
+
     def __add_pause_cue_clicked(self):
         add_pause_window = Tk()
         add_pause_window.config(bg=bg_color)
@@ -601,62 +627,11 @@ class CueCreator:
 
         def add_pause_button_clicked(seconds):
             self.current_cues.append({
-                'device': 'Pause',
+                'device': 'pause',
                 'time': seconds
             })
             add_pause_window.destroy()
             self.__update_cues_display()
-
-    def __add_resi_cue_clicked(self):
-        add_resi_cue_window = Tk()
-        add_resi_cue_window.config(bg=bg_color)
-
-        def button_pressed(command):
-            add_resi_cue_window.destroy()
-            self.current_cues.append({
-                'device': 'Resi',
-                'name': commands[command]['name'],
-                'command': commands[command]['command']
-            })
-            self.__update_cues_display()
-
-        commands={
-            1: {
-                'name': 'Play',
-                'command': 'CC play'
-            },
-            2: {
-                'name': 'Pause',
-                'command': 'CC pause'
-            },
-            3: {
-                'name': 'Play and fade from black',
-                'command': 'CC PAFFB'
-            },
-            4: {
-                'name': 'Fade to black and pause',
-                'command': 'CC FTBAP'
-            },
-            5: {
-                'name': 'Fade from black (no change in playing state)',
-                'command': 'CC FFB'
-            },
-            6: {
-                'name': 'Fade to black (no change in playing state)',
-                'command': 'CC FTB'
-            }
-        }
-
-        resi_buttons = []
-        for iteration in commands:
-            resi_buttons.append(Button(add_resi_cue_window,
-                                       text=commands[iteration]['name'],
-                                       bg=bg_color,
-                                       fg=text_color,
-                                       font=(font, plan_text_size),
-                                       command=lambda iteration = iteration: button_pressed(command=iteration)))
-        for button in resi_buttons:
-            button.pack()
 
     def __update_cues_display(self):
         logger.debug('Updating Cues Display: Input %s', self.current_cues)
