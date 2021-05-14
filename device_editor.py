@@ -18,8 +18,28 @@ class DeviceEditor:
                 self.devices = json.loads(f.read())
             logger.debug('DeviceEditor.__init__: devices.json contents: %s', self.devices)
         else:
-            logger.info('DeviceEditor.__init__: devices.json does not exist. Setting to empty list.')
+            logger.info('DeviceEditor.__init__: devices.json does not exist. Setting to empty list, with reminder and pause.')
             self.devices = []
+
+            # this program sees internal generic actions, such as pause and reminders, as "devices". Devices are
+            # recognized by their uuid, so upon creation of a new file, we need to add them
+
+            self.devices.append({
+                'type': 'pause',
+                'user_name': 'pause',
+                'uuid': 'f0d73b84-60b1-4c1d-a49f-f3b11ea65d3f'
+            })
+            self.devices.append({
+                'type': 'reminder',
+                'user_name': 'reminder',
+                'uuid': 'b652b57e-c426-4f83-87f3-a7c4026ec1f0'
+            })
+            self.devices.append({
+                'type': 'kipro',
+                'user_name': 'All Kipros',
+                'uuid': '07af78bf-9149-4a12-80fc-0fa61abc0a5c'
+            })
+
 
         self.device_editor_window = Tk()
         self.devices_listbox = Listbox(self.device_editor_window)
@@ -270,6 +290,9 @@ class DeviceEditor:
                     'ip_address': ip_address_entry.get(),
                     'port': port_entry.get()
                 }
+
+                if cc_labels is not None:
+                    to_add['cc_labels'] = cc_labels
 
                 self.__add_device(device=to_add)
                 add_carbonite.destroy()
