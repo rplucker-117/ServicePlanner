@@ -68,7 +68,7 @@ class KiPro:
         except requests.exceptions.RequestException as e:
             return 0
 
-    def start_absolute(self, ip, name, include_date):
+    def start_absolute(self, ip, name, include_date=True):
         if include_date is True:
             now = datetime.now().strftime("_%Y_%m_%d-%H_%M")
             name = f'{name}{now}'
