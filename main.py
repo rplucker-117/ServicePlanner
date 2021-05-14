@@ -91,8 +91,8 @@ class SelectService:
 class Utilities:
     def __init__(self, main_ui_window_init):
         self.main_ui_window = main_ui_window_init
-        self.cue_handler = CueCreator(service_type_id = self.main_ui_window.service_type_id, plan_id=self.main_ui_window.service_id, ui=main_ui_window_init)
-        self.cue_handler_global = CueCreator(service_type_id = self.main_ui_window.service_type_id, plan_id=self.main_ui_window.service_id, ui=main_ui_window_init, cue_type='global', carbonite_labels=carbonite_cc_labels)
+        self.cue_handler = CueCreator(startup=self.main_ui_window.startup, ui=self.main_ui_window, devices=self.main_ui_window.startup.devices)
+        self.cue_handler_global = CueCreator(startup=self.main_ui_window.startup, ui=self.main_ui_window, devices=self.main_ui_window.startup.devices, cue_type='global')
 
         self.pco_live = PcoLive(service_type_id = self.main_ui_window.service_type_id, plan_id=self.main_ui_window.service_id)
         self.pco_plan = PcoPlan(service_type = self.main_ui_window.service_type_id, plan_id=self.main_ui_window.service_id)
@@ -240,16 +240,18 @@ class Utilities:
         pass
 
 class MainUI:
-    def __init__(self, service_type_id, service_id):
+    def __init__(self, startup):
+
+        self.startup = startup
 
         # service info
-        self.service_type_id = service_type_id
-        self.service_id = service_id
+        self.service_type_id = self.startup.service_type_id
+        self.service_id = self.startup.service_id
 
         # class initiations
-        self.pco_live = PcoLive(service_type_id=service_type_id, plan_id=service_id)
-        self.pco_plan = PcoPlan(service_type=service_type_id, plan_id=service_id)
-        self.cue_handler = CueCreator(service_type_id=service_type_id, plan_id=service_id, ui=self, carbonite_labels=carbonite_cc_labels)
+        self.pco_live = PcoLive(service_type_id=self.service_type_id, plan_id=self.service_id)
+        self.pco_plan = PcoPlan(service_type=self.service_type_id, plan_id=self.service_id)
+        self.cue_handler = CueCreator(ui=self, startup=startup, devices=startup.devices)
         self.kipro_ui = KiProUi()
         self.kipro = KiPro()
 
@@ -504,11 +506,8 @@ class MainUI:
     def reload(self):
         self.plan_window.destroy()
         self.kipro_ui.kill_threads()
-        reloaded_ui = MainUI(service_type_id=main_service.service_type_id, service_id=main_service.service_id)
+        reloaded_ui = MainUI(startup=self.startup)
         reloaded_ui.build_plan_window()
-
-    def __start_webserver(self):
-        self.webserver.serve()
 
     def __build_current_service_time(self):
         logger.debug('Building current service time info')
@@ -658,7 +657,7 @@ class MainUI:
             if not item['type'] == 'header':
                 Button(frame, image=self.gear_icon, anchor='w', font=(font, options_button_text_size),
                        bg=bg_color, fg=text_color, command=lambda item=item:
-                    CueCreator(service_type_id=main_service.service_type_id, plan_id=main_service.service_id, ui=self).create_cues(input_item=item)
+                    CueCreator(startup=self.startup, ui=self, devices=self.startup.devices).create_cues(input_item=item)
                     ).pack(side=RIGHT)
 
     def __build_kipro_status(self):
@@ -714,7 +713,7 @@ class MainUI:
                 self.cue_handler.activate_cues(cues=self.plan_items[self.next_item_index]['notes']['App Cues'])
 
                 for cue in self.plan_items[self.next_item_index]['notes']['App Cues']:
-                    if cue['device'] == 'Reminder':
+                    if cue['uuid'] == 'b652b57e-c426-4f83-87f3-a7c4026ec1f0':
                         time = (int(cue['minutes']) * 60) + int(cue['seconds'])
                         self.__set_reminder(reminder_time = time, reminder_text=cue['reminder'])
         if not next:
@@ -855,19 +854,23 @@ class KiProUi:
         else:
             logger.debug('KiProUi.__refresh: exit event set, stopping loop')
 
-def startup():
-    global main_service
-    global main_ui
-    global carbonite_cc_labels
+class Startup:
+    def __init__(self):
+        if os.path.exists('devices.json'):
+            with open('devices.json', 'r') as f:
+                self.devices = json.loads(f.read())
+        else:
+            logger.warning('Did not find devices.json file')
+            self.devices = None
 
-    carbonite_cc_reader = read_sheet(spreadsheet_path='flowood.ods')
-    carbonite_cc_labels = carbonite_cc_reader.read_cc_sheet()
+        self.main_service = SelectService(send_to=None)
+        self.main_service.ask_service_info()
 
-    main_service = SelectService(send_to=None)
-    main_service.ask_service_info()
+        self.service_type_id = self.main_service.service_type_id
+        self.service_id = self.main_service.service_id
 
-    main_ui = MainUI(service_type_id=main_service.service_type_id, service_id=main_service.service_id)
-    main_ui.build_plan_window()
+        self.main_ui = MainUI(startup=self)
+        self.main_ui.build_plan_window()
 
 if __name__ == '__main__':
-    startup()
+    startup = Startup()
