@@ -2,8 +2,7 @@ import ezodf
 import pprint
 from logzero import logger
 
-
-class read_sheet:
+class ReadSheet:
     def __init__(self, spreadsheet_path):
         self.sheet_path = spreadsheet_path
         self.spreadsheet = ezodf.opendoc(self.sheet_path)
@@ -31,7 +30,7 @@ class read_sheet:
             for cc in range(1, 33):
                 bank_data.append(sheet[cc, bank].value)
 
-            cc_data.update({bank_name : bank_data})
+            cc_data.update({bank_name: bank_data})
         logger.debug('Got sheet data: %s', cc_data)
         return cc_data
 
