@@ -409,5 +409,5 @@ class PcoPlan:
 
 if __name__ == '__main__':
     plan = PcoPlan(service_type=824571, plan_id=52371712)
-    pprint.pprint(plan.get_assigned_people())
+    pprint.pprint(plan.get_service_items())
 
