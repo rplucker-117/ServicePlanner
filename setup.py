@@ -1,7 +1,7 @@
 import subprocess
 import sys
 
-packages = ['logzero', 'requests', 'zulu', 'demjson', 'pymidi', 'wget', 'Flask','ezodf']
+packages = ['logzero', 'requests', 'zulu', 'demjson', 'pymidi', 'wget', 'Flask', 'ezodf', 'lxml']
 
 
 def update_pip():
@@ -12,7 +12,7 @@ def install(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
 
-update_pip()
+# update_pip()
 
 for package in packages:
     install(package)
