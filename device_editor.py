@@ -12,6 +12,9 @@ from shutil import copyfile
 
 class DeviceEditor:
     def __init__(self):
+        self.absolute_path = os.path.dirname(__file__)
+        os.chdir(self.absolute_path)
+
         if os.path.exists('devices.json'):
             logger.debug('DeviceEditor.__init__: devices.json exists. Reading...')
             with open('devices.json', 'r') as f:
