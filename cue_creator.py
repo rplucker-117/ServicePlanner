@@ -15,6 +15,7 @@ from kipro import *
 import threading
 from sheet_reader import ReadSheet
 
+
 class CueCreator:
     def __init__(self, startup, ui, cue_type='item', devices=None):
 
@@ -130,7 +131,7 @@ class CueCreator:
             for device in self.devices:
                 if cue['uuid'] == device['uuid']:
                     if device['type'] == 'pvp':
-                        pvp(device['ip_address'], device['port']).cue_clip_via_uuid(uuid=cue['cue_uuid'])
+                        pvp(device['ip_address'], device['port']).cue_clip_via_uuid(playlist_uuid=cue['playlist_uuid'], cue_uuid=cue['cue_uuid'])
 
                     elif device['type'] == 'ross_carbonite':
                         if cue['type'] == 'CC':
@@ -267,6 +268,8 @@ class CueCreator:
                 add_cg3_cue_buttons_window = Tk()
                 add_cg3_cue_buttons_window.config(bg=bg_color)
 
+                playlist_uuid = pvp_data['playlist']['children'][playlist_index]['uuid']
+
                 cue_names = []
                 for cue_name in pvp_data['playlist']['children'][playlist_index]['items']:
                     cue_names.append(cue_name['name'])
@@ -283,15 +286,16 @@ class CueCreator:
                                               bg=bg_color,
                                               fg=text_color,
                                               command=lambda name=name, uuid=uuid:
-                                              (cue_button_clicked(cue_name=name, cue_uuid=uuid),
+                                              (cue_button_clicked(cue_name=name, cue_uuid=uuid, playlist_uuid=playlist_uuid),
                                                add_cg3_cue_buttons_window.destroy())))
 
                 for button in cue_buttons:
                     button.pack()
 
-            def cue_button_clicked(cue_name, cue_uuid):
+            def cue_button_clicked(cue_name, cue_uuid, playlist_uuid):
                 self.current_cues.append({
                     'uuid': device['uuid'],
+                    'playlist_uuid': playlist_uuid,
                     'cue_uuid': cue_uuid,
                     'cue_name': cue_name
                 })
