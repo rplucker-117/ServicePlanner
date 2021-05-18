@@ -18,6 +18,8 @@ try:
     from flask_server import flask_server as fs
     import pprint
     from sheet_reader import *
+    from multiprocessing import Process, Lock
+    from flask import *
 
 except Exception as e:
     from setup import *
@@ -87,6 +89,7 @@ class SelectService:
         logger.debug('SelectService: service_type_id: %s, service_id: %s', self.service_type_id, self.service_id)
         if not self.send_to is None:
             self.send_to.receive_plan_details(service_type_id=self.service_type_id, service_id=self.service_id)
+
 
 class Utilities:
     def __init__(self, main_ui_window_init):
@@ -239,6 +242,7 @@ class Utilities:
     def __add_device(self):
         pass
 
+
 class MainUI:
     def __init__(self, startup):
 
@@ -305,6 +309,10 @@ class MainUI:
 
         self.kipro_buttons = []
         self.kipro_storage_remaining_bars = []
+
+        self.web_server = WebServer()
+        Process(target=self.web_server.start, args=(self.plan_items, )).start()
+
 
         # control webserver
 
@@ -396,7 +404,7 @@ class MainUI:
                     try:
                         label.configure(bg=live_color)
                     except AttributeError:
-                        continue
+                        pass
 
         def find_previous_item(i):
             if not self.plan_items[i-1]['type'] == 'header':
@@ -406,11 +414,19 @@ class MainUI:
                 return find_previous_item(i-1)
 
         def find_next_item(i):
-            if not self.plan_items[i+1]['type'] == 'header':
-                logger.debug('__update_live: find_next_item: returning %s', i)
-                return i+1
-            else:
-                return find_next_item(i+1)
+            try:
+                if not self.plan_items[i+1]['type'] == 'header':
+                    logger.debug('__update_live: find_next_item: returning %s', i)
+                    return i+1
+                else:
+                    return find_next_item(i+1)
+            except IndexError:
+                if i > 0:
+                    logger.debug('__update_live: find_next_item: reached end of plan')
+                    return i
+                else:
+                    logger.debug('__update_live: find_next_item: plan may not be live')
+                    return i
 
         def define_labels_to_change(index):
             labels = [
@@ -424,21 +440,39 @@ class MainUI:
             ]
             return labels
 
+
+        is_first_item = False
+        is_last_item = False
+
+        if self.current_item_index == 1:
+            logger.debug('Current live item is the first plan item, id %s', current_live_item_id)
+            is_first_item = True
+
+        if self.current_item_index == len(self.plan_items):
+            logger.debug('Current live item is the last plan item, id %s', current_live_item_id)
+            is_last_item = True
+
+
         self.previous_item_index = find_previous_item(self.current_item_index-1)
         self.next_item_index = find_next_item(self.current_item_index-1)
 
-        logger.debug('Previous item index: %s, %s, Next item index: %s, %s',
-                      self.previous_item_index, self.plan_items[self.previous_item_index]['title'], self.next_item_index, self.plan_items[self.next_item_index]['title'])
+        # logger.debug('Previous item index: %s, %s, Next item index: %s, %s',
+        #               self.previous_item_index, self.plan_items[self.previous_item_index]['title'], self.next_item_index, self.plan_items[self.next_item_index]['title'])
 
-        for previous_item, next_item in zip(define_labels_to_change(self.previous_item_index), define_labels_to_change(self.next_item_index)):
-            try:
-                previous_item.configure(bg=bg_color)
-            except AttributeError:
-                pass
-            try:
-                next_item.configure(bg=bg_color)
-            except AttributeError:
-                pass
+
+        if not is_first_item:
+            for previous_item in define_labels_to_change(self.previous_item_index):
+                try:
+                    previous_item.configure(bg=bg_color)
+                except AttributeError:
+                    pass
+
+        if not is_last_item:
+            for next_item in define_labels_to_change(self.next_item_index):
+                try:
+                    next_item.configure(bg=bg_color)
+                except AttributeError:
+                    pass
 
         if service_time:
             self.__build_current_service_time()
@@ -739,6 +773,7 @@ class MainUI:
 
         reminder_frame.after(reminder_time*1000, show_reminder)
 
+
 class AdjacentPlanView:
     def __init__(self, ui):
         self.adjacent_service = SelectService(send_to=self)
@@ -822,6 +857,7 @@ class AdjacentPlanView:
             check()
         check()
 
+
 class KiProUi:
     def __init__(self):
         self.kipro = KiPro()
@@ -854,9 +890,13 @@ class KiProUi:
         else:
             logger.debug('KiProUi.__refresh: exit event set, stopping loop')
 
-class Startup:
+
+class MainUIStartup:
     def __init__(self):
+        os.chdir(abs_path)
+
         if os.path.exists('devices.json'):
+            logger.debug('devices.json exists, reading...')
             with open('devices.json', 'r') as f:
                 self.devices = json.loads(f.read())
         else:
@@ -872,5 +912,17 @@ class Startup:
         self.main_ui = MainUI(startup=self)
         self.main_ui.build_plan_window()
 
+
+class WebServer:
+    def __init__(self):
+        pass
+
+    def start(self, plan_data):
+        fs.start(plan_data)
+
+    def update_live(self, live_index):
+        pass
+
+
 if __name__ == '__main__':
-    startup = Startup()
+    MainUIStartup()
