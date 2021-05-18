@@ -2,10 +2,10 @@ import json
 from logzero import logger
 import os
 
-
 class Creds:
     def __init__(self):
         self.creds_file = os.path.join(os.path.dirname(__file__), 'creds.json')
+        self.check_status()
 
     def create(self):
         print('Please create a PCO Personal Access Token from https://api.planningcenteronline.com/oauth/applications.'
@@ -38,10 +38,9 @@ class Creds:
             self.read()
 
 
-creds = Creds()
-
-if not os.path.exists(creds.creds_file):
-    logger.debug('creds.json doesnt exist. Creating...')
-    Creds().create()
-else:
-    logger.debug('creds.json exists! proceeding')
+    def check_status(self):
+        if not os.path.exists(self.creds_file):
+            logger.debug('creds.json doesnt exist. Creating...')
+            self.create()
+        else:
+            logger.debug('creds.json exists! proceeding')
