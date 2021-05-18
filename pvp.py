@@ -17,9 +17,9 @@ class pvp:
         logger.debug('cueing pvp clip based on playlist/clip index. playlist: %s, clip index: %s', playlist, clip_number)
         requests.post(f"http://{self.ip}:{self.port}/api/0/trigger/playlist/{playlist}/cue/{clip_number}")
 
-    def cue_clip_via_uuid(self, uuid):
-        logger.debug('cueing pvp clip via uuid. ip: %s, port: %s, uuid: %s', self.ip, self.port, uuid)
-        requests.post(f"http://{self.ip}:{self.port}/api/0/trigger/cue/{uuid}")
+    def cue_clip_via_uuid(self, playlist_uuid, cue_uuid):
+        logger.debug('cueing pvp clip via uuid. ip: %s, port: %s, playlist_uuid: %s, cue_uuid: %s', self.ip, self.port, playlist_uuid, cue_uuid)
+        requests.post(f"http://{self.ip}:{self.port}/api/0/trigger/playlist/{playlist_uuid}/cue/{cue_uuid}")
 
 if __name__ == '__main__':
     pvp = pvp(ip='10.1.60.95', port=49868)
