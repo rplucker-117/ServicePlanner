@@ -15,15 +15,16 @@ try:
     from kipro import KiPro
     from rosstalk import rosstalk as rt
     import wget
-    from flask_server import flask_server as fs
     import pprint
     from sheet_reader import *
     from multiprocessing import Process, Lock
-    from flask import *
+    import requests
+    from flask_server import flask_server as fs
 
 except Exception as e:
     from setup import *
     import os
+    print(e)
     os.system("Python main.py")
 
 
@@ -35,7 +36,6 @@ if not os.path.exists(os.path.join(abs_path, 'logs')):
 
 log_file_name = os.path.join(os.path.join(abs_path, 'logs'),time.strftime('%Y_%m_%d__%H_%M') + '.log')
 logfile(log_file_name)
-logging.getLogger('urllib3').setLevel(logging.INFO)
 
 
 class SelectService:
@@ -182,8 +182,8 @@ class Utilities:
     def __format(self):
         yes_no = messagebox.askyesno('Format KiPros', message="Are you sure you want to format ALL KiPros?")
         if yes_no:
-            for kipro_unit in kipros[1:]:
-                self.kipro.format_current_slot(ip=kipro_unit['ip'])
+            for kipro_unit in self.main_ui_window.all_kipros:
+                self.kipro.format_current_slot(ip=kipro_unit['ip_address'])
 
         self.utilities_menu.destroy()
 
@@ -307,18 +307,15 @@ class MainUI:
         self.item_producer_note_labels = []
         self.item_app_cue_labels = []
 
+        self.all_kipros = []
+
+        for device in self.startup.devices:
+            if device['type'] == 'kipro' and not device['uuid'] == '07af78bf-9149-4a12-80fc-0fa61abc0a5c':
+                logger.debug('adding kipro %s to all_kipros', device['user_name'])
+                self.all_kipros.append(device)
+
         self.kipro_buttons = []
         self.kipro_storage_remaining_bars = []
-
-        self.web_server = WebServer()
-        Process(target=self.web_server.start, args=(self.plan_items, )).start()
-
-
-        # control webserver
-
-        # self.webserver = fs.web_server
-        # self.webserver.plan_data = self.plan_items
-        # self.webserver.live_index = self.current_item_index
 
     def build_plan_window(self):
 
@@ -338,7 +335,6 @@ class MainUI:
         self.update_live()
 
         self.plan_window.mainloop()
-        # self.__start_webserver()
 
     def update_item_timer(self, time):
         self.time_remaining_is_positive = True
@@ -698,13 +694,13 @@ class MainUI:
         self.kipro_control_frame.grid(row=2, column=1, sticky='n')
 
         # Buttons
-        for kipro_unit in kipros[1:]:
-            button = Button(self.kipro_control_frame, text=kipro_unit['name'], font=(font, other_text_size), fg=text_color, height=2, relief=FLAT,
-                            command=lambda kipro_unit=kipro_unit: (self.kipro.toggle_start_stop(ip=kipro_unit['ip'], name=kipro_unit['name']), self.kipro_ui.update_kipro_status(ui=self)))
+        for kipro_unit in self.all_kipros:
+            button = Button(self.kipro_control_frame, text=kipro_unit['user_name'], font=(font, other_text_size), fg=text_color, height=2, width=11, relief=FLAT,
+                            command=lambda kipro_unit=kipro_unit: (self.kipro.toggle_start_stop(ip=kipro_unit['ip_address'], name=kipro_unit['user_name']), self.kipro_ui.update_kipro_status(ui=self)))
             self.kipro_buttons.append(button)
 
         # Storage remaining bars
-        for kipro_unit in kipros[1:]:
+        for kipro_unit in self.all_kipros:
             progress = ttk.Progressbar(self.kipro_control_frame, length=110, mode='determinate', maximum=100)
             self.kipro_storage_remaining_bars.append(progress)
 
@@ -868,13 +864,13 @@ class KiProUi:
         self.exit_event.set()
 
     def update_kipro_status(self, ui):
-        for iteration, kipro_unit in enumerate(kipros[1:]):
+        for iteration, kipro_unit in enumerate(ui.all_kipros):
 
-            status = int(self.kipro.get_status(ip=kipro_unit['ip']))
+            status = int(self.kipro.get_status(ip=kipro_unit['ip_address']))
             # logger.debug('update_kipro_status: status is %s for kipro %s', status, kipro_unit['name'])
             ui.update_kipro_status(kipro_unit=iteration, status=status)
 
-            percent = int(self.kipro.get_remaining_storage(ip=kipro_unit['ip']))
+            percent = int(self.kipro.get_remaining_storage(ip=kipro_unit['ip_address']))
             # logger.debug('update_kipro_status: storage is %s percent for kipro %s', percent, kipro_unit['name'])
             ui.update_kipro_storage(kipro_unit=iteration, percent=percent)
 
@@ -891,7 +887,7 @@ class KiProUi:
             logger.debug('KiProUi.__refresh: exit event set, stopping loop')
 
 
-class MainUIStartup:
+class Main:
     def __init__(self):
         os.chdir(abs_path)
 
@@ -910,19 +906,18 @@ class MainUIStartup:
         self.service_id = self.main_service.service_id
 
         self.main_ui = MainUI(startup=self)
+
+        if enable_webserver:
+            self.start_webserver()
+        else:
+            logger.debug('enable_webserver is False')
+
         self.main_ui.build_plan_window()
 
 
-class WebServer:
-    def __init__(self):
-        pass
+    def start_webserver(self):
+        logger.info('Starting webserver')
+        threading.Thread(target=lambda: fs.start(startup_class=self)).start()
 
-    def start(self, plan_data):
-        fs.start(plan_data)
+start = Main()
 
-    def update_live(self, live_index):
-        pass
-
-
-if __name__ == '__main__':
-    MainUIStartup()
