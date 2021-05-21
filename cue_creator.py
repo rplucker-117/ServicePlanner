@@ -120,8 +120,13 @@ class CueCreator:
 
                 if device['type'] == 'ross_carbonite':
                     if cue['type'] == 'CC':
+                        if device['cc_labels'] is not None:
+                            cc_labels = ReadSheet(device['cc_labels']).read_cc_sheet() # get spreadsheet file name from devices.json, convert it to dict with ReadSheet
+                        else:
+                            cc_labels = None
+                        cc_label = cc_labels['bank' + str(cue['bank'])][int(cue['CC'])-1] # get cc name from sheet[bank#][cc#]
                         cue_verbose = f"{device['user_name']}:" \
-                                      f"   {cue['type']}:{cue['bank']}:{cue['CC']}"
+                                      f"   {cue['type']}:{cue['bank']}:{cue['CC']}:  {cc_label}"
                         cues_verbose_list.append(cue_verbose)
             return cues_verbose_list
 
@@ -565,6 +570,7 @@ class CueCreator:
                 seconds = 0
 
             self.current_cues.append({
+                'uuid': 'b652b57e-c426-4f83-87f3-a7c4026ec1f0',
                 'device': 'reminder',
                 'minutes': int(minutes),
                 'seconds': int(seconds),
