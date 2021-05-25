@@ -116,8 +116,9 @@ class DeviceEditor:
         self.devices_listbox.delete(0, 'end')
 
         for index, device in enumerate(self.devices):
-            listbox_item_name = device['user_name'] + ' (' + device['type'] + ')'
-            self.devices_listbox.insert(index, listbox_item_name)
+            if not device['uuid'] in ('f0d73b84-60b1-4c1d-a49f-f3b11ea65d3f', 'b652b57e-c426-4f83-87f3-a7c4026ec1f0', '07af78bf-9149-4a12-80fc-0fa61abc0a5c'):
+                listbox_item_name = device['user_name'] + ' (' + device['type'] + ')'
+                self.devices_listbox.insert(index, listbox_item_name)
 
     def __verify_ip(self, ip):
         try:
