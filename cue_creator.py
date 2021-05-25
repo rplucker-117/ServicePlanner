@@ -51,10 +51,11 @@ class CueCreator:
         self.devices = devices
 
         self.all_kipros = []
-        for device in self.devices:
-            if device['type'] == 'kipro' and not device['uuid'] == '07af78bf-9149-4a12-80fc-0fa61abc0a5c':
-                logger.debug('adding kipro %s to all_kipros', device['user_name'])
-                self.all_kipros.append(device)
+        if self.devices is not None:
+            for device in self.devices:
+                if device['type'] == 'kipro' and not device['uuid'] == '07af78bf-9149-4a12-80fc-0fa61abc0a5c':
+                    logger.debug('adding kipro %s to all_kipros', device['user_name'])
+                    self.all_kipros.append(device)
 
         # runs if input cue is global
         if self.cue_type == 'global':
