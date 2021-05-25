@@ -20,6 +20,8 @@ try:
     from multiprocessing import Process, Lock
     import requests
     from flask_server import flask_server as fs
+    import urllib.parse
+    from device_editor import DeviceEditor
 
 except Exception as e:
     from setup import *
@@ -106,7 +108,7 @@ class Utilities:
         self.kipro = KiPro()
 
     def open_utilities_menu(self):
-        self.utilities_menu.geometry('400x300')
+        self.utilities_menu.geometry('400x400')
         self.utilities_menu.configure(bg=bg_color)
 
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Start Live Service', font=(font, other_text_size), command=self.__start_live).pack()
@@ -118,12 +120,16 @@ class Utilities:
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Add Global Cue', font=(font, other_text_size), command=self.__add_global).pack()
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Remove Global Cue', font=(font, other_text_size), command=self.__remove_global).pack()
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Update switcher cam names from PCO positions', font=(font, other_text_size), command=self.__update_cam_names).pack()
+        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Open Device Editor', font=(font, other_text_size), command=self.__open_device_editor).pack()
 
         self.utilities_menu.mainloop()
 
     def __reload_plan(self):
         self.utilities_menu.destroy()
         self.main_ui_window.reload()
+
+    def __open_device_editor(self):
+        DeviceEditor().build_ui()
 
     def __start_live(self):
         if self.pco_live.get_current_live_item() is None:
@@ -340,32 +346,33 @@ class MainUI:
         self.time_remaining_is_positive = True
         self.current_item_timer_input = time
 
-    def next(self, cue_items):
+    def next(self, cue_items, from_web=False):
         logger.debug('Next button pressed')
         self.update_item_timer(time=self.plan_items[self.next_item_index]['length'])
 
         if cue_items:
             self.__cue()
 
-            # t = threading.Thread(target=self.__cue)
-            # t.start()
-            # t.join()
-
         self.pco_live.go_to_next_item()
         self.update_live()
 
-    def previous(self, cue_items):
+        if not from_web and enable_webserver is True:
+            logger.debug('MainUI.next: sending next command to webserver')
+            next_web_data = {'action': 'app_next'}
+            requests.post('http://127.0.0.1/action', json=json.dumps(next_web_data))
+
+    def previous(self, cue_items, from_web=False):
         self.update_item_timer(time=self.plan_items[self.previous_item_index]['length'])
 
         if cue_items:
             self.__cue(next=False)
 
-            # t = threading.Thread(target=lambda: self.__cue(next=False))
-            # t.start()
-            # t.join()
-
         self.pco_live.go_to_previous_item()
         self.update_live()
+
+        if not from_web and enable_webserver is True:
+            previous_web_data = {'action': 'app_previous'}
+            requests.post('http://127.0.0.1/action', json=json.dumps(previous_web_data))
 
     def update_live(self, service_time=False):
         # Get index of current live item
@@ -601,11 +608,12 @@ class MainUI:
                 item_frame_height = 20
                 item_frame_color = header_color
             else:
-                item_frame_height = 40
+                item_frame_height = 50
                 item_frame_color = bg_color
             item_frame = Frame(self.service_plan_frame, bg=item_frame_color, width=plan_item_frame_width, height=item_frame_height)
             self.item_frames.append(item_frame)
 
+        # separators
         for frame in self.item_frames:
             separator = Frame(self.service_plan_frame, bg=separator_color, width=plan_item_frame_width, height=1)
             separator.pack_propagate(0)
@@ -711,7 +719,8 @@ class MainUI:
         self.kipro_ui.update_kipro_status(ui=self)
 
     def __build_global_cue_buttons(self):
-        if not self.pco_plan.check_if_plan_app_cue_exists() is False:
+        if self.pco_plan.check_if_plan_app_cue_exists():
+            print(self.pco_plan.check_if_plan_app_cue_exists())
             logger.debug('MainUI.__build_global_cue_buttons: adding global cue buttons')
             self.global_cues_frame.grid(row=3, column=0)
             global_cues = self.pco_plan.get_plan_app_cues()
@@ -743,7 +752,7 @@ class MainUI:
                 self.cue_handler.activate_cues(cues=self.plan_items[self.next_item_index]['notes']['App Cues'])
 
                 for cue in self.plan_items[self.next_item_index]['notes']['App Cues']:
-                    if cue['uuid'] == 'b652b57e-c426-4f83-87f3-a7c4026ec1f0':
+                    if cue['uuid'] == 'b652b57e-c426-4f83-87f3-a7c4026ec1f0': # reminder
                         time = (int(cue['minutes']) * 60) + int(cue['seconds'])
                         self.__set_reminder(reminder_time = time, reminder_text=cue['reminder'])
         if not next:
@@ -752,15 +761,15 @@ class MainUI:
                 self.cue_handler.activate_cues(cues=self.plan_items[self.previous_item_index]['notes']['App Cues'])
 
                 for cue in self.plan_items[self.previous_item_index]['notes']['App Cues']:
-                    if cue['device'] == 'Reminder':
+                    if cue['uuid'] == 'b652b57e-c426-4f83-87f3-a7c4026ec1f0': # reminder
                         time = (int(cue['minutes']) * 60) + int(cue['seconds'])
                         self.__set_reminder(reminder_time = time, reminder_text=cue['reminder'])
 
     def __set_reminder(self, reminder_time, reminder_text):
         reminder_frame = Frame(self.plan_window, bg=accent_color_1)
 
-        Label(reminder_frame, fg=reminder_color, bg=accent_color_1, text=reminder_text, font=(font, reminder_font_size)).grid(row=0, column=0)
-        Label(reminder_frame, fg=reminder_color, bg=accent_color_1, text='REMINDER:  ',font=(accent_text_font, accent_text_size)).grid(row=0, column=1)
+        Label(reminder_frame, fg=reminder_color, bg=accent_color_1, text=reminder_text, font=(font, reminder_font_size)).grid(row=0, column=1)
+        Label(reminder_frame, fg=reminder_color, bg=accent_color_1, text='REMINDER:  ',font=(accent_text_font, accent_text_size)).grid(row=0, column=0)
         Button(reminder_frame, fg=reminder_color, bg=accent_color_1, text='clear', font=(accent_text_font, accent_text_size), command=reminder_frame.destroy).grid(row=0, column=2)
 
         def show_reminder():
@@ -768,7 +777,6 @@ class MainUI:
             reminder_frame.place(relx=.5, rely=.5, anchor=CENTER)
 
         reminder_frame.after(reminder_time*1000, show_reminder)
-
 
 class AdjacentPlanView:
     def __init__(self, ui):
