@@ -1,15 +1,14 @@
 Service Planner is an app that allows you to plan live production actions & schedule them through Planning Center Online, simplifying the live production environment.
-I'm developing this for MY needs, so some naming schemes(like CG3/CG4) may not apply to you. I'll work on adding custom devices in the future!
 
 
 # A few tasks to get things working:
 - Install Python 3.7 with pip + add to PATH
-- Run initial_setup.bat 
 - Item cues are stored in a planning center item app category named "App Cues". For each service category that you intend to use this with, create a item note category named "App Cues".
 - Global cues are stored in a plan note named "App Cues". Same as before, for each service category, create a plan note category named "App Cues".
 - Get an Application ID and Secret [Personal Access Tokens](https://api.planningcenteronline.com/oauth/applications). You will be asked to enter this info upon first launch.
-- Edit ip addresses of applicable devices in settings.py. I'm working on better documentation and easy addition of devices, but CG3/CG4 is ProVideoPlayer, Rosstalk is our Carbonite+ video swithcer. Device naming will stay the same unless you want to dive into the code. Settings is a mess right now and I recommend not playing with font sizes, but you do you boo.
 - Run the program by running "main.py" (Python 3.7)
+- Load up any plan and go to utilities(gear button at the top)>device editor. Add all devices that you wish to control
+
 
 ## Running a Service
 The idea of this app is to simplify a live service production **as much as possible** by moving all of the thought into equipment cues/actions to BEFORE the service.
@@ -46,7 +45,8 @@ Cue/list of cues that is saved on a plan item. Cues are activated when that item
 - Get media storage remaining
  
 ### Rosstalk:
-- Custom Control
+- Custom Controls
+- You can add custom CC labels by editing carbonite_cc_name_template.ods and saving it as a new file. Add the new file under device manager>carbonite>add Custom Control labels
  
 ### Reminders:
 - Strictly a reminder to do something, after a set amount of time. (Ex. After 2 minutes: get confidence monitor notes ready)
@@ -66,3 +66,5 @@ Not working yet
 As referenced above, add a action or set of actions with a custom name to a button at the bottom of the screen that can be accessed at any time
 ### Remove Global Cue
 Remove a global cue after it's been added, if desired
+### Device Editor
+Add/remove physical devices
