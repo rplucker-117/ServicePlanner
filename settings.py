@@ -7,8 +7,6 @@ log_level = 10
 # INFO: 20
 # DEBUG: 10
 
-app_cue_note_category_id = 4141733
-
 bg_color = '#2b2b2b'
 header_color = '#8c8c8c'
 header_font_size = 11
@@ -50,15 +48,10 @@ kipro_error_color = '#ff0000'
 kipro_unable_to_commmunicate_color = '#7a7a7a'
 
 interval_update_kipros = True
-kipro_update_interval = 30000 # in seconds. Only applies if interval_update_kipros and display_kipros is True.
+kipro_update_interval = 10 # in seconds. Only applies if interval_update_kipros and display_kipros is True.
 
 global_cue_font_size = 11
 
-cg3_ip = '10.1.60.95'
-cg3_port = '49868'
-
-cg4_ip = '10.1.51.29'
-cg4_port = '49188'
 
 current_cues_text_size = 11
 
@@ -84,41 +77,4 @@ kipro_timeout_threshold = 1 #in seconds
 # how often to refresh live adjacent plan
 adjacent_plan_refresh_interval = 5
 
-kipros = [
-    {
-        'name': 'ALL',
-         'ip': '*'
-    },
-    {
-        'name': 'REC1_CAM1',
-        'ip': '10.1.60.14'
-    },
-    {
-        'name': 'REC2_CAM2',
-        'ip': '10.1.60.15'
-    },
-    {
-        'name': 'REC3_CAM3',
-        'ip': '10.1.60.20'
-    },
-    {
-        'name': 'REC4_CAM4',
-        'ip': '10.1.60.87'
-    },
-    {
-        'name': 'REC5_CAM5',
-        'ip': '10.1.60.88'
-    },
-    {
-        'name': 'REC6_CAM6',
-        'ip': '10.1.60.89'
-    },
-    {
-        'name': 'REC7_CAM7',
-        'ip': '10.1.60.86'
-    },
-    {
-        'name': 'REC8_CAM8',
-        'ip': '10.1.60.85'
-    }
-]
+enable_webserver = True
