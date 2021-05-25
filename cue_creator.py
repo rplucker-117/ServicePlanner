@@ -63,6 +63,7 @@ class CueCreator:
                 self.imported_cues = []
 
     def create_cues(self, input_item):
+        self.input_item = input_item
         try:
             if 'App Cues' in input_item['notes']:
                 yes_no = messagebox.askyesno('Overwrite existing cues', message="There's existing cues on this item. Do you want to overwrite them?")
@@ -70,13 +71,12 @@ class CueCreator:
                     logger.debug('create_cues: Overwriting existing cues')
                     self.__open_cue_creator(overwrite=True)
                 if not yes_no: # User chose to append onto existing cues
-                    self.input_item = input_item
                     self.__open_cue_creator(overwrite=False)
             else: # No cues exist
                 self.__open_cue_creator(overwrite=None)
         except TypeError:
-            self.input_item = input_item
             self.__open_cue_creator(overwrite=None)
+
 
         # input_item_id is None if setting a global cue
         try:
@@ -191,8 +191,16 @@ class CueCreator:
 
         # Current cues display
         self.current_cues_frame.pack_propagate(0)
-        Label(self.current_cues_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Cues to Add:').pack(anchor='nw')
+        cues_to_add_label = Label(self.current_cues_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Cues to Add:')
+        cues_to_add_label.pack(anchor='nw')
         self.current_cues_display.pack(anchor='nw')
+
+        if self.cue_type == 'item':
+            try:
+                cues_to_add_label.configure(text=f"Cues to add to {self.input_item['title']}:")
+                logger.debug(f"cue_creator.__open_cue_creator: changed label to       {cues_to_add_label.cget('text')}")
+            except Exception as e:
+                logger.error(f"cue_creator.__open_cue_creator exception: {e}")
 
         # Separator frames
         Frame(self.bottom_frame, bg=separator_color, width=600, height=1).grid(row=0, column=0) # Above bottom buttons
