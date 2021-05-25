@@ -111,6 +111,7 @@ class PcoPlan:
         r = requests.get(f'https://api.planningcenteronline.com/services/v2/service_types/{self.service_type}/plans/{self.plan_id}/notes/',
                          auth=(APP_ID, SECRET))
         r = json.loads(r.text)
+        logger.debug('PcoPlan.get_plan_app_cue_note_id: response received: %s', r)
         for category in r['data']:
             logger.debug('get_plan_app_cue_note_id: checking if contains app cue')
             if category['attributes']['category_name'] == 'App Cues':
@@ -127,7 +128,11 @@ class PcoPlan:
             for note in r['data']:
                 if note['attributes']['category_name'] == 'App Cues':
                     logger.debug(f"PcoPlan.get_plan_app_cues: found app cue note content: {note['attributes']['content']}")
-                    return json.loads(note['attributes']['content'])
+                    try:
+                        return json.loads(note['attributes']['content'])
+                    except json.decoder.JSONDecodeError:
+                        logger.error("pco_plan.get_plan_app_cues: Found note content but it wasn't valid json. Skipping.")
+                        return None
         else:
             logger.debug('PcoPlan.get_plan_app_cues: could not find note in app cues section')
             return None
@@ -226,14 +231,32 @@ class PcoPlan:
                          auth=(APP_ID, SECRET))
         r = json.loads(r.text)
         for note in r['data']:
-            if note['attributes']['category_name'] == 'App Cues':
+            if note['attributes']['category_name'] == 'App Cues': #check if there's content in note
                 logger.debug('check_if_plan_app_cue_note_exists: found plan note with category_name of "App Cues". Content: %s', note['attributes']['content'])
-                return True
+                try:
+                    json.loads(note['attributes']['content']) #see if content is valid json
+                    logger.debug('PcoPlan.check_if_plan_app_cue_exists: valid json found, returning True')
+                    return True # return true if valid json
+                except Exception as e:
+                    logger.error('Found note content in plan app cues section, but it was not valid json. Skipping and removing content from PCO note.')
+                    self.remove_plan_app_cues()
+                    return False # return false if not valid json
             else:
                 logger.debug('check_if_plan_app_cue_note_exists: did not find plan note with category_name of "App Cues."')
                 return False
         if len(r['data']) == 0:
             return False
+
+    def remove_plan_app_cues(self): # removes all content on "app cue" plan note section
+        logger.debug('PcoPlan.remove_plan_app_cue called')
+        note_ids = self.get_plan_app_cue_note_id()
+        if note_ids is not None:
+            for note in note_ids:
+                logger.debug('removing plan app cue note with id %s', note)
+                requests.delete(f'https://api.planningcenteronline.com/services/v2/service_types/{self.service_type}/plans/{self.plan_id}/notes/{note}',
+                                auth=(APP_ID, SECRET))
+        else:
+            logger.error('PcoPlan.remove_plan_app_cues: no plan app cue notes were found!')
 
     def update_plan_app_cue(self, note_content):
         # update content of plan app cue note section ONLY if it already exists
@@ -408,6 +431,6 @@ class PcoPlan:
         return team_members
 
 if __name__ == '__main__':
-    plan = PcoPlan(service_type=824571, plan_id=52371712)
-    pprint.pprint(plan.get_service_items())
+    plan = PcoPlan(service_type=1039564, plan_id=52356777)
+    plan.remove_plan_app_cues()
 
