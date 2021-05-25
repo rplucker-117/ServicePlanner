@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Service Planner</title>
+    <link rel="stylesheet" href="{{ url_for ('static', filename='styles.css')}}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+<script type="text/javascript" charset="utf-8">
+    var socket = io.connect('http://127.0.0.1:80');
+      socket.on('connect', function() {
+        socket.emit('my event', {
+          data: 'User connected'
+        })
+      });
+</script>
+</head>
+
+<body class="background">
+<div>
+    <a href="#" class="next-button" id="Previous">Previous</a>
+    <a href="#" class="next-button" id="Next">Next</a>
+
+
+    <script>
+
+    $(document).ready(function(){
+      console.log('document is ready')
+      $('#Next').click(function(){
+        console.log('Next button clicked');
+        $.post('/action', {action: 'web_next', cue: true})
+      })
+      $('#Previous').click(function(){
+        console.log('Previous button clicked');
+        $.post('/action', {action: 'web_previous', cue: true})
+      })
+    });
+
+    function secondsToMinutes(s) {
+      minutes = Math.floor(s/60).toString();
+      seconds = Math.floor(s % 60).toString();
+
+      if (minutes.length == 1) {
+        minutes = '0' + minutes
+      }
+      if (seconds.length == 1) {
+        seconds = seconds + '0'
+      }
+
+      return minutes + ':' + seconds;
+    }
+    </script>
+
+</div>
+
+
+{% for item in plan_data %}
+
+    {% if loop.index == live_index %}
+    <div class="plan_item_live plan_item_div">
+    {% else %}
+
+    <div class="plan_item_div">
+        {% endif %}
+
+        {% if item['type'] != 'header' %}
+            <p class="time"><script>document.write(secondsToMinutes( "{{item['length']}}" ))</script></p>
+        {% endif %}
+
+        {% if item['type'] == 'item' %}
+            <p class="plan_item_text">{{item['title']}}</p>
+        {% endif %}
+
+        {% if item['type'] == 'song' %}
+            <p class="plan_item_text song_plan_items">{{item['title']}}</p>
+        {% endif %}
+
+        {% if item['type'] == 'header' %}
+            <p class="header">{{item['title']}}</p>
+        {% endif %}
+    </div>
+
+    <div class="divider"></div>
+{% endfor %}
+
+
+
+</body>
+
+</html>
