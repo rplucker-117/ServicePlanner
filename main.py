@@ -129,6 +129,7 @@ class Utilities:
         self.main_ui_window.reload()
 
     def __open_device_editor(self):
+        self.utilities_menu.destroy()
         DeviceEditor().build_ui()
 
     def __start_live(self):
@@ -314,11 +315,11 @@ class MainUI:
         self.item_app_cue_labels = []
 
         self.all_kipros = []
-
-        for device in self.startup.devices:
-            if device['type'] == 'kipro' and not device['uuid'] == '07af78bf-9149-4a12-80fc-0fa61abc0a5c':
-                logger.debug('adding kipro %s to all_kipros', device['user_name'])
-                self.all_kipros.append(device)
+        if self.startup.devices is not None:
+            for device in self.startup.devices:
+                if device['type'] == 'kipro' and not device['uuid'] == '07af78bf-9149-4a12-80fc-0fa61abc0a5c':
+                    logger.debug('adding kipro %s to all_kipros', device['user_name'])
+                    self.all_kipros.append(device)
 
         self.kipro_buttons = []
         self.kipro_storage_remaining_bars = []
