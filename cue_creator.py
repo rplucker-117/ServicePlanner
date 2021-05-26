@@ -595,37 +595,24 @@ class CueCreator:
         time_entry_frame.config(bg=bg_color)
         time_entry_frame.grid(row=1, column=0)
 
-        add_reminder_text_label = Label(add_reminder_window, bg=bg_color, fg=text_color,
-                                  font=(font, current_cues_text_size), anchor='w',
-                                  text='Add reminder after x time:').grid(row=0, column=0)
+        Label(add_reminder_window, bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', text='Add reminder after x time:').grid(row=0, column=0)
 
-        add_reminder_in_label = Label(time_entry_frame, bg=bg_color, fg=text_color,
-                                  font=(font, current_cues_text_size), anchor='w',
-                                  text='Add reminder in: ').grid(row=1, column=0)
+        Label(time_entry_frame, bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', text='Add reminder in: ').grid(row=1, column=0)
 
-        minutes_entry = Entry(time_entry_frame, width=2, bg=text_entry_box_bg_color, fg=text_color,
-                                  font=(font, current_cues_text_size))
+        minutes_entry = Entry(time_entry_frame, width=2, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
         minutes_entry.grid(row=1, column=2)
 
-        minutes_seconds_label = Label(time_entry_frame, bg=bg_color, fg=text_color,
-                                  font=(font, current_cues_text_size), anchor='w',
-                                  text='minutes, ').grid(row=1, column=3)
+        Label(time_entry_frame, bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', text='minutes, ').grid(row=1, column=3)
 
-        seconds_entry = Entry(time_entry_frame, width=2, bg=text_entry_box_bg_color, fg=text_color,
-                                  font=(font, current_cues_text_size))
+        seconds_entry = Entry(time_entry_frame, width=2, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
         seconds_entry.grid(row=1, column=4)
 
-        seconds_label = Label(time_entry_frame, bg=bg_color, fg=text_color,
-                                  font=(font, current_cues_text_size), anchor='w',
-                                  text='seconds.').grid(row=1, column=5)
+        Label(time_entry_frame, bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', text='seconds.').grid(row=1, column=5)
 
-        reminder_entry = Entry(add_reminder_window, width=100, bg=text_entry_box_bg_color, fg=text_color,
-                                  font=(font, plan_text_size))
+        reminder_entry = Entry(add_reminder_window, width=100, bg=text_entry_box_bg_color, fg=text_color, font=(font, plan_text_size))
         reminder_entry.grid(row=2, column=0)
 
-        okay = Button(add_reminder_window, bg=bg_color, fg=text_color, font=(font, plan_text_size),
-                              anchor='w', text='okay',
-                              command=okay_pressed).grid(row=3, column=0)
+        Button(add_reminder_window, bg=bg_color, fg=text_color, font=(font, plan_text_size), anchor='w', text='okay', command=okay_pressed).grid(row=3, column=0)
 
     def __add_pause_cue_clicked(self):
         add_pause_window = Tk()
