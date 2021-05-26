@@ -373,13 +373,27 @@ class PcoPlan:
 
                     if dict_key == 'App Cues':
                         logger.debug('pco_plan.get_service_items: content: %s', note_content)
-                        note_content = json.loads(note_content)
+                        try:
+                            note_content = json.loads(note_content)
+                        except ValueError:
+                            logger.warning('Invalid app cue data on item %s. Removing it and retrying.', item['title'])
+                            self.remove_item_app_cue(item_id=item_id, note_id=note['id'])
+                            return self.get_service_items()
 
                     item['notes'][dict_key] = note_content
 
         logger.debug('pco_plan_upadte: received service items. %s', service_items)
 
         return service_request_dict, service_items
+
+    def remove_item_app_cue(self, item_id, note_id):
+        r = requests.delete(f'https://api.planningcenteronline.com/services/v2/service_types/'
+                                       f'{self.service_type}/plans/{self.plan_id}/items/{item_id}/item_notes/{note_id}',
+                            auth=(APP_ID, SECRET))
+        if not r.status_code in (204, '204'):
+            logger.warning('remove_item_app_cue: potentially failed. Returned code %s with content %s', r.status_code, r.text)
+
+
 
     def get_service_type_details_from_id(self):
         # returns:
