@@ -9,6 +9,7 @@ import uuid
 import socket
 from datetime import datetime
 from shutil import copyfile
+import pprint
 
 class DeviceEditor:
     def __init__(self):
@@ -75,6 +76,7 @@ class DeviceEditor:
 
         Button(self.device_editor_window, text='Add New Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self.__add_new_device_window).pack(side=LEFT, padx=10)
         Button(self.device_editor_window, text='Remove Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self.__remove_device).pack(side=LEFT, padx=10)
+        Button(self.device_editor_window, text='Show details', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self.__show_details).pack(side=LEFT, padx=10)
         Button(self.device_editor_window, text='Write changes to disk', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self.__update_devices_file).pack(side=RIGHT, padx=10)
 
         self.device_editor_window.mainloop()
@@ -109,8 +111,10 @@ class DeviceEditor:
         self.__update_existing_devices()
 
     def __remove_device(self):
-        self.devices.pop(self.devices_listbox.curselection()[0])
+
+        self.devices.pop(self.devices_listbox.curselection()[0]+3)
         self.__update_existing_devices()
+        pprint.pprint(self.devices)
 
     def __update_existing_devices(self):
         self.devices_listbox.delete(0, 'end')
@@ -120,11 +124,38 @@ class DeviceEditor:
                 listbox_item_name = device['user_name'] + ' (' + device['type'] + ')'
                 self.devices_listbox.insert(index, listbox_item_name)
 
+    def __show_details(self): #opens new window containing details for all fields of selected device
+        details_window = Tk()
+        details_window.configure(bg=bg_color)
+        details_window.geometry('450x250')
+
+        selected_device_index = self.devices_listbox.curselection()[0]+3
+        for field in self.devices[selected_device_index].keys():
+            Label(details_window, bg=bg_color, fg=text_color,
+                  text=f'{field} : {self.devices[selected_device_index][field]}', font=(font, other_text_size)).pack()
+
     def __verify_ip(self, ip):
         try:
             socket.inet_aton(ip)
             return True
         except socket.error:
+            return False
+
+    def __verify_port(self, port):  # checks if port is a number and is between 0 and 65535
+        try:
+            int(port)
+        except ValueError:
+            return False
+        if 0 < int(port) < 65535:
+            return True
+        else:
+            return False
+
+    def __verify_number_of_io(self, io_number):  # verifies video router input/output entry
+        try:
+            int(io_number)
+            return True
+        except ValueError:
             return False
 
     def __add_new_device_window(self):
@@ -187,7 +218,7 @@ class DeviceEditor:
         add_scp = Tk()
         add_scp.title('Add SCP/A via GlobalCache IP2SL')
         add_scp.configure(bg=bg_color)
-        add_scp.geometry('700x200')
+        add_scp.geometry('700x240')
 
         name_entry_frame = Frame(add_scp)
         name_entry_frame.configure(bg=bg_color)
@@ -198,40 +229,57 @@ class DeviceEditor:
         name_entry = Entry(name_entry_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
         ip_address_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
         port_entry = Entry(info_entry_frame, width=5, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        input_entry = Entry(info_entry_frame, width=5, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        output_entry = Entry(info_entry_frame, width=5, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
 
         device_description = Label(add_scp, bg=bg_color, fg=text_color, font=(font, other_text_size - 2),
               text='Add Ross NK router control via the Ross SCP/A, controlled by the GlobalCache IP2SL. See readme for more info')
         name_label = Label(name_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Name:')
         ip_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='GC IP2SL Target IP Address:')
         port_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Target Port (default 4999):')
+        inputs_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Number of inputs:')
+        outputs_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Number of outputs:')
 
         name_label.pack()
         name_entry.pack()
 
         device_description.pack(side=TOP)
-        ip_label.pack(side=LEFT)
-        ip_address_entry.pack(side=LEFT)
-        port_entry.pack(side=RIGHT)
-        port_label.pack(side=RIGHT)
+
+        ip_label.grid(row=0, column=0)
+        ip_address_entry.grid(row=0, column=1)
+
+        port_label.grid(row=0, column=2)
+        port_entry.grid(row=0, column=3)
+
+
+        inputs_label.grid(row=1, column=0, sticky='e')
+        input_entry.grid(row=1, column=1, sticky='w')
+
+        outputs_label.grid(row=1, column=2, sticky='e')
+        output_entry.grid(row=1, column=3, sticky='w')
 
         name_entry_frame.pack(pady=20)
         info_entry_frame.pack(pady=20)
 
         def add():
-            if self.__verify_ip(ip_address_entry.get()) and port_entry.get() != '':
+            if self.__verify_ip(ip_address_entry.get()) and self.__verify_port(port_entry.get()) and \
+                    self.__verify_number_of_io(io_number=input_entry.get() and self.__verify_number_of_io(io_number=output_entry.get())):
 
                 to_add = {
                     'type': 'nk_scpa_ip2sl',
                     'user_name': name_entry.get(),
                     'ip_address': ip_address_entry.get(),
-                    'port': port_entry.get()
+                    'port': port_entry.get(),
+                    'inputs': input_entry.get(),
+                    'outputs': output_entry.get()
                 }
 
                 self.__add_device(device=to_add)
                 add_scp.destroy()
             else:
-                messagebox.showerror(title='Invalid IP address or Port', message='An Invalid IP address or port was entered')
-                logger.error('__add_pvp: IP address or port not valid: %s, %s', ip_address_entry.get(), port_entry.get())
+                messagebox.showerror(title='Invalid IP address or Port', message='An Invalid IP address, port, inputs, or outputs was entered.')
+                logger.error('__add_pvp: IP address, port, inputs, or outputs not valid: %s, %s, %s, %s',
+                             ip_address_entry.get(), port_entry.get(), input_entry.get(), output_entry.get())
                 add_scp.lift()
 
         Button(add_scp, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
