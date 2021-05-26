@@ -9,7 +9,6 @@ import uuid
 import socket
 from datetime import datetime
 from shutil import copyfile
-import pprint
 
 class DeviceEditor:
     def __init__(self):
@@ -114,7 +113,6 @@ class DeviceEditor:
 
         self.devices.pop(self.devices_listbox.curselection()[0]+3)
         self.__update_existing_devices()
-        pprint.pprint(self.devices)
 
     def __update_existing_devices(self):
         self.devices_listbox.delete(0, 'end')
@@ -233,7 +231,8 @@ class DeviceEditor:
         output_entry = Entry(info_entry_frame, width=5, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
 
         device_description = Label(add_scp, bg=bg_color, fg=text_color, font=(font, other_text_size - 2),
-              text='Add Ross NK router control via the Ross SCP/A, controlled by the GlobalCache IP2SL. See readme for more info')
+              text="Add Ross NK router control via the Ross SCP/A, controlled by the GlobalCache IP2SL. "
+                   "You can also add a .lbl file created by Ross Dashboard for easy labeling in the future if you'd like.")
         name_label = Label(name_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Name:')
         ip_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='GC IP2SL Target IP Address:')
         port_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Target Port (default 4999):')
@@ -261,6 +260,19 @@ class DeviceEditor:
         name_entry_frame.pack(pady=20)
         info_entry_frame.pack(pady=20)
 
+        nk_labels = None
+
+        def add_nk_labels():
+            path = filedialog.askopenfilename(filetypes=[('NK labels', '.lbl')])
+            logger.debug('nk labels file added: %s', path)
+            file = os.path.basename(path)
+            nonlocal nk_labels
+            nk_labels = file
+
+            Label(add_scp, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text=f'labels file added: {file}').pack(side=LEFT)
+
+            add_scp.lift()
+
         def add():
             if self.__verify_ip(ip_address_entry.get()) and self.__verify_port(port_entry.get()) and \
                     self.__verify_number_of_io(io_number=input_entry.get() and self.__verify_number_of_io(io_number=output_entry.get())):
@@ -274,15 +286,20 @@ class DeviceEditor:
                     'outputs': output_entry.get()
                 }
 
+                if nk_labels is not None:
+                    to_add['nk_labels'] = nk_labels
+
                 self.__add_device(device=to_add)
                 add_scp.destroy()
+
             else:
                 messagebox.showerror(title='Invalid IP address or Port', message='An Invalid IP address, port, inputs, or outputs was entered.')
                 logger.error('__add_pvp: IP address, port, inputs, or outputs not valid: %s, %s, %s, %s',
                              ip_address_entry.get(), port_entry.get(), input_entry.get(), output_entry.get())
                 add_scp.lift()
 
-        Button(add_scp, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
+        Button(add_scp, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add custom NK Labels', command=add_nk_labels).pack(side=LEFT)
+        Button(add_scp, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack(side=RIGHT)
 
     def __add_ross_carbonite(self):
         self.new_device_window.withdraw()
