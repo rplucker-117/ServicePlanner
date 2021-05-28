@@ -55,7 +55,7 @@ class DeviceEditor:
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Ross NK Router', command=self.__add_scpa_via_ip2sl).pack()
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add AJA KiPro', command=self.__add_kipro).pack()
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Resi Decoder', command=self.__add_resi).pack()
-        # Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add AJA IPT').pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add EZ Outlet 2', command=self.__add_ez_outlet_2).pack()
         # Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add AJA IPR').pack()
 
         self.new_device_window.withdraw()
@@ -70,7 +70,7 @@ class DeviceEditor:
                    "-When finished, reload the program for your changes to take effect.\n"
                    "-You can use a devices file from a different machine or program version if you wish, just make sure it's named devices.json and in the same directory.\n", justify=LEFT).pack()
 
-        self.devices_listbox.configure(bg=bg_color, fg=text_color, font=(font, current_cues_text_size), width=50)
+        self.devices_listbox.configure(bg=bg_color, fg=text_color, font=(font, current_cues_text_size), width=50, height=20)
         self.devices_listbox.pack(pady=20)
 
         Button(self.device_editor_window, text='Add New Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self.__add_new_device_window).pack(side=LEFT, padx=10)
@@ -92,7 +92,7 @@ class DeviceEditor:
             logger.info('Devices file does not exist, nothing to back up')
 
         logger.info('Updating devices.json file. Contents: %s', self.devices)
-        with open ('devices.json', 'w') as f:
+        with open('devices.json', 'w') as f:
             f.writelines(json.dumps(self.devices))
 
     def __add_device(self, device):
@@ -231,7 +231,7 @@ class DeviceEditor:
         output_entry = Entry(info_entry_frame, width=5, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
 
         device_description = Label(add_scp, bg=bg_color, fg=text_color, font=(font, other_text_size - 2),
-              text="Add Ross NK router control via the Ross SCP/A, controlled by the GlobalCache IP2SL. "
+              text="Add Ross NK router control via the Ross SCP/A, controlled by the GlobalCache IP2SL. \n"
                    "You can also add a .lbl file created by Ross Dashboard for easy labeling in the future if you'd like.")
         name_label = Label(name_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Name:')
         ip_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='GC IP2SL Target IP Address:')
@@ -501,6 +501,68 @@ class DeviceEditor:
                 add_resi.lift()
 
         Button(add_resi, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
+
+    def __add_ez_outlet_2(self):
+        self.new_device_window.withdraw()
+
+        add_ez = Tk()
+        add_ez.title('Add Resi Decoder')
+        add_ez.configure(bg=bg_color)
+        add_ez.geometry('800x300')
+
+        name_entry_frame = Frame(add_ez)
+        name_entry_frame.configure(bg=bg_color)
+
+        info_entry_frame = Frame(add_ez)
+        info_entry_frame.configure(bg=bg_color)
+
+        name_entry = Entry(name_entry_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        ip_address_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        username_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        password_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+
+        device_description = Label(add_ez, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Add an EZ Outlet 2')
+        name_label = Label(name_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Name:')
+        ip_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Target IP Address:')
+        username_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Control Username (default admin):')
+        password_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Control Password (default admin):')
+
+        device_description.pack()
+
+        name_label.grid(row=0, column=0, padx=10, pady=10)
+        name_entry.grid(row=0, column=1, padx=10, pady=10)
+
+        ip_label.grid(row=0, column=0, padx=10, pady=10)
+        ip_address_entry.grid(row=0, column=1, padx=10, pady=10)
+
+        username_label.grid(row=1, column=0, padx=10, pady=10)
+        username_entry.grid(row=1, column=1, padx=10, pady=10)
+
+        password_label.grid(row=1, column=2, padx=10, pady=10)
+        password_entry.grid(row=1, column=3, padx=10, pady=10)
+
+        name_entry_frame.pack(pady=20)
+        info_entry_frame.pack(pady=20)
+
+        def add():
+            if self.__verify_ip(ip_address_entry.get()):
+
+                to_add = {
+                    'type': 'ez_outlet_2',
+                    'user_name': name_entry.get(),
+                    'ip_address': ip_address_entry.get(),
+                    'username': username_entry.get(),
+                    'password': password_entry.get()
+                }
+
+                self.__add_device(device=to_add)
+                add_ez.destroy()
+            else:
+                messagebox.showerror(title='Invalid IP address', message='An Invalid IP address was entered')
+                logger.error('__add_pvp: IP address not valid: %s', ip_address_entry.get())
+                add_ez.lift()
+
+        Button(add_ez, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
 
 if __name__ == '__main__':
     device_editor = DeviceEditor()
