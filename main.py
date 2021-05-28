@@ -39,7 +39,6 @@ if not os.path.exists(os.path.join(abs_path, 'logs')):
 log_file_name = os.path.join(os.path.join(abs_path, 'logs'),time.strftime('%Y_%m_%d__%H_%M') + '.log')
 logfile(log_file_name)
 
-
 class SelectService:
     def __init__(self, send_to):
         self.service_type_id = None
@@ -97,6 +96,7 @@ class Utilities:
     def __init__(self, main_ui_window_init):
         self.main_ui_window = main_ui_window_init
         self.cue_handler = CueCreator(startup=self.main_ui_window.startup, ui=self.main_ui_window, devices=self.main_ui_window.startup.devices)
+        self.cue_handler_plan = CueCreator(startup=self.main_ui_window.startup, ui=self.main_ui_window, devices=self.main_ui_window.startup.devices, cue_type='plan')
         self.cue_handler_global = CueCreator(startup=self.main_ui_window.startup, ui=self.main_ui_window, devices=self.main_ui_window.startup.devices, cue_type='global')
 
         self.pco_live = PcoLive(service_type_id = self.main_ui_window.service_type_id, plan_id=self.main_ui_window.service_id)
@@ -117,8 +117,10 @@ class Utilities:
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Load Adjacent Plan', font=(font, other_text_size), command=self.__load_adjacent).pack()
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Format Kipros', font=(font, other_text_size), command=self.__format).pack()
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Download Kipro Clips', font=(font, other_text_size), command=self.__download).pack()
-        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Add Global Cue', font=(font, other_text_size), command=self.__add_global).pack()
-        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Remove Global Cue', font=(font, other_text_size), command=self.__remove_global).pack()
+        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Add Plan Cue', font=(font, other_text_size), command=self.__add_plan_cue).pack()
+        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Remove Plan Cue', font=(font, other_text_size), command=self.__remove_plan_cue).pack()
+        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Add Global Cue', font=(font, other_text_size), command=self.__add_global_cue).pack()
+        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Remove Global Cue', font=(font, other_text_size), command=self.__remove_global_cue).pack()
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Update switcher cam names from PCO positions', font=(font, other_text_size), command=self.__update_cam_names).pack()
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Open Device Editor', font=(font, other_text_size), command=self.__open_device_editor).pack()
 
@@ -216,19 +218,19 @@ class Utilities:
                 logger.debug('Updating camera position name via rosstalk: %s, %s', person['position'], name[0:6])
                 rt(rosstalk_ip=rosstalk_ip, rosstalk_port=rosstalk_port, command=f"MNEM IN:{cam_pos}:{cam_pos} {name[0:6]}")
 
-    def __add_global(self):
+    def __add_plan_cue(self):
         self.utilities_menu.destroy()
-        self.cue_handler_global.create_cues(input_item=None)
+        self.cue_handler_plan.create_cues()
 
-    def __remove_global(self):
-        logger.debug('Utilities.__remove_global clicked')
+    def __remove_plan_cue(self):
+        logger.debug('Utilities.__remove_plan_cue clicked')
         self.utilities_menu.destroy()
-        if not self.pco_plan.check_if_plan_app_cue_exists() is False:
+        if self.pco_plan.check_if_plan_app_cue_exists():
             current_cues = self.pco_plan.get_plan_app_cues()
 
-            remove_global_menu = Tk()
-            remove_global_menu.configure(bg=bg_color)
-            listbox = Listbox(remove_global_menu, bg=bg_color, fg=text_color, font=(font, other_text_size))
+            remove_plan_cue_window = Tk()
+            remove_plan_cue_window.configure(bg=bg_color)
+            listbox = Listbox(remove_plan_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size))
             listbox.pack()
 
             for iteration, item in enumerate(current_cues):
@@ -236,15 +238,55 @@ class Utilities:
                 listbox.insert(iteration, name)
 
             def okay():
-                logger.debug('Utilities.__remove_global: sending updated cues: %s', current_cues)
-                remove_global_menu.destroy()
+                logger.debug('Utilities.__remove_plan: sending updated cues: %s', current_cues)
+                remove_plan_cue_window.destroy()
                 self.pco_plan.create_and_update_plan_app_cues(note_content=json.dumps(current_cues))
                 self.main_ui_window.reload()
 
-            Button(remove_global_menu, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Remove',
+            Button(remove_plan_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Remove',
                    command=lambda: (current_cues.pop(listbox.curselection()[0]), listbox.delete(first=listbox.curselection()[0]))).pack(side=LEFT)
-            Button(remove_global_menu, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Okay',
+            Button(remove_plan_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Okay',
                    command=okay).pack(side=RIGHT)
+
+    def __add_global_cue(self):
+        self.utilities_menu.destroy()
+        self.cue_handler_global.create_cues()
+
+    def __remove_global_cue(self):
+        logger.debug('Utilities.__remove_global_cue clicked')
+        self.utilities_menu.destroy()
+
+        global_cues = []
+
+        with open('global_cues.json', 'r') as f:
+            global_cues = json.loads(f.read())
+
+        remove_global_cue_window = Tk()
+        remove_global_cue_window.configure(bg=bg_color)
+        listbox = Listbox(remove_global_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size))
+        listbox.pack()
+
+        for iteration, item in enumerate(global_cues):
+            name = item[0]
+            listbox.insert(iteration, name)
+
+        def okay():
+            logger.debug('Utilities.__remove_plan: sending updated cues: %s', global_cues)
+            remove_global_cue_window.destroy()
+
+            with open('global_cues.json', 'w') as f:
+                f.writelines(json.dumps(global_cues))
+
+            self.main_ui_window.reload()
+
+        Button(remove_global_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Remove',
+               command=lambda: (
+               global_cues.pop(listbox.curselection()[0]), listbox.delete(first=listbox.curselection()[0]))).pack(
+            side=LEFT)
+
+        Button(remove_global_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Okay',
+               command=okay).pack(side=RIGHT)
+
 
     def __add_device(self):
         pass
@@ -263,6 +305,7 @@ class MainUI:
         self.pco_live = PcoLive(service_type_id=self.service_type_id, plan_id=self.service_id)
         self.pco_plan = PcoPlan(service_type=self.service_type_id, plan_id=self.service_id)
         self.cue_handler = CueCreator(ui=self, startup=startup, devices=startup.devices)
+        self.cue_handler_global = CueCreator(ui=self, startup=startup, devices=startup.devices, cue_type='global')
         self.kipro_ui = KiProUi()
         self.kipro = KiPro()
 
@@ -297,7 +340,7 @@ class MainUI:
         self.adjacent_plan_frame = Frame(self.clock_frame, bg=bg_color)
         self.aux_controls_frame = Frame(self.plan_window, bg=bg_color)
         self.kipro_control_frame = Frame(self.plan_window, bg=bg_color)
-        self.global_cues_frame = Frame(self.plan_window, bg=bg_color)
+        self.plan_cues_frame = Frame(self.plan_window, bg=bg_color)
         self.current_service_frame = Frame(self.plan_window, bg=bg_color)
 
         self.service_controls_frame = Frame(self.plan_window, bg=bg_color)
@@ -318,11 +361,18 @@ class MainUI:
         if self.startup.devices is not None:
             for device in self.startup.devices:
                 if device['type'] == 'kipro' and not device['uuid'] == '07af78bf-9149-4a12-80fc-0fa61abc0a5c':
-                    logger.debug('adding kipro %s to all_kipros', device['user_name'])
                     self.all_kipros.append(device)
 
         self.kipro_buttons = []
         self.kipro_storage_remaining_bars = []
+
+        #  if global_cues.json exists, read. If file does not exist, variable is set to None
+        self.global_cues = None
+        if os.path.exists(os.path.join(abs_path, 'global_cues.json')):
+            with open('global_cues.json', 'r') as f:
+                self.global_cues = json.loads(f.read())
+
+        self.global_cues = None if len(self.global_cues) == 0 else self.global_cues  # reset global_cues variable back to None if it's empty
 
     def build_plan_window(self):
 
@@ -331,13 +381,19 @@ class MainUI:
 
         self.__build_current_service_time()
         self.__build_clock()
-        self.__build_utilities_button()
         self.__build_item_timer()
         self.__build_items_view()
         self.__build_aux_controls()
+
+        if self.global_cues is not None:
+            self.__build_global_cues_button()
+
+        self.__build_utilities_button()
+
         if display_kipros:
             self.__build_kipro_status()
-        self.__build_global_cue_buttons()
+
+        self.__build_plan_cue_buttons()
 
         self.update_live()
 
@@ -372,6 +428,7 @@ class MainUI:
         self.update_live()
 
         if not from_web and enable_webserver is True:
+            logger.debug('MainUI.next: sending previous command to webserver')
             previous_web_data = {'action': 'app_previous'}
             requests.post('http://127.0.0.1/action', json=json.dumps(previous_web_data))
 
@@ -599,6 +656,20 @@ class MainUI:
         Button(self.clock_frame, bg=bg_color, image=self.gear_icon, command=lambda:
                Utilities(main_ui_window_init=self).open_utilities_menu()).pack(side=RIGHT, padx=15)
 
+    def __build_global_cues_button(self):
+        Button(self.clock_frame, bg=bg_color, fg=text_color, font=(font, other_text_size),
+               text='Global Cues', command=self.__open_global_cues_menu).pack(side=RIGHT, padx=15)
+
+    def __open_global_cues_menu(self):
+        if self.global_cues is not None:
+            global_cues_menu = Tk()
+            global_cues_menu.title('Global Cues')
+            global_cues_menu.configure(bg=bg_color)
+
+            for cue in self.global_cues:
+                Button(global_cues_menu, bg=bg_color, fg=text_color, font=(font, other_text_size+2), text=cue[0], padx=30, pady=5,
+                       command=lambda cue = cue: (self.cue_handler_global.activate_cues(cues=cue[1]), global_cues_menu.destroy())).pack()
+
     def __build_items_view(self):
         self.service_plan_frame.grid(row=2, column=0)
 
@@ -719,20 +790,19 @@ class MainUI:
 
         self.kipro_ui.update_kipro_status(ui=self)
 
-    def __build_global_cue_buttons(self):
+    def __build_plan_cue_buttons(self):
         if self.pco_plan.check_if_plan_app_cue_exists():
-            print(self.pco_plan.check_if_plan_app_cue_exists())
-            logger.debug('MainUI.__build_global_cue_buttons: adding global cue buttons')
-            self.global_cues_frame.grid(row=3, column=0)
-            global_cues = self.pco_plan.get_plan_app_cues()
-            for iteration, cue in enumerate(global_cues):
+            logger.debug('MainUI.__build_plan_cue_buttons: adding plan cue buttons')
+            self.plan_cues_frame.grid(row=3, column=0)
+            plan_cues = self.pco_plan.get_plan_app_cues()
+            for iteration, cue in enumerate(plan_cues):
                 cue_name = cue[0]
                 cue_data = cue[1]
-                logger.debug('Creating global cues button: %s, cue_data = %s', cue_name, cue_data)
-                Button(self.global_cues_frame, bg=bg_color, fg=text_color, font=(font, other_text_size),
+                logger.debug('Creating plan cues button: %s, cue_data = %s', cue_name, cue_data)
+                Button(self.plan_cues_frame, bg=bg_color, fg=text_color, font=(font, other_text_size),
                        text=cue_name, command=lambda cue_data=cue_data: self.cue_handler.activate_cues(cue_data)).grid(row=0, column=iteration, padx=2, pady=10)
         else:
-            logger.debug('No global cues were added because none were found')
+            logger.debug('No plan cues were added because none were found')
 
     def __build_aux_controls(self):
         self.aux_controls_frame.grid(row=4, column=0)
@@ -778,6 +848,7 @@ class MainUI:
             reminder_frame.place(relx=.5, rely=.5, anchor=CENTER)
 
         reminder_frame.after(reminder_time*1000, show_reminder)
+
 
 class AdjacentPlanView:
     def __init__(self, ui):
@@ -896,7 +967,7 @@ class KiProUi:
             logger.debug('KiProUi.__refresh: exit event set, stopping loop')
 
 
-class Main:
+class Main:  #startup
     def __init__(self):
         os.chdir(abs_path)
 
@@ -919,7 +990,7 @@ class Main:
         if enable_webserver:
             self.start_webserver()
         else:
-            logger.debug('enable_webserver is False')
+            logger.debug('enable_webserver is False, skipping')
 
         self.main_ui.build_plan_window()
 
@@ -927,6 +998,7 @@ class Main:
     def start_webserver(self):
         logger.info('Starting webserver')
         threading.Thread(target=lambda: fs.start(startup_class=self)).start()
+
 
 start = Main()
 
