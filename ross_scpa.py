@@ -96,4 +96,5 @@ class ScpaViaIP2SL:
 
 if __name__ == '__main__':
     scp = ScpaViaIP2SL(ip='10.1.60.128')
-    print(scp.get_status(output=37))
+    for output in range(1,73):
+        print(scp.get_status(output=output))
