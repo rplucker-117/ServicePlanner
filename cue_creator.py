@@ -14,7 +14,9 @@ from rosstalk import rosstalk as rt
 from kipro import *
 import threading
 from sheet_reader import ReadSheet
-
+import math
+from ross_scpa import ScpaViaIP2SL
+from ez_outlet_2 import EZOutlet2
 
 class CueCreator:
     def __init__(self, startup, ui, cue_type='item', devices=None):
@@ -39,7 +41,7 @@ class CueCreator:
 
         self.current_cues_display = Label(self.current_cues_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), justify=LEFT)
 
-        # elements for is type is 'global' cue
+        # elements for is type is 'plan' cue
         self.custom_name_frame = Frame(self.bottom_frame, bg=bg_color)
         self.custom_name_entry = Entry(self.custom_name_frame, width=40, bg=text_entry_box_bg_color, fg=text_color, font=(font, plan_text_size))
 
@@ -54,16 +56,14 @@ class CueCreator:
         if self.devices is not None:
             for device in self.devices:
                 if device['type'] == 'kipro' and not device['uuid'] == '07af78bf-9149-4a12-80fc-0fa61abc0a5c':
-                    logger.debug('adding kipro %s to all_kipros', device['user_name'])
                     self.all_kipros.append(device)
 
-        # runs if input cue is global
-        if self.cue_type == 'global':
+        if self.cue_type == 'plan':
             self.imported_cues = self.pco_plan.get_plan_app_cues()
             if self.imported_cues is None:
                 self.imported_cues = []
 
-    def create_cues(self, input_item):
+    def create_cues(self, input_item=None):
         self.input_item = input_item
         try:
             if 'App Cues' in input_item['notes']:
@@ -79,11 +79,11 @@ class CueCreator:
             self.__open_cue_creator(overwrite=None)
 
 
-        # input_item_id is None if setting a global cue
+        # input_item_id is None if setting a plan cue
         try:
             self.input_item_id = input_item['id']
         except TypeError:
-            logger.debug('CueCreator.create_cues: Creating global cue, no input item')
+            logger.debug('CueCreator.create_cues: Creating plan cue, no input item')
 
     def verbose_decode_cues(self, cuelist):
         cues_verbose_list = []
@@ -129,6 +129,12 @@ class CueCreator:
                         cue_verbose = f"{device['user_name']}:" \
                                       f"   {cue['type']}:{cue['bank']}:{cue['CC']}:  {cc_label}"
                         cues_verbose_list.append(cue_verbose)
+
+                if device['type'] == 'ez_outlet_2':
+                    cue_verbose = f"{device['user_name']}: {cue['action']}"
+                    cues_verbose_list.append(cue_verbose)
+
+
             return cues_verbose_list
 
     def activate_cues(self, cues):
@@ -164,6 +170,17 @@ class CueCreator:
 
                     elif device['type'] == 'pause':
                         time.sleep(cue['time'])
+
+                    elif device['type'] == 'ez_outlet_2':
+                        outlet = EZOutlet2(ip=device['ip_address'], user=device['username'], password=device['password'])
+                        if cue['action'] == 'turn_off':
+                            outlet.turn_off()
+                        if cue['action'] == 'turn_on':
+                            outlet.turn_on()
+                        if cue['action'] == 'toggle_state':
+                            outlet.toggle_state()
+                        if cue['action'] == 'reset':
+                            outlet.reset()
 
                     # todo add nk
 
@@ -207,10 +224,10 @@ class CueCreator:
         Frame(self.bottom_frame, bg=separator_color, width=600, height=1).grid(row=0, column=0) # Above bottom buttons
         Frame(self.cue_creator_window, bg=separator_color, width=1, height=300).grid(row=0, column=1) # Left of cue type buttons
 
-        # If global cue, add custom name
-        if self.cue_type == 'global':
+        # If plan cue, add custom name
+        if self.cue_type in ('plan', 'global'):
             self.custom_name_frame.grid(row=0, column=0)
-            Label(self.custom_name_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Global Cue Name').pack()
+            Label(self.custom_name_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Plan Cue Name').pack()
             self.custom_name_entry.pack()
 
         def add_cue_clicked(device):
@@ -228,6 +245,8 @@ class CueCreator:
                 self.__add_carbonite_cue(device, cc_labels=cc_labels)
             elif device['type'] == 'resi':
                 self.__add_resi_cue(device)
+            elif device['type'] == 'ez_outlet_2':
+                self.__add_ez_outlet_2(device)
 
         includes_kipro = None
 
@@ -246,14 +265,77 @@ class CueCreator:
 
         # Bottom Buttons
         Button(self.bottom_buttons_frame, text='Test', font=(font, plan_text_size), bg=bg_color, fg=text_color, command=self.__test).grid(row=1, column=0)
-        Button(self.bottom_buttons_frame, text='Add to Planning Center', font=(font, plan_text_size), bg=bg_color, fg=text_color, command=self.__add_to_pco).grid(row=1, column=1)
+        Button(self.bottom_buttons_frame, text='Add Cue(s)', font=(font, plan_text_size), bg=bg_color, fg=text_color, command=self.__add_cues).grid(row=1, column=1)
         Button(self.bottom_buttons_frame, text='Cancel', font=(font, plan_text_size), bg=bg_color, fg=text_color, command=lambda: self.cue_creator_window.destroy()).grid(row=1, column=2)
 
         self.__update_cues_display()
 
-    def __add_nk_scpa_ip2sl_cue(self, device):
+    def __add_nk_scpa_ip2sl_cue(self, device):  #todo
         logger.debug('__add_nk_scpa_ip2sl_cue: received. device: %s', device)
-        pass
+
+        add_nk_cue = Tk()
+        add_nk_cue.configure(bg=bg_color)
+
+        has_labels = False
+
+        if 'nk_labels' in device.keys():
+            has_labels = True
+            labels = ReadSheet(device['nk_labels']).read_lbl_file()
+            input_labels = labels['inputs']
+            output_labels = labels['outputs']
+
+        total_inputs = device['inputs']
+        total_outputs = device['outputs']
+
+        #  inputs radiobuttons
+
+        inputs_frame = Frame(add_nk_cue, bg=bg_color)
+        inputs_buttons = []
+        selected_input = None
+
+        def assign_input(input):
+            selected_input = input
+
+        for input in range(1, int(total_inputs) + 1):
+            if has_labels:
+                input_label = f"{str(input)}:  {input_labels[input-1]}"
+            else:
+                input_label = f"Input {str(input)}"
+
+            inputs_buttons.append(Radiobutton(inputs_frame, bg=bg_color, fg=text_color, font=(font, other_text_size-2), text=input_label,
+                                              command=lambda input=input: assign_input(input)))
+
+        for iteration, button in enumerate(inputs_buttons):
+            row = math.floor(iteration/6)
+            column = iteration % 6
+            button.grid(row=row, column=column, sticky='w')
+
+        #  outputs radiobuttons
+
+        outputs_frame = Frame(add_nk_cue, bg=bg_color)
+        outputs_buttons = []
+        selected_output = None
+
+        def assign_output(output):  #todo when output clicked, get status and show to user
+            ScpaViaIP2SL(ip=device['ip_address']).get_status(output=output)
+            selected_output = output
+
+        for output in range(1, int(total_outputs) + 1):
+            if has_labels:
+                output_label = f"{str(output)}: {output_labels[output-1]}"
+            else:
+                output_label = f"Outpur {str(output)}"
+
+            outputs_buttons.append(Radiobutton(outputs_frame, bg=bg_color, fg=text_color, font=(font, other_text_size-2), text=output_label,
+                                              command=lambda output=output: assign_output(output)))
+
+        for iteration, button in enumerate(outputs_buttons):
+            row = math.floor(iteration/6)
+            column = iteration % 6
+            button.grid(row=row, column=column, sticky='w')
+
+        outputs_frame.pack(anchor='w', pady=20)
+        inputs_frame.pack(anchor='w', pady=20)
 
     def __add_pvp_cue(self, device):
             add_pvp_cue_window = Tk()
@@ -563,6 +645,27 @@ class CueCreator:
                          font=(font, plan_text_size),
                          command=okay_pressed).grid(row=1, column=0)
 
+    def __add_ez_outlet_2(self, device):
+        add_ez_outlet_cue_window = Tk()
+        add_ez_outlet_cue_window.configure(bg=bg_color)
+
+        command_selected = StringVar(add_ez_outlet_cue_window, value=None)
+
+        def okay_pressed():
+            self.current_cues.append({
+                'uuid': device['uuid'],
+                'action': command_selected.get()
+            })
+            logger.debug('CueCreator.__add_ez_outlet_2 pressed. uuid %s, action %s', device['uuid'], command_selected)
+            self.__update_cues_display()
+            add_ez_outlet_cue_window.destroy()
+
+        Radiobutton(add_ez_outlet_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Turn Outlet Off', selectcolor=bg_color, variable=command_selected, value='turn_off').pack()
+        Radiobutton(add_ez_outlet_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Turn Outlet On', selectcolor=bg_color, variable=command_selected, value='turn_on').pack()
+        Radiobutton(add_ez_outlet_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Toggle Outlet State', selectcolor=bg_color, variable=command_selected, value='toggle_state').pack()
+        Radiobutton(add_ez_outlet_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Reset Outlet', selectcolor=bg_color, variable=command_selected, value='reset').pack()
+        Button(add_ez_outlet_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=okay_pressed).pack()
+
     def __add_reminder_cue_clicked(self):
         # creates a new window for adding a reminder with minutes, seconds, reminder text, and okay.
         logger.debug('add reminder button clicked')
@@ -646,26 +749,57 @@ class CueCreator:
             self.cues_display_text = self.cues_display_text + cue_verbose + '\n'
         self.current_cues_display.configure(text=self.cues_display_text)
 
-    def __add_to_pco(self):
+    def __add_cues(self):
         # if adding to individual plan item, add cues to app cues note section.
-        # if adding to global cues, the scheme looks like: list>list>string>dict<list<list
+        # if adding to plan or global cues, the scheme looks like: list>list>string>dict<list<list
         #
         # [
         #   ['cue 1 name assigned by user', [{cue 1 action 1 data}{cue 1 action 2data}]
         #   ['cue 2 name assigned by user', [{cue 2 action 1 data}{cue 2 action 2 data}]
         # ]
         #
-        # When adding global, we append new data to the old data, then update the plan note with the old + new data
+        # When adding plan, we append new data to the old data, then update the plan note with the old + new data
 
         if self.cue_type == 'item':
-            logger.debug('cue_creator.__add_to_pco: attempting to add cues to pco. service_type_id: %s, service_id: %s, item_id: %s, items: %s',
+            logger.debug('cue_creator.__add_cues attempting to add cues to pco. service_type_id: %s, service_id: %s, item_id: %s, items: %s',
                           self.service_type_id, self.plan_id, self.input_item_id, self.current_cues)
             self.pco_plan.create_and_update_item_app_cue(item_id=self.input_item_id, app_cue=json.dumps(self.current_cues))
-        if self.cue_type == 'global':
+
+        if self.cue_type == 'plan':
             custom_cue_name = self.custom_name_entry.get()
             custom_cue_set = self.current_cues
             self.imported_cues.append([custom_cue_name, custom_cue_set])
             self.pco_plan.create_and_update_plan_app_cues(note_content=json.dumps(self.imported_cues))
+
+        if self.cue_type == 'global':
+            abs_path = os.path.dirname(__file__)
+            abs_file = os.path.join(abs_path, 'global_cues.json')
+            current_cue = [self.custom_name_entry.get(), self.current_cues]
+            logger.debug('Writing new global cue content: %s', current_cue)
+
+            if not os.path.exists(abs_file):  # If global_cues.json doesn't exist, create it and write cues to it
+                logger.info('global_cues.json not found. Creating...')
+                with open('global_cues.json', 'w') as f:
+                    logger.debug('Creating global_cues.json and writing content: %s', current_cue)
+                    f.writelines(json.dumps([current_cue]))
+
+            else:  # write current cues to global_cues.json
+                with open('global_cues.json', 'r') as f:
+                    contents = f.read()
+
+                    if len(contents) > 0:  # If file contains content already, append it
+                        current_global_cues = json.loads(contents)
+
+                        current_global_cues.append(current_cue)
+
+                        with open('global_cues.json', 'w') as f_write:
+                            logger.debug('appending cues to file: %s', current_global_cues)
+                            f_write.writelines(json.dumps(current_global_cues))
+
+                    else:  # if file doesn't contain cues already, write without appending
+                        with open('global_cues.json', 'w') as f_write:
+                            logger.debug('Writing cues to empty file: %s', current_cue)
+                            f_write.writelines(json.dumps(current_cue))
 
         self.cue_creator_window.destroy()
         self.main_ui.reload()
