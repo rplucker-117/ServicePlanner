@@ -5,7 +5,7 @@ from logzero import logger
 class ReadSheet:
     def __init__(self, spreadsheet_path):
         self.sheet_path = spreadsheet_path
-        self.spreadsheet = ezodf.opendoc(self.sheet_path)
+        self.spreadsheet = None
         logger.debug('Opening spreadsheet %s', self.sheet_path)
 
     def read_cc_sheet(self):
@@ -19,6 +19,7 @@ class ReadSheet:
         # from a specified spreadsheet in .ods format. Use carbonite_cc_name_template.ods.
 
         logger.debug('Reading rosstalk custom control spreadsheet: %s', self.sheet_path)
+        self.spreadsheet = ezodf.opendoc(self.sheet_path)
         sheet = self.spreadsheet.sheets['Sheet1']
 
         cc_data = {}
@@ -34,6 +35,23 @@ class ReadSheet:
         logger.debug('Got sheet data: %s', cc_data)
         return cc_data
 
-# if __name__ == '__main__':
-#     sheet = read_sheet(spreadsheet_path='flowood.ods')
-#     sheet.read_cc_sheet()
+    def read_lbl_file(self):  # reads a nk .lbl sheet, outputs a dict>list containing names of each input/output
+        logger.debug('reading nk lbl sheet: %s', self.sheet_path)
+
+        inputs = []
+        outputs = []
+
+        with open(self.sheet_path) as f:
+            for line in f.readlines():
+                inputs.append(line.split(',')[1])  # inputs
+                outputs.append(line.split(',')[3])  # outputs
+
+        io = {
+            'inputs': inputs,
+            'outputs': outputs
+        }
+
+        return io
+
+if __name__ == '__main__':
+    pprint.pprint(ReadSheet('2021_05_11.lbl').read_lbl_file())
