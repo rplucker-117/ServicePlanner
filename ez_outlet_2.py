@@ -37,7 +37,7 @@ class EZOutlet2:
         if r.status_code == 200:
             logger.debug('EZOutlet2: request made successfully. control param: %s, ip: %s', control, self.ip)
         else:
-            logger.error('EZOutlet2: request returned error. Control param %s, ip %s, response body: %s', control, self.ip, r.text)
+            logger.error('EZOutlet2: request returned error. Control param %s, ip %s, response body: %s \n request: %s', control, self.ip, r.text, r.raw)
 
 
 
