@@ -367,7 +367,7 @@ class MainUI:
         self.kipro_storage_remaining_bars = []
 
         #  if global_cues.json exists, read. If file does not exist, variable is set to None
-        self.global_cues = None
+        self.global_cues = []
         if os.path.exists(os.path.join(abs_path, 'global_cues.json')):
             with open('global_cues.json', 'r') as f:
                 self.global_cues = json.loads(f.read())
