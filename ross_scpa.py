@@ -90,11 +90,12 @@ class ScpaViaIP2SL:
 
         command = 'X' + output_str + ',' + input_str + ',' + str(breakaway)
 
+        self.__create_socket()
         self.__connect()
         self.__send_data(data=command)
+        self.__listen()
         self.__close()
 
 if __name__ == '__main__':
     scp = ScpaViaIP2SL(ip='10.1.60.128')
-    for output in range(1,73):
-        print(scp.get_status(output=output))
+    print(scp.get_status(output=5))
