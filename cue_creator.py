@@ -15,11 +15,16 @@ from kipro import *
 import threading
 from sheet_reader import ReadSheet
 import math
-from ross_scpa import ScpaViaIP2SL
 from ez_outlet_2 import EZOutlet2
+from select_service import SelectService
+from exos_telnet import Exos
+import socket
+from tkinter import messagebox
+from ross_scpa import ScpaViaIP2SL
+from sheet_reader import ReadSheet
 
 class CueCreator:
-    def __init__(self, startup, ui, cue_type='item', devices=None):
+    def __init__(self, startup, ui, cue_type='item', devices=None, imported_cues = None):
 
         self.service_type_id = startup.service_type_id
         self.plan_id = startup.service_id
@@ -39,7 +44,7 @@ class CueCreator:
         self.bottom_frame = Frame(self.cue_creator_window, bg=bg_color)  # very bottom, holds separator as well as main function buttons
         self.bottom_buttons_frame = Frame(self.bottom_frame, bg=bg_color)  # holds add/cancel/test buttons at bottom. Child of bottom_frame
 
-        self.current_cues_display = Label(self.current_cues_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), justify=LEFT)
+        self.current_cues_listbox = Listbox(self.current_cues_frame, bg=bg_color, fg=text_color, font=(font, other_text_size-1), height=15)
 
         # elements for is type is 'plan' cue
         self.custom_name_frame = Frame(self.bottom_frame, bg=bg_color)
@@ -49,6 +54,7 @@ class CueCreator:
         self.input_item = None
         self.cues_display_text = str()
         self.current_cues = []
+
 
         self.devices = devices
 
@@ -62,6 +68,42 @@ class CueCreator:
             self.imported_cues = self.pco_plan.get_plan_app_cues()
             if self.imported_cues is None:
                 self.imported_cues = []
+
+        def verify_ip(ip):
+            try:
+                socket.inet_aton(ip)
+                return True
+            except socket.error:
+                return False
+
+        def is_open(ip, port):
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1)
+            try:
+                s.connect((ip, int(port)))
+                s.shutdown(1)
+                return True
+            except:
+                return False
+
+        # obtain resi ip address automatically
+        for device in self.devices:
+            if device['type'] == 'resi' and device['obtain_ip_automatically']:
+                logger.debug('cue_creator: attempting to obtain resi ip automatically')
+                try:
+                    ip = Exos(host=device['exos_mgmt_ip'],
+                              user=device['exos_mgmt_user'],
+                              password=device['exos_mgmt_pass']).get_port_addresses(device['resi_exos_port'])['ips'][0]
+                except TimeoutError:
+                    ip = device['ip_address']
+                    pass
+
+                if verify_ip(ip) and is_open(ip=ip, port=7788):
+                    logger.debug('cue_creator: successfully got resi ip: %s', ip)
+                    device['ip_address'] = ip
+                else:
+                    messagebox.showerror(title='Could not get resi ip', message=f'Could not automatically get Resi Decoder IP address. Using default {device["ip_address"]} instead.')
+                    logger.error('cue_creator: did not successfully get resi address. using default %s instead.', device['ip_address'])
 
     def create_cues(self, input_item=None):
         self.input_item = input_item
@@ -91,6 +133,8 @@ class CueCreator:
             for cue in cuelist:
                 logger.debug('creating verbose output from %s', cue)
                 device = self.__get_device_user_name_from_uuid(uuid=cue['uuid'])
+                if device is None:
+                    logger.critical('devices file mismatch')
 
                 if device['type'] == 'pvp':
                     cue_verbose = f"{device['user_name']}:   Cue {cue['cue_name']}"
@@ -134,6 +178,12 @@ class CueCreator:
                     cue_verbose = f"{device['user_name']}: {cue['action']}"
                     cues_verbose_list.append(cue_verbose)
 
+                if device['type'] == 'nk_scpa_ip2sl':
+                    labels = ReadSheet(device['nk_labels']).read_lbl_file()
+                    inputs = labels['inputs']
+                    outputs = labels['outputs']
+                    cue_verbose = f"{device['user_name']}: route input {cue['input']} ({inputs[int(cue['input']-1)]}) to output {cue['output']} ({outputs[int(cue['output']-1)]})"
+                    cues_verbose_list.append(cue_verbose)
 
             return cues_verbose_list
 
@@ -182,7 +232,8 @@ class CueCreator:
                         if cue['action'] == 'reset':
                             outlet.reset()
 
-                    # todo add nk
+                    elif device['type'] == 'nk_scpa_ip2sl':
+                        ScpaViaIP2SL(ip=device['ip_address']).switch_output(input=cue['input'], output=cue['output'])
 
                     else:
                         logger.warning('Received cue not in activate_cues list: %s', cue)
@@ -211,7 +262,9 @@ class CueCreator:
         self.current_cues_frame.pack_propagate(0)
         cues_to_add_label = Label(self.current_cues_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Cues to Add:')
         cues_to_add_label.pack(anchor='nw')
-        self.current_cues_display.pack(anchor='nw')
+
+        self.__update_cues_display()
+        self.current_cues_listbox.pack(anchor='w', fill=BOTH, pady=10)
 
         if self.cue_type == 'item':
             try:
@@ -224,10 +277,10 @@ class CueCreator:
         Frame(self.bottom_frame, bg=separator_color, width=600, height=1).grid(row=0, column=0) # Above bottom buttons
         Frame(self.cue_creator_window, bg=separator_color, width=1, height=300).grid(row=0, column=1) # Left of cue type buttons
 
-        # If plan cue, add custom name
+        # If plan/global cue, add custom name
         if self.cue_type in ('plan', 'global'):
             self.custom_name_frame.grid(row=0, column=0)
-            Label(self.custom_name_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Plan Cue Name').pack()
+            Label(self.custom_name_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Cue Name').pack()
             self.custom_name_entry.pack()
 
         def add_cue_clicked(device):
@@ -267,10 +320,12 @@ class CueCreator:
         Button(self.bottom_buttons_frame, text='Test', font=(font, plan_text_size), bg=bg_color, fg=text_color, command=self.__test).grid(row=1, column=0)
         Button(self.bottom_buttons_frame, text='Add Cue(s)', font=(font, plan_text_size), bg=bg_color, fg=text_color, command=self.__add_cues).grid(row=1, column=1)
         Button(self.bottom_buttons_frame, text='Cancel', font=(font, plan_text_size), bg=bg_color, fg=text_color, command=lambda: self.cue_creator_window.destroy()).grid(row=1, column=2)
+        Button(self.bottom_buttons_frame, text='Copy cues from a plan item', font=(font, plan_text_size), bg=bg_color, fg=text_color, command=lambda: self.__copy_from_plan_item()).grid(row=1, column=3)
+        Button(self.bottom_buttons_frame, text='Remove Selected', font=(font, plan_text_size), bg=bg_color, fg=text_color, command=lambda: self.__remove_selected()).grid(row=1, column=4)
 
         self.__update_cues_display()
 
-    def __add_nk_scpa_ip2sl_cue(self, device):  #todo
+    def __add_nk_scpa_ip2sl_cue(self, device):
         logger.debug('__add_nk_scpa_ip2sl_cue: received. device: %s', device)
 
         add_nk_cue = Tk()
@@ -291,10 +346,8 @@ class CueCreator:
 
         inputs_frame = Frame(add_nk_cue, bg=bg_color)
         inputs_buttons = []
-        selected_input = None
 
-        def assign_input(input):
-            selected_input = input
+        selected_input = IntVar(inputs_frame)
 
         for input in range(1, int(total_inputs) + 1):
             if has_labels:
@@ -302,8 +355,13 @@ class CueCreator:
             else:
                 input_label = f"Input {str(input)}"
 
-            inputs_buttons.append(Radiobutton(inputs_frame, bg=bg_color, fg=text_color, font=(font, other_text_size-2), text=input_label,
-                                              command=lambda input=input: assign_input(input)))
+            inputs_buttons.append(Radiobutton(inputs_frame,
+                                              bg=bg_color,
+                                              selectcolor=bg_color,
+                                              fg=text_color, font=(font, other_text_size-2),
+                                              text=input_label,
+                                              variable=selected_input,
+                                              value=input))
 
         for iteration, button in enumerate(inputs_buttons):
             row = math.floor(iteration/6)
@@ -314,28 +372,51 @@ class CueCreator:
 
         outputs_frame = Frame(add_nk_cue, bg=bg_color)
         outputs_buttons = []
-        selected_output = None
 
-        def assign_output(output):  #todo when output clicked, get status and show to user
-            ScpaViaIP2SL(ip=device['ip_address']).get_status(output=output)
-            selected_output = output
+        selected_output = IntVar(outputs_frame)
+
+        def show_current_route():
+            current_route = ScpaViaIP2SL(ip=device['ip_address']).get_status(output=selected_output.get())
+            if current_route != 0:
+                inputs_buttons[current_route-1].flash()
+                inputs_buttons[current_route-1].select()
 
         for output in range(1, int(total_outputs) + 1):
             if has_labels:
                 output_label = f"{str(output)}: {output_labels[output-1]}"
             else:
-                output_label = f"Outpur {str(output)}"
+                output_label = f"Output {str(output)}"
 
-            outputs_buttons.append(Radiobutton(outputs_frame, bg=bg_color, fg=text_color, font=(font, other_text_size-2), text=output_label,
-                                              command=lambda output=output: assign_output(output)))
+            outputs_buttons.append(Radiobutton(outputs_frame,
+                                               bg=bg_color,
+                                               fg=text_color,
+                                               selectcolor=bg_color,
+                                               font=(font, other_text_size-2),
+                                               text=output_label,
+                                               variable=selected_output,
+                                               value=output,
+                                               command=show_current_route))
 
         for iteration, button in enumerate(outputs_buttons):
             row = math.floor(iteration/6)
             column = iteration % 6
             button.grid(row=row, column=column, sticky='w')
 
+        def add():
+            self.current_cues.append({
+                'uuid': device['uuid'],
+                'input': selected_input.get(),
+                'output': selected_output.get()
+            })
+
+            self.__update_cues_display()
+            add_nk_cue.destroy()
+
+        okay = Button(add_nk_cue, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Cue', command=add)
+
         outputs_frame.pack(anchor='w', pady=20)
         inputs_frame.pack(anchor='w', pady=20)
+        okay.pack()
 
     def __add_pvp_cue(self, device):
             add_pvp_cue_window = Tk()
@@ -744,10 +825,16 @@ class CueCreator:
 
     def __update_cues_display(self):
         logger.debug('Updating Cues Display: Input %s', self.current_cues)
-        self.cues_display_text = str()
-        for cue_verbose in self.verbose_decode_cues(cuelist=self.current_cues):
-            self.cues_display_text = self.cues_display_text + cue_verbose + '\n'
-        self.current_cues_display.configure(text=self.cues_display_text)
+
+        self.current_cues_listbox.delete(0, 'end')
+
+        for iteration, cue_verbose in enumerate(self.verbose_decode_cues(cuelist=self.current_cues)):
+            self.current_cues_listbox.insert(iteration, cue_verbose)
+
+    def __remove_selected(self):
+        logger.debug('Removing selected item: %s', self.current_cues[self.current_cues_listbox.curselection()[0]])
+        self.current_cues.pop(self.current_cues_listbox.curselection()[0])
+        self.current_cues_listbox.delete(self.current_cues_listbox.curselection()[0])
 
     def __add_cues(self):
         # if adding to individual plan item, add cues to app cues note section.
@@ -803,6 +890,46 @@ class CueCreator:
 
         self.cue_creator_window.destroy()
         self.main_ui.reload()
+
+    def __copy_from_plan_item(self):
+        from_plan = SelectService(send_to=self)
+        from_plan.ask_service_info()
+
+    def receive_plan_details(self, service_type_id, service_id):  # for copying actions from a specific plan item
+        from_pco_plan = PcoPlan(service_type=service_type_id, plan_id=service_id)
+        from_pco_plan_items = from_pco_plan.get_service_items()[1]
+
+        copy_from_plan_item_window = Tk()
+        copy_from_plan_item_window.configure(bg=bg_color)
+
+        def select(item):
+            copy_from_plan_item_window.destroy()
+            cues = item['notes']['App Cues']
+            for cue in cues:
+                self.current_cues.append(cue)
+            self.__update_cues_display()
+
+        item_frames = []
+        item_separators = []
+        for iteration, item in enumerate(from_pco_plan_items):
+            if item['type'] != 'header' and 'App Cues' in (item['notes'].keys()):
+                frame = Frame(copy_from_plan_item_window, bg=bg_color)
+                item_frames.append(frame)
+
+                Label(frame, bg=bg_color, fg=text_color, font=(font, 12), text=item['title'], justify=LEFT).pack(side=LEFT, padx=10, pady=10, anchor='w')
+                verbose_title = ''
+                for verbose in self.verbose_decode_cues(item['notes']['App Cues']):
+                    verbose_title += verbose + '\n'
+                Label(frame, bg=bg_color, fg=text_color, font=(font, 7), text=verbose_title, justify=LEFT).pack(side=LEFT, padx=10, anchor='w')
+                Button(frame, bg=bg_color, fg=text_color, text='Select', font=(font, 12), command=lambda item=item: select(item)).pack(side=RIGHT, padx=10, anchor='e')
+
+                separator = Frame(copy_from_plan_item_window, bg=separator_color, width=500, height=1)
+                separator.pack_propagate(0)
+                item_separators.append(separator)
+
+        for frame, separator in zip(item_frames, item_separators):
+            frame.pack(anchor='e')
+            separator.pack(pady=4)
 
     def __test(self):
         t = threading.Thread(target=lambda: self.activate_cues(cues=self.current_cues))
