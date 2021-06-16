@@ -22,6 +22,7 @@ try:
     from flask_server import flask_server as fs
     import urllib.parse
     from device_editor import DeviceEditor
+    from select_service import SelectService
 
 except Exception as e:
     from setup import *
@@ -39,65 +40,14 @@ if not os.path.exists(os.path.join(abs_path, 'logs')):
 log_file_name = os.path.join(os.path.join(abs_path, 'logs'),time.strftime('%Y_%m_%d__%H_%M') + '.log')
 logfile(log_file_name)
 
-class SelectService:
-    def __init__(self, send_to):
-        self.service_type_id = None
-        self.service_id = None
-
-        self.service_types_menu = Tk()
-        self.services_menu = Tk()
-        self.services_menu.withdraw()
-        self.pco_plan = PcoPlan()
-
-        self.send_to = send_to
-
-    def ask_service_info(self):
-        self.__build_service_types_menu()
-
-    def __build_service_types_menu(self):
-        self.service_types_menu.title('Pick service folder')
-        self.service_types_menu.configure(bg=bg_color)
-
-        # Create button for each service type, call build_service_types_menu when clicked
-        for service_type in self.pco_plan.get_service_types()[1]:
-            Button(self.service_types_menu, text=service_type['name'],
-                   command=lambda
-                 service_type=service_type: self.__build_services_menu(
-                 service_type_id=service_type['id']),
-                   bg=bg_color, fg=text_color, font=(font, other_text_size), bd=1, width=50,
-                   pady=3).pack()
-        self.service_types_menu.mainloop()
-
-    def __build_services_menu(self, service_type_id):
-        self.service_types_menu.destroy()
-
-        self.service_type_id = service_type_id
-        self.services_menu.deiconify()
-
-        self.services_menu.title('Pick Service')
-        self.services_menu.configure(bg=bg_color)
-        self.pco_plan = PcoPlan(service_type=service_type_id)
-
-        #Create button for each service within service type, call build_plan_window + destroy root when clicked
-        for service in self.pco_plan.get_services_from_service_type()[1]:
-            Button(self.services_menu, text=service['date'], command=lambda service=service: self.__update_values(id=service['id']),
-                   bg=bg_color, fg=text_color, font=(font, other_text_size), bd=1, width=50,
-                   pady=3, ).pack()
-
-    def __update_values(self, id):
-        self.services_menu.destroy()
-        self.service_id = id
-        logger.debug('SelectService: service_type_id: %s, service_id: %s', self.service_type_id, self.service_id)
-        if not self.send_to is None:
-            self.send_to.receive_plan_details(service_type_id=self.service_type_id, service_id=self.service_id)
-
+logging.getLogger('urllib3').setLevel(logging.INFO)
 
 class Utilities:
     def __init__(self, main_ui_window_init):
         self.main_ui_window = main_ui_window_init
-        self.cue_handler = CueCreator(startup=self.main_ui_window.startup, ui=self.main_ui_window, devices=self.main_ui_window.startup.devices)
-        self.cue_handler_plan = CueCreator(startup=self.main_ui_window.startup, ui=self.main_ui_window, devices=self.main_ui_window.startup.devices, cue_type='plan')
-        self.cue_handler_global = CueCreator(startup=self.main_ui_window.startup, ui=self.main_ui_window, devices=self.main_ui_window.startup.devices, cue_type='global')
+        self.cue_handler = main_ui_window_init.cue_handler
+        self.cue_handler_global = main_ui_window_init.cue_handler_global
+        self.cue_handler_plan = main_ui_window_init.cue_handler_plan
 
         self.pco_live = PcoLive(service_type_id = self.main_ui_window.service_type_id, plan_id=self.main_ui_window.service_id)
         self.pco_plan = PcoPlan(service_type = self.main_ui_window.service_type_id, plan_id=self.main_ui_window.service_id)
@@ -306,6 +256,7 @@ class MainUI:
         self.pco_plan = PcoPlan(service_type=self.service_type_id, plan_id=self.service_id)
         self.cue_handler = CueCreator(ui=self, startup=startup, devices=startup.devices)
         self.cue_handler_global = CueCreator(ui=self, startup=startup, devices=startup.devices, cue_type='global')
+        self.cue_handler_plan = CueCreator(ui=self, startup=startup, devices=startup.devices, cue_type='plan')
         self.kipro_ui = KiProUi()
         self.kipro = KiPro()
 
@@ -357,6 +308,8 @@ class MainUI:
         self.item_producer_note_labels = []
         self.item_app_cue_labels = []
 
+        self.progress_bar = None
+
         self.all_kipros = []
         if self.startup.devices is not None:
             for device in self.startup.devices:
@@ -366,8 +319,10 @@ class MainUI:
         self.kipro_buttons = []
         self.kipro_storage_remaining_bars = []
 
+        self.plan_cues = []
+
         #  if global_cues.json exists, read. If file does not exist, variable is set to None
-        self.global_cues = None
+        self.global_cues = []
         if os.path.exists(os.path.join(abs_path, 'global_cues.json')):
             with open('global_cues.json', 'r') as f:
                 self.global_cues = json.loads(f.read())
@@ -380,6 +335,7 @@ class MainUI:
         self.plan_window.configure(bg=bg_color)
 
         self.__build_current_service_time()
+        # self.__build_time_remaining_progress_bar()
         self.__build_clock()
         self.__build_item_timer()
         self.__build_items_view()
@@ -604,6 +560,12 @@ class MainUI:
         reloaded_ui = MainUI(startup=self.startup)
         reloaded_ui.build_plan_window()
 
+    def __build_time_remaining_progress_bar(self):
+        self.progress_bar = Canvas(self.plan_window)
+        if self.time_remaining_is_positive:
+            self.progress_bar.configure(height=3, bg=accent_color_1)
+        self.progress_bar.grid(row=10, column=0, sticky='w')
+
     def __build_current_service_time(self):
         logger.debug('Building current service time info')
         current_service_time = self.pco_plan.get_current_live_service()
@@ -622,6 +584,7 @@ class MainUI:
         time_label.pack(side=LEFT)
 
         def tick():
+
             time_string = time.strftime('%H:%M:%S')
             time_label.config(text=time_string)
             time_label.after(1000, tick)
@@ -636,6 +599,15 @@ class MainUI:
         time_label.pack(side=LEFT, padx=50)
 
         def tick():
+            current_item_length = int(self.plan_items[self.current_item_index - 1]['length'])
+            try:
+                percentage = 1 - self.current_item_timer_input/current_item_length
+            except ZeroDivisionError:
+                pass
+
+            if self.time_remaining_is_positive and self.progress_bar is not None:
+                self.progress_bar.configure(width=percentage*plan_item_frame_width)
+
             if self.current_item_timer_input == 0:
                 self.time_remaining_is_positive = False
 
@@ -794,8 +766,8 @@ class MainUI:
         if self.pco_plan.check_if_plan_app_cue_exists():
             logger.debug('MainUI.__build_plan_cue_buttons: adding plan cue buttons')
             self.plan_cues_frame.grid(row=3, column=0)
-            plan_cues = self.pco_plan.get_plan_app_cues()
-            for iteration, cue in enumerate(plan_cues):
+            self.plan_cues = self.pco_plan.get_plan_app_cues()
+            for iteration, cue in enumerate(self.plan_cues):
                 cue_name = cue[0]
                 cue_data = cue[1]
                 logger.debug('Creating plan cues button: %s, cue_data = %s', cue_name, cue_data)
@@ -977,9 +949,11 @@ class Main:  #startup
                 self.devices = json.loads(f.read())
         else:
             logger.warning('Did not find devices.json file')
-            self.devices = None
+            DeviceEditor().build_default_file()
+            with open('devices.json', 'r') as f:
+                self.devices = json.loads(f.read())
 
-        self.main_service = SelectService(send_to=None)
+        self.main_service = SelectService()
         self.main_service.ask_service_info()
 
         self.service_type_id = self.main_service.service_type_id
@@ -994,10 +968,9 @@ class Main:  #startup
 
         self.main_ui.build_plan_window()
 
-
     def start_webserver(self):
         logger.info('Starting webserver')
-        threading.Thread(target=lambda: fs.start(startup_class=self)).start()
+        #threading.Thread(target=lambda: fs.start(startup_class=self)).start()
 
 
 start = Main()
