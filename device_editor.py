@@ -4,6 +4,7 @@ from logzero import logger
 from tkinter import *
 from tkinter import messagebox
 from tkinter import filedialog
+from tkinter import IntVar
 from settings import *
 import uuid
 import socket
@@ -43,12 +44,15 @@ class DeviceEditor:
                 'uuid': '07af78bf-9149-4a12-80fc-0fa61abc0a5c'
             })
 
-
-        self.device_editor_window = Tk()
+        self.root = Tk()
+        self.root.withdraw()
+        self.device_editor_window = Toplevel(self.root)
         self.devices_listbox = Listbox(self.device_editor_window)
+
 
         self.new_device_window = Tk()
         self.new_device_window.configure(bg=bg_color)
+        self.new_device_window.title('Select a device type to add')
 
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add ProVideoPlayer', command=self.__add_pvp).pack()
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Ross Carbonite', command=self.__add_ross_carbonite).pack()
@@ -78,7 +82,10 @@ class DeviceEditor:
         Button(self.device_editor_window, text='Show details', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self.__show_details).pack(side=LEFT, padx=10)
         Button(self.device_editor_window, text='Write changes to disk', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self.__update_devices_file).pack(side=RIGHT, padx=10)
 
-        self.device_editor_window.mainloop()
+        self.root.mainloop()
+
+    def build_default_file(self):
+        self.__update_devices_file()
 
     def __update_devices_file(self):
         if not os.path.exists('devices_backup/'):
@@ -94,6 +101,8 @@ class DeviceEditor:
         logger.info('Updating devices.json file. Contents: %s', self.devices)
         with open('devices.json', 'w') as f:
             f.writelines(json.dumps(self.devices))
+
+        self.device_editor_window.destroy()
 
     def __add_device(self, device):
         # Adds date added and UUID to device info, adds to main devices dict, updates listbox
@@ -454,7 +463,7 @@ class DeviceEditor:
         add_resi = Tk()
         add_resi.title('Add Resi Decoder')
         add_resi.configure(bg=bg_color)
-        add_resi.geometry('700x200')
+        add_resi.geometry('700x350')
 
         name_entry_frame = Frame(add_resi)
         name_entry_frame.configure(bg=bg_color)
@@ -462,23 +471,68 @@ class DeviceEditor:
         info_entry_frame = Frame(add_resi)
         info_entry_frame.configure(bg=bg_color)
 
+        device_description = Label(add_resi, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Add a Resi Streaming Decoder')
+
         name_entry = Entry(name_entry_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        name_label = Label(name_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Name:')
+
+        ip_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Target Resi IP Address:')
         ip_address_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+
+        port_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Resi Rosstalk Port(default 7788):')
         port_entry = Entry(info_entry_frame, width=5, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
 
-        device_description = Label(add_resi, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Add a Resi Streaming Decoder')
-        name_label = Label(name_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Name:')
-        ip_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Target Resi IP Address:')
-        port_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Resi Rosstalk Port(default 7788):')
+        exos_mgmt_ip_entry_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='exos management address: ')
+        exos_mgmt_ip_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+
+        exos_mgmt_user_entry_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='exos management username: ')
+        exos_mgmt_user_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+
+        exos_mgmt_pass_entry_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='exos management password: ')
+        exos_mgmt_pass_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+
+        exos_port_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='resi/switch port number: ')
+        exos_port_entry = Entry(info_entry_frame, width=5, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
 
         name_label.pack()
         name_entry.pack()
 
         device_description.pack(side=TOP)
-        ip_label.pack(side=LEFT)
-        ip_address_entry.pack(side=LEFT)
-        port_entry.pack(side=RIGHT)
-        port_label.pack(side=RIGHT)
+
+        ip_label.grid(row=0, column=0, pady=5)
+        ip_address_entry.grid(row=0, column=1, pady=5)
+
+        port_label.grid(row=1, column=0, pady=5)
+        port_entry.grid(row=1, column=1, pady=5)
+
+        def show_exos():
+            exos_mgmt_ip_entry_label.grid(row=4, column=0, pady=5)
+            exos_mgmt_ip_entry.grid(row=4, column=1, pady=5)
+
+            exos_mgmt_user_entry_label.grid(row=5, column=0, pady=5)
+            exos_mgmt_user_entry.grid(row=5, column=1, pady=5)
+
+            exos_mgmt_pass_entry_label.grid(row=6, column=0, pady=5)
+            exos_mgmt_pass_entry.grid(row=6, column=1, pady=5)
+
+            exos_port_label.grid(row=7, column=0, pady=5)
+            exos_port_entry.grid(row=7, column=1, pady=5)
+
+            add_resi.geometry('700x500')
+
+        exos_description = Label(add_resi, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), justify=LEFT, wraplength=600,
+                                text="Since Resi Decoders are typically required to have a DHCP acquired address rather than" \
+        "a static one, Service Planner can automatically get it by reading the arp entries on the physical switch port " \
+        "that it's connected to. Only confirmed working on extreme x440 series switches. A target resi IP is required " \
+        "even if obtain ip automatically is checked. Make sure you have telnet enabled on your switch. \n***TEST THIS BEFORE YOU USE IT IN PRODUCTION")
+
+        obtain_automatically_status = BooleanVar(info_entry_frame)
+        obtain_ip_dynamically = Checkbutton(info_entry_frame, bg=bg_color, fg=text_color, selectcolor=bg_color, font=(font, other_text_size-3),
+                                            text='Obtain Resi IP Address Automatically (recommended)', command=show_exos,
+                                            variable=obtain_automatically_status)
+
+        exos_description.pack()
+        obtain_ip_dynamically.grid(row=3, column=0, padx=15)
 
         name_entry_frame.pack(pady=20)
         info_entry_frame.pack(pady=20)
@@ -490,11 +544,27 @@ class DeviceEditor:
                     'type': 'resi',
                     'user_name': name_entry.get(),
                     'ip_address': ip_address_entry.get(),
-                    'port': port_entry.get()
+                    'port': port_entry.get(),
+                    'obtain_ip_automatically': obtain_automatically_status.get()
                 }
+
+                if obtain_automatically_status.get():
+                    if self.__verify_ip(exos_mgmt_ip_entry.get()):
+                        to_add.update({
+                            'exos_mgmt_ip': exos_mgmt_ip_entry.get(),
+                            'exos_mgmt_user': exos_mgmt_user_entry.get(),
+                            'exos_mgmt_pass': exos_mgmt_pass_entry.get(),
+                            'resi_exos_port': exos_port_entry.get()
+                        })
+
+                else:
+                    messagebox.showerror(title='Invalid IP address or Port', message='An Invalid IP address or port was entered')
+                    logger.error('__add_pvp: IP address or port not valid: %s, %s', ip_address_entry.get(), port_entry.get())
+                    add_resi.lift()
 
                 self.__add_device(device=to_add)
                 add_resi.destroy()
+
             else:
                 messagebox.showerror(title='Invalid IP address or Port', message='An Invalid IP address or port was entered')
                 logger.error('__add_pvp: IP address or port not valid: %s, %s', ip_address_entry.get(), port_entry.get())
