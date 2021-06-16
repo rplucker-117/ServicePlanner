@@ -63,12 +63,6 @@ item_separator_color = '#dddddd'
 reminder_color = '#1c1c1c'
 reminder_font_size = 24
 
-resi_ip = '10.2.60.101'
-resi_port = '7788'
-
-rosstalk_ip = '10.1.60.13'
-rosstalk_port = 7788
-
 delay_kipro_start = True
 #adds .5s of delay between multiple kipros, so they import in the correct order in a nle
 
