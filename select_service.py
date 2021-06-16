@@ -7,10 +7,8 @@ from pco_plan import PcoPlan
 from pco_live import PcoLive
 from tkinter import ttk
 
-
-
 class SelectService:
-    def __init__(self, send_to):
+    def __init__(self, send_to=None):
         self.service_type_id = None
         self.service_id = None
 
@@ -61,5 +59,9 @@ class SelectService:
         logger.debug('SelectService: service_type_id: %s, service_id: %s', self.service_type_id, self.service_id)
         if self.send_to is not None:
             self.send_to.receive_plan_details(service_type_id=self.service_type_id, service_id=self.service_id)
-        else:
-            return self.service_type_id, self.service_id
+
+
+
+if __name__ == '__main__':
+    service = SelectService()
+    service.ask_service_info()
