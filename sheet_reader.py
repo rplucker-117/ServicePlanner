@@ -43,8 +43,8 @@ class ReadSheet:
 
         with open(self.sheet_path) as f:
             for line in f.readlines():
-                inputs.append(line.split(',')[1])  # inputs
-                outputs.append(line.split(',')[3])  # outputs
+                outputs.append(line.split(',')[1])  # outputs
+                inputs.append(line.split(',')[3])  # inputs
 
         io = {
             'inputs': inputs,
