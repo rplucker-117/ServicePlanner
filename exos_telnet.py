@@ -12,8 +12,7 @@ class Exos():
 
         self.user = user
         self.password = password
-        self.tn = telnetlib.Telnet(host)
-        self.tn.timeout(1)
+        self.tn = telnetlib.Telnet(host, timeout=1)
 
         self.tn.write((self.user + '\n').encode('ascii'))
         self.tn.read_until(b'password: ').decode('ascii')
@@ -82,6 +81,7 @@ class Exos():
 
     def get_port_addresses(self, port):
         # Get the ip and mac address of devices attached to a port
+        port = str(port)
 
         ips = []
         macs = []
@@ -173,5 +173,5 @@ class Exos():
         self.tn.close()
 
 if __name__ == '__main__':
-    ex = Exos('10.1.60.1')
-    ex.get_port_state('1:6')
+    ex = Exos(host='10.2.60.1', user='admin', password='')
+    ex.get_port_addresses(port=14)
