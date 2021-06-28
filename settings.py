@@ -21,7 +21,7 @@ producer_note_text_size = 9
 live_color = '#a34444'
 default_font = 'Arial'
 item_time_size = 8
-plan_item_frame_width = 1000
+plan_item_frame_width = 1250
 
 separator_color ='#3f3f3f'
 
@@ -71,4 +71,4 @@ kipro_timeout_threshold = 1 #in seconds
 # how often to refresh live adjacent plan
 adjacent_plan_refresh_interval = 5
 
-enable_webserver = True
+enable_webserver = False
