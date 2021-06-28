@@ -44,6 +44,7 @@ class KiPro:
         urllib.request.urlopen(f'http://{ip}/options', data=payload)
 
     def transport_stop(self, ip):
+        self.set_rec_play_mode(ip=ip)
         logger.debug('Setting transport stop on kipro %s', ip)
         payload= 'paramName=eParamID_TransportCommand&newValue=4'.encode('utf-8')
         urllib.request.urlopen(f'http://{ip}/options', data=payload)
@@ -87,6 +88,9 @@ class KiPro:
     def download_clips(self):
         root = Tk()
         root.withdraw()
+
+        kipros = [] #todo fix this
+
 
         files = []
 
