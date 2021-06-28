@@ -22,6 +22,7 @@ import socket
 from tkinter import messagebox
 from ross_scpa import ScpaViaIP2SL
 from sheet_reader import ReadSheet
+from bem104 import BEM104
 
 class CueCreator:
     def __init__(self, startup, ui, cue_type='item', devices=None, imported_cues = None):
@@ -87,23 +88,28 @@ class CueCreator:
                 return False
 
         # obtain resi ip address automatically
-        for device in self.devices:
-            if device['type'] == 'resi' and device['obtain_ip_automatically']:
-                logger.debug('cue_creator: attempting to obtain resi ip automatically')
-                try:
-                    ip = Exos(host=device['exos_mgmt_ip'],
-                              user=device['exos_mgmt_user'],
-                              password=device['exos_mgmt_pass']).get_port_addresses(device['resi_exos_port'])['ips'][0]
-                except TimeoutError:
-                    ip = device['ip_address']
-                    pass
+        if cue_type == 'plan':
+            for device in self.devices:
+                if device['type'] == 'resi' and device['obtain_ip_automatically']:
+                    logger.debug('cue_creator: attempting to obtain resi ip automatically')
+                    try:
+                        ip = Exos(host=device['exos_mgmt_ip'],
+                                  user=device['exos_mgmt_user'],
+                                  password=device['exos_mgmt_pass']).get_port_addresses(device['resi_exos_port'])['ips'][0]
+                        if ip != device['ip_address']:
+                            logger.warning('Resi ip mismatch: devices file: %s, exos: %s', device['ip_address'], ip)
+                            messagebox.showinfo(title='IP address mismatch', message=f"Resi ip acquired from exos switch is different from the ip in device file. Using updated ip {ip} instead of file {device['ip_address']}. \n\n"
+                                                                                     "It's safe to proceed with your live show if you suspect this is correct and you TEST IT, but updating your devices file with the updated address in the future is encouraged.")
+                    except TimeoutError:
+                        ip = device['ip_address']
+                        pass
 
-                if verify_ip(ip) and is_open(ip=ip, port=7788):
-                    logger.debug('cue_creator: successfully got resi ip: %s', ip)
-                    device['ip_address'] = ip
-                else:
-                    messagebox.showerror(title='Could not get resi ip', message=f'Could not automatically get Resi Decoder IP address. Using default {device["ip_address"]} instead.')
-                    logger.error('cue_creator: did not successfully get resi address. using default %s instead.', device['ip_address'])
+                    if verify_ip(ip) and is_open(ip=ip, port=7788): # if ip acquired from exos is valid and port 7788 is open, proceed with using acquired address. Else, use ip on file
+                        logger.debug('cue_creator: successfully got resi ip: %s', ip)
+                        device['ip_address'] = ip
+                    else:
+                        messagebox.showerror(title='Could not get resi ip', message=f'Could not automatically get Resi Decoder IP address. Using default {device["ip_address"]} instead.')
+                        logger.error('cue_creator: did not successfully get resi address. using default %s instead.', device['ip_address'])
 
     def create_cues(self, input_item=None):
         self.input_item = input_item
@@ -140,8 +146,8 @@ class CueCreator:
                     cue_verbose = f"{device['user_name']}:   Cue {cue['cue_name']}"
                     cues_verbose_list.append(cue_verbose)
 
-                if device['type'] == 'Pause':
-                    cue_verbose = f"{cue['device']}:   {cue['time']} seconds."
+                if device['type'] == 'pause':
+                    cue_verbose = f"{cue['device']}: {cue['time']} seconds"
                     cues_verbose_list.append(cue_verbose)
 
                 if device['type'] == 'kipro':
@@ -184,60 +190,81 @@ class CueCreator:
                     outputs = labels['outputs']
                     cue_verbose = f"{device['user_name']}: route input {cue['input']} ({inputs[int(cue['input']-1)]}) to output {cue['output']} ({outputs[int(cue['output']-1)]})"
                     cues_verbose_list.append(cue_verbose)
-
+            logger.debug('verbose_decode_cues: returning %s', cues_verbose_list)
             return cues_verbose_list
 
     def activate_cues(self, cues):
         logger.debug('activate_cues called, cues input: %s', cues)
-        for cue in cues:
-            for device in self.devices:
-                if cue['uuid'] == device['uuid']:
-                    if device['type'] == 'pvp':
-                        pvp(device['ip_address'], device['port']).cue_clip_via_uuid(playlist_uuid=cue['playlist_uuid'], cue_uuid=cue['cue_uuid'])
+        def start_cues():
+            logger.debug('cue_creator.activate_cues.start_cues called')
+            for cue in cues:
+                for device in self.devices:
+                    if cue['uuid'] == device['uuid']:
+                        if device['type'] == 'pvp':
+                            pvp(device['ip_address'], device['port']).cue_clip_via_uuid(playlist_uuid=cue['playlist_uuid'], cue_uuid=cue['cue_uuid'])
 
-                    elif device['type'] == 'ross_carbonite':
-                        if cue['type'] == 'CC':
-                            command = f"CC {cue['bank']}:{cue['CC']}"
-                            logger.info('activate_cues: cueing rosstalk: %s', command)
-                            rt(rosstalk_ip=device['ip_address'], rosstalk_port=device['port'], command=command)
+                        elif device['type'] == 'ross_carbonite':
+                            if cue['type'] == 'CC':
+                                command = f"CC {cue['bank']}:{cue['CC']}"
+                                logger.info('activate_cues: cueing rosstalk: %s', command)
+                                rt(rosstalk_ip=device['ip_address'], rosstalk_port=device['port'], command=command)
 
-                    elif device['type'] == 'kipro':
-                        if device['uuid'] == '07af78bf-9149-4a12-80fc-0fa61abc0a5c':
-                            if cue['start']:
-                                for kipro in self.all_kipros:
-                                    KiPro().start_absolute(ip=kipro['ip_address'], name=kipro['user_name'])
-                            if not cue['start']:
-                                for kipro in self.all_kipros:
-                                    KiPro().transport_stop(ip=kipro['ip_address'])
+                        elif device['type'] == 'kipro':
+                            if device['uuid'] == '07af78bf-9149-4a12-80fc-0fa61abc0a5c':
+                                if cue['start']:
+                                    for kipro in self.all_kipros:
+                                        KiPro().start_absolute(ip=kipro['ip_address'], name=kipro['user_name'])
+                                if not cue['start']:
+                                    for kipro in self.all_kipros:
+                                        KiPro().transport_stop(ip=kipro['ip_address'])
+                            else:
+                                if cue['start']:
+                                    KiPro().start_absolute(ip=device['ip_address'], name=device['user_name'])
+                                if not cue['start']:
+                                    KiPro().transport_stop(ip=device['ip_address'])
+
+                        elif device['type'] == 'resi':
+                            rt(rosstalk_ip=device['ip_address'], rosstalk_port=device['port'], command=cue['command'])
+
+                        elif device['type'] == 'pause':
+                            logger.debug('Pausing %s seconds', cue['time'])
+                            time.sleep(cue['time'])
+
+                        elif device['type'] == 'ez_outlet_2':
+                            outlet = EZOutlet2(ip=device['ip_address'], user=device['username'], password=device['password'])
+                            if cue['action'] == 'turn_off':
+                                outlet.turn_off()
+                            if cue['action'] == 'turn_on':
+                                outlet.turn_on()
+                            if cue['action'] == 'toggle_state':
+                                outlet.toggle_state()
+                            if cue['action'] == 'reset':
+                                outlet.reset()
+
+                        elif device['type'] == 'nk_scpa_ip2sl':
+                            ScpaViaIP2SL(ip=device['ip_address']).switch_output(input=cue['input'], output=cue['output'])
+
+                        elif device['type'] == 'bem104':
+                            b = BEM104(ip=device['ip_address'])
+
+                            if cue['command'] == 'switch_off':
+                                b.switch_off(relay=cue['relay'])
+                            if cue['command'] == 'switch_on':
+                                b.switch_on(relay=cue['relay'])
+                            if cue['command'] == 'toggle':
+                                b.toggle(relay=cue['relay'])
+                            if cue['command'] == 'pulse_on':
+                                b.pulse_on(relay=cue['relay'])
+                            if cue['command'] == 'pulse_off':
+                                b.pulse_off(relay=cue['relay'])
+                            if cue['command'] == 'pulse_toggle':
+                                b.pulse_toggle(relay=cue['relay'])
+
                         else:
-                            if cue['start']:
-                                KiPro().start_absolute(ip=device['ip_address'], name=device['user_name'])
-                            if not cue['start']:
-                                KiPro().transport_stop(ip=device['ip_address'])
+                            logger.warning('Received cue not in activate_cues list: %s', cue)
+                            pass
 
-                    elif device['type'] == 'resi':
-                        rt(rosstalk_ip=device['ip_address'], rosstalk_port=device['port'], command=cue['command'])
-
-                    elif device['type'] == 'pause':
-                        time.sleep(cue['time'])
-
-                    elif device['type'] == 'ez_outlet_2':
-                        outlet = EZOutlet2(ip=device['ip_address'], user=device['username'], password=device['password'])
-                        if cue['action'] == 'turn_off':
-                            outlet.turn_off()
-                        if cue['action'] == 'turn_on':
-                            outlet.turn_on()
-                        if cue['action'] == 'toggle_state':
-                            outlet.toggle_state()
-                        if cue['action'] == 'reset':
-                            outlet.reset()
-
-                    elif device['type'] == 'nk_scpa_ip2sl':
-                        ScpaViaIP2SL(ip=device['ip_address']).switch_output(input=cue['input'], output=cue['output'])
-
-                    else:
-                        logger.warning('Received cue not in activate_cues list: %s', cue)
-                        pass
+        threading.Thread(target=start_cues).start()
 
     def __get_device_user_name_from_uuid(self, uuid):
         for device in self.devices:
@@ -300,6 +327,8 @@ class CueCreator:
                 self.__add_resi_cue(device)
             elif device['type'] == 'ez_outlet_2':
                 self.__add_ez_outlet_2(device)
+            elif device['type'] =='bem104':
+                self.__add_bem104(device)
 
         includes_kipro = None
 
@@ -747,6 +776,45 @@ class CueCreator:
         Radiobutton(add_ez_outlet_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Reset Outlet', selectcolor=bg_color, variable=command_selected, value='reset').pack()
         Button(add_ez_outlet_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=okay_pressed).pack()
 
+    def __add_bem104(self, device):
+        add_bem104_cue_window = Tk()
+        add_bem104_cue_window.configure(bg=bg_color)
+
+        relay_selected = StringVar(add_bem104_cue_window, value=None)
+        command_selected = StringVar(add_bem104_cue_window, value=None)
+
+        left_frame = Frame(add_bem104_cue_window, bg=bg_color)
+        left_frame.grid(row=0, column=0)
+
+        right_frame = Frame(add_bem104_cue_window, bg=bg_color)
+        right_frame.grid(row=0, column=1)
+
+        Radiobutton(left_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Relay 1', selectcolor=bg_color, variable=relay_selected, value='1').pack()
+        Radiobutton(left_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Relay 2', selectcolor=bg_color, variable=relay_selected, value='2').pack()
+
+        Radiobutton(right_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Switch OFF', selectcolor=bg_color, variable=command_selected, value='switch_off').pack()
+        Radiobutton(right_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Switch ON', selectcolor=bg_color, variable=command_selected, value='switch_on').pack()
+        Radiobutton(right_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Toggle State', selectcolor=bg_color, variable=command_selected, value='toggle').pack()
+        Radiobutton(right_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Pulse off/on/off', selectcolor=bg_color, variable=command_selected, value='pulse_on').pack()
+        Radiobutton(right_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Pulse on/off/on', selectcolor=bg_color, variable=command_selected, value='pulse_off').pack()
+        Radiobutton(right_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Pulse Toggle', selectcolor=bg_color, variable=command_selected, value='pulse_toggle').pack()
+
+        def okay_pressed():
+            logger.debug('CueCreator.__add_bem104 pressed. uuid %s, relay: %s, action: %s', device['uuid'], relay_selected.get(), command_selected.get())
+
+            if relay_selected.get() in (None, '') or command_selected.get() in (None, ''):
+                messagebox.showerror(title='Please select relay and command', message='Please select a relay number and command')
+
+            self.current_cues.append({
+                'uuid': device['uuid'],
+                'relay': relay_selected.get(),
+                'command': command_selected.get()
+            })
+            self.__update_cues_display()
+            add_bem104_cue_window.destroy()
+
+        Button(add_bem104_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=okay_pressed).grid(row=1, column=0)
+
     def __add_reminder_cue_clicked(self):
         # creates a new window for adding a reminder with minutes, seconds, reminder text, and okay.
         logger.debug('add reminder button clicked')
@@ -817,6 +885,7 @@ class CueCreator:
 
         def add_pause_button_clicked(seconds):
             self.current_cues.append({
+                'uuid': 'f0d73b84-60b1-4c1d-a49f-f3b11ea65d3f',
                 'device': 'pause',
                 'time': seconds
             })
