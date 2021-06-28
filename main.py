@@ -237,7 +237,6 @@ class Utilities:
         Button(remove_global_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Okay',
                command=okay).pack(side=RIGHT)
 
-
     def __add_device(self):
         pass
 
@@ -369,7 +368,7 @@ class MainUI:
         self.pco_live.go_to_next_item()
         self.update_live()
 
-        if not from_web and enable_webserver is True:
+        if enable_webserver is True and not from_web:
             logger.debug('MainUI.next: sending next command to webserver')
             next_web_data = {'action': 'app_next'}
             requests.post('http://127.0.0.1/action', json=json.dumps(next_web_data))
@@ -717,7 +716,7 @@ class MainUI:
             if 'Producer Notes' in item['notes']:
                 label = Label(frame, bg=bg_color, fg=text_color, text=item['notes']['Producer Notes'], font=(font, producer_note_text_size))
                 self.item_producer_note_labels.append(label)
-                label.place(anchor='nw', x=500)
+                label.place(anchor='nw', x=700)
             else:
                 self.item_producer_note_labels.append(None)
 
@@ -730,7 +729,7 @@ class MainUI:
                 label = Label(frame, bg=bg_color, fg=text_color, text=label_text, justify=LEFT,
                       font=(font, app_cue_font_size))
                 self.item_app_cue_labels.append(label)
-                label.place(anchor='nw', x=750)
+                label.place(anchor='nw', x=1050)
             else:
                 self.item_app_cue_labels.append(None)
 
