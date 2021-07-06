@@ -11,7 +11,7 @@ APP_ID = creds['APP_ID']
 SECRET = creds['SECRET']
 
 class PcoPlan:
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs): # include service_type and plan_id if possible
         if 'service_type' in kwargs:
             self.service_type = kwargs['service_type']
         if 'plan_id' in kwargs:
@@ -343,10 +343,12 @@ class PcoPlan:
         # Gets service items given a service type id and service id. Returns:
         # 0: raw response data in python dict form
         # 1: list of dicts containing item title / type / length / service position / id / sequence, as well as applicable notes
+        # This will also check to see if any plan items are "excluded" from live, and fix them if so
+
         logger.debug('pco_plan_update.get_service_items called. service_type_id: %s, service_id: %s', self.service_type, self.plan_id)
 
         service_request = requests.get(f'https://api.planningcenteronline.com/services/v2/service_types/'
-                                       f'{self.service_type}/plans/{self.plan_id}/items?&include=item_notes', auth=(APP_ID, SECRET))
+                                       f'{self.service_type}/plans/{self.plan_id}/items?&include=item_notes,item_times', auth=(APP_ID, SECRET))
         service_request_dict = json.loads(service_request.text)
 
         # load response data into dict
@@ -364,25 +366,36 @@ class PcoPlan:
         # initial request also includes all item notes, but in a separate dict. Loop through every note returned in ['included'],
         # if item id matches the current dict loop item id, add its content to the 'notes' dict. If note category name is 'App Cues',
         # convert it from json to python dict
-        for note in service_request_dict['included']:
-            item_id = note['relationships']['item']['data']['id']
-            for item in service_items:
-                if item['id'] == item_id:
-                    dict_key = note['attributes']['category_name']
-                    note_content = note['attributes']['content']
 
-                    if dict_key == 'App Cues':
-                        logger.debug('pco_plan.get_service_items: content: %s', note_content)
-                        try:
-                            note_content = json.loads(note_content)
-                        except ValueError:
-                            logger.warning('Invalid app cue data on item %s. Removing it and retrying.', item['title'])
-                            self.remove_item_app_cue(item_id=item_id, note_id=note['id'])
-                            return self.get_service_items()
+        all_included = True
 
-                    item['notes'][dict_key] = note_content
+        for included in service_request_dict['included']:
+            if included['type'] == 'ItemTime':
+                if included['attributes']['exclude'] is False:
+                    all_included = False
 
-        logger.debug('pco_plan_upadte: received service items. %s', service_items)
+            elif included['type'] == 'ItemNote':
+                item_id = included['relationships']['item']['data']['id']
+                for item in service_items:
+                    if item['id'] == item_id:
+                        dict_key = included['attributes']['category_name']
+                        note_content = included['attributes']['content']
+
+                        if dict_key == 'App Cues':
+                            logger.debug('pco_plan.get_service_items: content: %s', note_content)
+                            try:
+                                note_content = json.loads(note_content)
+                            except ValueError:
+                                logger.warning('Invalid app cue data on item %s. Removing it and retrying.', item['title'])
+                                self.remove_item_app_cue(item_id=item_id, note_id=included['id'])
+                                return self.get_service_items()
+
+                        item['notes'][dict_key] = note_content
+
+        if not all_included:
+            self.include_all_items_in_live()
+
+        logger.debug('pco_plan_update: received service items. %s', service_items)
 
         return service_request_dict, service_items
 
@@ -392,8 +405,6 @@ class PcoPlan:
                             auth=(APP_ID, SECRET))
         if not r.status_code in (204, '204'):
             logger.warning('remove_item_app_cue: potentially failed. Returned code %s with content %s', r.status_code, r.text)
-
-
 
     def get_service_type_details_from_id(self):
         # returns:
@@ -444,7 +455,47 @@ class PcoPlan:
 
         return team_members
 
-if __name__ == '__main__':
-    plan = PcoPlan(service_type=1039564, plan_id=52356777)
-    plan.remove_plan_app_cues()
+    def include_all_items_in_live(self): # If some items are "excluded" from the live plan, it will break the service planner app's item order. Run this to make all items "included" in the live plan.
+        r = requests.get(f'https://api.planningcenteronline.com/services/v2/service_types/'
+                                       f'{self.service_type}/plans/{self.plan_id}/items/?&include=item_times', auth=(APP_ID, SECRET))
+        r = r.json()
 
+        excluded = [] # /service_types/#/plans/#/items/#/item_times/id // list of dicts of item time ids that are excluded
+
+        for item_time in r['included']:
+            if item_time['attributes']['exclude'] is True:
+
+                item = {
+                    'item_id': item_time['relationships']['item']['data']['id'],
+                    'time_id': item_time['id']
+                }
+
+                excluded.append(item)
+        if len(excluded) > 0:
+
+            request_headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+            payload = {
+                          "data": {
+                            "type": "ItemTime",
+                            "attributes": {
+                              "exclude": False,
+                            },
+                          }
+                        }
+
+            for item in excluded:
+                r = requests.patch(f'https://api.planningcenteronline.com/services/v2/service_types/'
+                                           f'{self.service_type}/plans/{self.plan_id}/items/{item["item_id"]}/item_times/{item["time_id"]}',
+                                  headers=request_headers,
+                                  data=json.dumps(payload),
+                                  auth=(APP_ID, SECRET))
+                if r.status_code != 200:
+                    logger.critical('pco_plan.include_all_items_in_live: ERROR including item time %s', item)
+                else:
+                    logger.info('pco_plan.include_all_items_in_live: updated live item to be included in plan: %s', item)
+
+
+if __name__ == '__main__':
+    plan = PcoPlan(service_type=824571, plan_id=53401741)
+    # pprint.pprint(plan.get_service_items())
+    plan.get_service_items()
