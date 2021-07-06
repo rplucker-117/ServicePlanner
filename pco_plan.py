@@ -5,6 +5,7 @@ from settings import *
 from logzero import logger
 import zulu
 from creds import Creds
+import math
 
 creds = Creds().read()
 APP_ID = creds['APP_ID']
@@ -440,18 +441,29 @@ class PcoPlan:
         # return list of dicts of all people assigned to plan. Dict includes name, position name, and accept status
         logger.debug('PcoPlan.get_assigned_people: Getting people assigned to plan id %s', self.plan_id)
 
-        r = requests.get(f"https://api.planningcenteronline.com/services/v2/service_types/"
+        total_count_request = requests.get(f"https://api.planningcenteronline.com/services/v2/service_types/"
                          f"{self.service_type}/plans/{self.plan_id}/team_members", auth=(APP_ID, SECRET))
-        r = json.loads(r.text)
+        total_in_plan = json.loads(total_count_request.text)['meta']['total_count']
+
+        members = []
+
+        team = requests.get(f"https://api.planningcenteronline.com/services/v2/service_types/"
+                         f"{self.service_type}/plans/{self.plan_id}/team_members?&per_page={total_in_plan}", auth=(APP_ID, SECRET))
+        team = json.loads(team.text)
+
+
+        for member in team['data']:
+            members.append(member)
 
         team_members = []
 
-        for person in r['data']:
+        for person in members:
             team_members.append({
                 'name': person['attributes']['name'],
                 'position': person['attributes']['team_position_name'],
                 'status': person['attributes']['status']
             })
+        logger.debug('PcoPlan.get_assigned_people: Got people assigned to plan id %s, %s', self.plan_id, team_members)
 
         return team_members
 
@@ -496,6 +508,6 @@ class PcoPlan:
 
 
 if __name__ == '__main__':
-    plan = PcoPlan(service_type=824571, plan_id=53401741)
+    plan = PcoPlan(service_type=824571, plan_id=53401742)
     # pprint.pprint(plan.get_service_items())
-    plan.get_service_items()
+    # pprint.pprint(plan.get_assigned_people())
