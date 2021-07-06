@@ -60,6 +60,13 @@ class CueCreator:
         self.devices = devices
 
         self.all_kipros = []
+
+        self.includes_kipro = False
+
+        for device in self.devices:
+            if device['type'] == 'kipro' and device['user_name'] != 'All Kipros':
+                self.includes_kipro = True
+
         if self.devices is not None:
             for device in self.devices:
                 if device['type'] == 'kipro' and not device['uuid'] == '07af78bf-9149-4a12-80fc-0fa61abc0a5c':
@@ -160,7 +167,7 @@ class CueCreator:
                     cues_verbose_list.append(cue_verbose)
 
                 if device['type'] == 'resi':
-                    cue_verbose = f"{cue['device']}:   {cue['name']}"
+                    cue_verbose = f"{device['user_name']}:   {cue['name']}"
                     cues_verbose_list.append(cue_verbose)
 
                 if device['type'] == 'reminder':
@@ -330,17 +337,16 @@ class CueCreator:
             elif device['type'] =='bem104':
                 self.__add_bem104(device)
 
-        includes_kipro = None
-
         if self.devices is not None:
             for device in self.devices:
-                if not device['type'] == 'kipro':
-                    if not device['type'] in ('pause', 'reminder', 'kipro_all'):
-                        button_name = 'Add ' + device['user_name'] + '(' + device['type'] + ')' + ' cue'
-                        Button(self.cue_type_buttons_frame, text=button_name, font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=lambda device=device: add_cue_clicked(device)).pack()
-                elif device['type'] == 'kipro' and includes_kipro is not True:
-                    Button(self.cue_type_buttons_frame, text='Add KiPro Cue', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_kipro_cue).pack()
-                    includes_kipro = True
+                if not device['type'] in ('pause', 'reminder', 'kipro'):  #if the device is not pause, reminder, or kipro, create a button for it
+                    button_name = 'Add ' + device['user_name'] + '(' + device['type'] + ')' + ' cue'
+                    Button(self.cue_type_buttons_frame, text=button_name, font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=lambda device=device: add_cue_clicked(device)).pack()
+                elif device['type'] == 'kipro' and not device['user_name'] == 'All Kipros':
+                    self.includes_kipro = True
+
+        if self.includes_kipro:
+            Button(self.cue_type_buttons_frame, text='Add KiPro Cue', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_kipro_cue).pack()
 
         Button(self.cue_type_buttons_frame, text='Add Pause', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_pause_cue_clicked).pack()
         Button(self.cue_type_buttons_frame, text='Add Reminder', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_reminder_cue_clicked).pack()
@@ -626,7 +632,14 @@ class CueCreator:
                 bank.grid(row=iteration, column=0)
 
             for iteration, CC in enumerate(CCs):
-                CC.grid(row=iteration, column=1)
+                column_val = 1
+                row_val = iteration
+
+                if iteration > 15:
+                    column_val = 2
+                    row_val = iteration - 16
+
+                CC.grid(row=row_val, column=column_val)
 
             # Gets banks intvar and CCs intvar values, assigns them to cues dict
             def okay_pressed(bank, CC):
