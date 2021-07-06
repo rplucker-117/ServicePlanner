@@ -155,6 +155,11 @@ class Utilities:
     def __update_cam_names(self):
         people = self.pco_plan.get_assigned_people()
 
+        for device in self.main_ui_window.startup.devices:
+            if device['type'] == 'ross_carbonite':
+                switcher_ip = device['ip_address']
+                switcher_port = device['port']
+
         for person in people:
             cam_pos = None
             if person['position'].startswith('Cam') and person['status'] != 'D':
@@ -166,7 +171,7 @@ class Utilities:
             if cam_pos is not None:
                 name = person['name'].upper()
                 logger.debug('Updating camera position name via rosstalk: %s, %s', person['position'], name[0:6])
-                rt(rosstalk_ip=rosstalk_ip, rosstalk_port=rosstalk_port, command=f"MNEM IN:{cam_pos}:{cam_pos} {name[0:6]}")
+                rt(rosstalk_ip=switcher_ip, rosstalk_port=switcher_port, command=f"MNEM IN:{cam_pos}:{cam_pos} {name[0:6]}")
 
     def __add_plan_cue(self):
         self.utilities_menu.destroy()
@@ -327,6 +332,10 @@ class MainUI:
                 self.global_cues = json.loads(f.read())
 
         self.global_cues = None if len(self.global_cues) == 0 else self.global_cues  # reset global_cues variable back to None if it's empty
+
+        if enable_webserver:
+            self.webserver_thread = None
+            self.__start_webserver()
 
     def build_plan_window(self):
 
@@ -554,10 +563,16 @@ class MainUI:
         self.kipro_storage_remaining_bars[kipro_unit].configure(value=percent)
 
     def reload(self):
+        # self.webserver_thread.join() #todo stop webserver thread
         self.plan_window.destroy()
         self.kipro_ui.kill_threads()
         reloaded_ui = MainUI(startup=self.startup)
         reloaded_ui.build_plan_window()
+
+    def __start_webserver(self):
+        self.webserver_thread = threading.Thread(target=lambda: fs.start(startup_class=self.startup))
+        # while
+        self.webserver_thread.start()
 
     def __build_time_remaining_progress_bar(self):
         self.progress_bar = Canvas(self.plan_window)
@@ -960,16 +975,7 @@ class Main:  #startup
 
         self.main_ui = MainUI(startup=self)
 
-        if enable_webserver:
-            self.start_webserver()
-        else:
-            logger.debug('enable_webserver is False, skipping')
-
         self.main_ui.build_plan_window()
-
-    def start_webserver(self):
-        logger.info('Starting webserver')
-        #threading.Thread(target=lambda: fs.start(startup_class=self)).start()
 
 
 start = Main()
