@@ -12,6 +12,7 @@ import os
 from tkinter import filedialog
 from tkinter import *
 import wget
+from device_editor import DeviceEditor
 
 
 class KiPro:
@@ -86,23 +87,23 @@ class KiPro:
         time.sleep(delay)
 
     def download_clips(self):
-        root = Tk()
-        root.withdraw()
+        kipros = []
 
-        kipros = [] #todo fix this
-
+        devices = DeviceEditor().devices
+        for device in devices:
+            if device['type'] == 'kipro' and not device['user_name'] == 'All Kipros':
+                kipros.append(device)
 
         files = []
 
         for kipro in kipros:
-            if not kipro['name'] == 'ALL':
-                self.set_data_lan_mode(ip=kipro['ip'])
-                r = requests.get(f"http://{kipro['ip']}/clips")
-                clips = demjson.decode(r.text[:-2])
-                files.append({
-                    'clips': clips,
-                    'ip': kipro['ip']
-                })
+            self.set_data_lan_mode(ip=kipro['ip_address'])
+            r = requests.get(f"http://{kipro['ip_address']}/clips")
+            clips = demjson.decode(r.text[:-2])
+            files.append({
+                'clips': clips,
+                'ip': kipro['ip_address']
+            })
 
         os.chdir(filedialog.askdirectory())
 
