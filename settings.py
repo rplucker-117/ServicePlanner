@@ -21,7 +21,7 @@ producer_note_text_size = 9
 live_color = '#a34444'
 default_font = 'Arial'
 item_time_size = 8
-plan_item_frame_width = 1250
+plan_item_frame_width = 1400
 
 separator_color ='#3f3f3f'
 
@@ -48,7 +48,7 @@ kipro_error_color = '#ff0000'
 kipro_unable_to_commmunicate_color = '#7a7a7a'
 
 interval_update_kipros = True
-kipro_update_interval = 10 # in seconds. Only applies if interval_update_kipros and display_kipros is True.
+kipro_update_interval = 1 # in seconds. Only applies if interval_update_kipros and display_kipros is True.
 
 global_cue_font_size = 11
 
@@ -72,3 +72,8 @@ kipro_timeout_threshold = 1 #in seconds
 adjacent_plan_refresh_interval = 5
 
 enable_webserver = False
+
+close_global_cues_menu_after_cue = False
+
+#uuids
+advance_on_next_uuid = 'a0fac1cd-3bff-4286-80e2-20b284361ba0'
