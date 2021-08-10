@@ -23,13 +23,17 @@ from tkinter import messagebox
 from ross_scpa import ScpaViaIP2SL
 from sheet_reader import ReadSheet
 from bem104 import BEM104
+from controlflex import Flex
+import uuid
 
 class CueCreator:
-    def __init__(self, startup, ui, cue_type='item', devices=None, imported_cues = None):
+    def __init__(self, startup, ui, cue_type='item', devices=None, imported_cues=None):
 
         self.service_type_id = startup.service_type_id
         self.plan_id = startup.service_id
         self.cue_type = cue_type
+
+        self.startup = startup
 
         self.pco_plan = PcoPlan(service_type=self.service_type_id, plan_id=self.plan_id)
 
@@ -44,6 +48,10 @@ class CueCreator:
         self.cue_type_buttons_frame = Frame(self.cue_creator_window, bg=bg_color)  # Holds buttons for adding cues on right side
         self.bottom_frame = Frame(self.cue_creator_window, bg=bg_color)  # very bottom, holds separator as well as main function buttons
         self.bottom_buttons_frame = Frame(self.bottom_frame, bg=bg_color)  # holds add/cancel/test buttons at bottom. Child of bottom_frame
+        self.advance_to_next_frame = Frame(self.cue_creator_window, bg=bg_color)
+
+        self.devices_buttons_frame = Frame(self.cue_type_buttons_frame, bg=bg_color)
+        self.cue_presets_button_frame = Frame(self.cue_type_buttons_frame, bg=bg_color)
 
         self.current_cues_listbox = Listbox(self.current_cues_frame, bg=bg_color, fg=text_color, font=(font, other_text_size-1), height=15)
 
@@ -56,12 +64,15 @@ class CueCreator:
         self.cues_display_text = str()
         self.current_cues = []
 
-
         self.devices = devices
 
         self.all_kipros = []
 
         self.includes_kipro = False
+
+        # advance to next
+        self.advance_to_next_labels = []
+        self.advance_to_next_remove_buttons = []
 
         for device in self.devices:
             if device['type'] == 'kipro' and device['user_name'] != 'All Kipros':
@@ -197,6 +208,47 @@ class CueCreator:
                     outputs = labels['outputs']
                     cue_verbose = f"{device['user_name']}: route input {cue['input']} ({inputs[int(cue['input']-1)]}) to output {cue['output']} ({outputs[int(cue['output']-1)]})"
                     cues_verbose_list.append(cue_verbose)
+
+                if device['type'] == 'bem104':
+                    commands = {
+                        'switch_off': 'Switch OFF',
+                        'switch_on': 'Switch ON',
+                        'toggle': 'Toggle State',
+                        'pulse_on': 'Pulse off/on/off',
+                        'pulse_off': 'Pulse on/off/on',
+                        'pulse_toggle': 'Pulse Toggle'
+                    }
+
+                    cue_verbose = f"{device['user_name']}: Relay {cue['relay']}: {commands[cue['command']]}"
+                    cues_verbose_list.append(cue_verbose)
+
+                if device['type'] == 'controlflex':
+                    cue_verbose = f"{device['user_name']}: {cue['zone']['friendly_name']}: "
+
+                    if cue['zone']['zone_type'] == 'sony_pro_bravia': #if cue is for a sony pro bravia
+                        if cue['command']['args'] == 'power': # cue is power
+                            if int(cue['command']['value']) == 1: # power on
+                                cue_verbose += 'Power ON'
+                            if int(cue['command']['value']) == 0: # power off
+                                cue_verbose += 'Power OFF'
+                        if cue['command']['args'] == 'volume': # cue is volume
+                            cue_verbose += f'Set volume to {cue["command"]["value"]}%'
+                        if cue['command']['args'] == 'input': # cue is input
+                            cue_verbose += f'Set to input {cue["command"]["value"]}'
+
+                    if cue['zone']['zone_type'] == 'qsys': # cue is for qsys
+                        if cue['command']['args'] == 'mute': #cue is to mute
+                            if int(cue['command']['value']) == 1:
+                                cue_verbose += f'MUTE {cue["zone"]["friendly_name"]}'
+                            if int(cue['command']['value']) == 0:
+                                cue_verbose += f'UNMUTE {cue["zone"]["friendly_name"]}'
+                        if cue['command']['args'] == 'gain': #cue is gain
+                            cue_verbose += f'Set {cue["zone"]["friendly_name"]} to {cue["command"]["value"]}%'
+                        if cue['command']['args'] == 'source': # cue is change source
+                            cue_verbose += f'Set {cue["zone"]["friendly_name"]} to {cue["zone"]["friendly_input_names"][cue["command"]["value"]-1]}'
+
+                    cues_verbose_list.append(cue_verbose)
+
             logger.debug('verbose_decode_cues: returning %s', cues_verbose_list)
             return cues_verbose_list
 
@@ -267,6 +319,24 @@ class CueCreator:
                             if cue['command'] == 'pulse_toggle':
                                 b.pulse_toggle(relay=cue['relay'])
 
+                        elif device['type'] == 'controlflex':
+                            flex = Flex(controlflex_ip=device['ip_address'])
+
+                            if cue['zone']['zone_type'] == 'sony_pro_bravia':  # if cue is for a sony pro bravia
+                                if cue['command']['args'] == 'power':  # cue is power
+                                    flex.sony_pro_bravia_power(device_name=cue['zone']['flex_name'], state=int(cue['command']['value']))
+                                if cue['command']['args'] == 'volume':  # cue is volume
+                                    flex.sony_pro_bravia_volume(device_name=cue['zone']['flex_name'], volume_percent=int(cue['command']['value']))
+                                if cue['command']['args'] == 'input':  # cue is input
+                                    flex.sony_pro_bravia_input(device_name=cue['zone']['flex_name'], input_number=int(cue['command']['value']))
+                            if cue['zone']['zone_type'] == 'qsys':  # if cue is qsys
+                                if cue['command']['args'] == 'mute': # cue is mute
+                                    flex.qsys_mute(qsys_name=cue['zone']['qsys_name'], qsys_zone=cue['zone']['control_id'], state=cue['command']['value'])
+                                if cue['command']['args'] == 'gain': # cue is gain
+                                    flex.set_qsys_volume_percent(qsys_name=cue['zone']['qsys_name'], qsys_zone=cue['zone']['control_id'], percent=cue['command']['value'])
+                                if cue['command']['args'] == 'source':  # cue is source
+                                    flex.qsys_source(qsys_name=cue['zone']['qsys_name'], qsys_zone=cue['zone']['control_id'], source_number=cue['command']['value'])
+
                         else:
                             logger.warning('Received cue not in activate_cues list: %s', cue)
                             pass
@@ -278,7 +348,7 @@ class CueCreator:
             if device['uuid'] == uuid:
                 return device
 
-    def __open_cue_creator(self, overwrite):
+    def __open_cue_creator(self, overwrite=False):  # opens main cue creator window
 
         if overwrite is False:
             existing_cues = self.input_item['notes']['App Cues']
@@ -292,13 +362,27 @@ class CueCreator:
         self.bottom_frame.grid(row=2, column=0)
         self.bottom_buttons_frame.grid(row=1, column=0)
 
+        self.devices_buttons_frame.pack(side=LEFT) # this and cue_presets_button_frame go inside cue_type_buttons_frame
+        self.cue_presets_button_frame.pack(side=RIGHT)
+
+
+
         # Current cues display
         self.current_cues_frame.pack_propagate(0)
         cues_to_add_label = Label(self.current_cues_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Cues to Add:')
-        cues_to_add_label.pack(anchor='nw')
+        cues_to_add_label.pack(anchor='n')
 
         self.__update_cues_display()
         self.current_cues_listbox.pack(anchor='w', fill=BOTH, pady=10)
+
+        self.cue_presets = None
+        if os.path.exists('cue_presets.json'):
+            try:
+                with open('cue_presets.json', 'r') as f:
+                    self.cue_presets = json.loads(f.read())
+                    logger.debug('Read cue_presets.json. Contents: %s', self.cue_presets)
+            except json.decoder.JSONDecodeError:
+                logger.error('Unable to read json on cue_presets.json, continuing as None')
 
         if self.cue_type == 'item':
             try:
@@ -336,27 +420,44 @@ class CueCreator:
                 self.__add_ez_outlet_2(device)
             elif device['type'] =='bem104':
                 self.__add_bem104(device)
+            elif device['type'] == 'controlflex':
+                self.__add_controlflex(device)
 
-        if self.devices is not None:
+        if self.devices is not None: # if the device is not pause, reminder, or kipro, create a button for it
             for device in self.devices:
-                if not device['type'] in ('pause', 'reminder', 'kipro'):  #if the device is not pause, reminder, or kipro, create a button for it
+                if not device['type'] in ('pause', 'reminder', 'kipro', 'advance_on_time'):
                     button_name = 'Add ' + device['user_name'] + '(' + device['type'] + ')' + ' cue'
-                    Button(self.cue_type_buttons_frame, text=button_name, font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=lambda device=device: add_cue_clicked(device)).pack()
+                    Button(self.devices_buttons_frame, text=button_name, font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=lambda device=device: add_cue_clicked(device)).pack(padx=10)
                 elif device['type'] == 'kipro' and not device['user_name'] == 'All Kipros':
                     self.includes_kipro = True
 
         if self.includes_kipro:
-            Button(self.cue_type_buttons_frame, text='Add KiPro Cue', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_kipro_cue).pack()
+            Button(self.devices_buttons_frame, text='Add Kipro Cue', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_kipro_cue).pack(padx=20)
 
-        Button(self.cue_type_buttons_frame, text='Add Pause', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_pause_cue_clicked).pack()
-        Button(self.cue_type_buttons_frame, text='Add Reminder', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_reminder_cue_clicked).pack()
+        #pause/reminder buttons, goes in with other device cue buttons
+        Button(self.devices_buttons_frame, text='Add Pause', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_pause_cue_clicked).pack(padx=20)
+        Button(self.devices_buttons_frame, text='Add Reminder', font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=self.__add_reminder_cue_clicked).pack(padx=20)
+
+        def add_preset_clicked(preset):
+            logger.debug('Add preset button clicked: %s', preset)
+            for cue in preset['cues']:
+                self.current_cues.append(cue)
+            self.__update_cues_display()
+
+        if self.cue_presets is not None:
+            for preset in self.cue_presets:
+                Button(self.cue_presets_button_frame, text=preset['name'], font=(font, options_button_text_size), bg=bg_color, fg=text_color, command=lambda preset=preset: add_preset_clicked(preset)).pack(padx=20)
+
+        if self.cue_type == 'item':
+            Button(self.bottom_buttons_frame, text='Schedule advance to next', font=(font, plan_text_size-1), bg=bg_color, fg=text_color, command=lambda: self.__add_advance_cue()).grid(row=1, column=5)
 
         # Bottom Buttons
-        Button(self.bottom_buttons_frame, text='Test', font=(font, plan_text_size), bg=bg_color, fg=text_color, command=self.__test).grid(row=1, column=0)
-        Button(self.bottom_buttons_frame, text='Add Cue(s)', font=(font, plan_text_size), bg=bg_color, fg=text_color, command=self.__add_cues).grid(row=1, column=1)
-        Button(self.bottom_buttons_frame, text='Cancel', font=(font, plan_text_size), bg=bg_color, fg=text_color, command=lambda: self.cue_creator_window.destroy()).grid(row=1, column=2)
-        Button(self.bottom_buttons_frame, text='Copy cues from a plan item', font=(font, plan_text_size), bg=bg_color, fg=text_color, command=lambda: self.__copy_from_plan_item()).grid(row=1, column=3)
-        Button(self.bottom_buttons_frame, text='Remove Selected', font=(font, plan_text_size), bg=bg_color, fg=text_color, command=lambda: self.__remove_selected()).grid(row=1, column=4)
+        Button(self.bottom_buttons_frame, text='Test', font=(font, plan_text_size-1), bg=bg_color, fg=text_color, command=self.__test).grid(row=1, column=0)
+        Button(self.bottom_buttons_frame, text='Add Cue(s)', font=(font, plan_text_size-1), bg=bg_color, fg=text_color, command=self.__add_cues).grid(row=1, column=1)
+        Button(self.bottom_buttons_frame, text='Cancel', font=(font, plan_text_size-1), bg=bg_color, fg=text_color, command=lambda: self.cue_creator_window.destroy()).grid(row=1, column=2)
+        Button(self.bottom_buttons_frame, text='Copy cues from a plan item', font=(font, plan_text_size-1), bg=bg_color, fg=text_color, command=lambda: self.__copy_from_plan_item()).grid(row=1, column=3)
+        Button(self.bottom_buttons_frame, text='Remove Selected', font=(font, plan_text_size-1), bg=bg_color, fg=text_color, command=lambda: self.__remove_selected()).grid(row=1, column=4)
+        Button(self.bottom_buttons_frame, text='Create Preset from Added Cues', font=(font, plan_text_size-1), bg=bg_color, fg=text_color, command=lambda: self.__create_preset()).grid(row=1, column=6)
 
         self.__update_cues_display()
 
@@ -828,6 +929,127 @@ class CueCreator:
 
         Button(add_bem104_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=okay_pressed).grid(row=1, column=0)
 
+    def __add_controlflex(self, device):
+        add_controlflex = Tk()
+        add_controlflex.configure(bg=bg_color)
+
+        all_controlflex_zones = device['zones']
+
+
+        contains_qsys =  False
+        for zone in device['zones']:  # if a qsys device exists, contains_qsys is true. used later for separating qsys zones
+            if zone['zone_type'] == 'qsys':
+                contains_qsys = True
+                break
+
+        if contains_qsys:
+            qsys_zones = [] # ALL qsys zones in controlflex.
+            for zone in device['zones']:
+                if zone['zone_type'] == 'qsys':
+                    qsys_zones.append(zone)
+            qsys_zone_types = [] # list of qsys zone categories
+            for qsys_zone in qsys_zones:
+                if not qsys_zone['qsys_zone_type'] in qsys_zone_types:
+                    qsys_zone_types.append(qsys_zone['qsys_zone_type'])
+
+
+        zone_types = [] # types of controlflex zones: qsys, sony pro bravia, lighting, etc
+        for zone in device['zones']:
+            if not zone['zone_type'] in zone_types:
+                zone_types.append(zone['zone_type'])
+
+        controlflex_zone_frames = []
+
+        def zone_type_selected(zone): # run when a controlflex zone is selected
+            logger.debug('__add_controlflex: zone type selected: %s', zone)
+            for frame in controlflex_zone_frames: # destroy frames holding controlflex zones
+                frame.destroy()
+
+            zone_command_frame = Frame(add_controlflex, bg=bg_color)
+            zone_command_frame.pack()
+
+            def command_finished(command, zone):
+                add_controlflex.destroy()
+
+                to_add = {
+                    'uuid': device['uuid'],
+                    'command': command,
+                    'zone': zone
+                }
+                self.current_cues.append(to_add)
+                self.__update_cues_display()
+
+                logger.debug('__add_controlflex: command completed: %s', to_add)
+
+            if zone['zone_type'] == 'qsys': # selected zone type is qsys
+                if zone['qsys_zone_type'] == 'qsys_mute':
+                    Button(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text=f'MUTE {zone["friendly_name"]}', command=lambda: command_finished(command={'args': 'mute', 'value': '1'}, zone=zone)).pack()
+                    Button(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text=f'UNMUTE {zone["friendly_name"]}', command=lambda: command_finished(command={'args': 'mute', 'value': '0'}, zone=zone)).pack()
+
+                if zone['qsys_zone_type'] == 'qsys_gain':
+                    Label(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text=f'Set {zone["friendly_name"]} to ').pack(side=LEFT)
+                    percent_entry = Entry(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), width=2)
+                    percent_entry.pack(side=LEFT)
+                    Label(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='%.').pack(side=LEFT)
+
+                    def ok():
+                        command_finished(command={'args': 'gain', 'value': percent_entry.get()}, zone=zone)
+
+                    Button(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Okay', command=ok).pack(side=BOTTOM)
+
+                if zone['qsys_zone_type'] == 'qsys_source':
+                    def ok(source_index):
+                        command_finished(command={'args':'source', 'value': source_index}, zone=zone)
+
+                    for iteration, input in enumerate(zone['friendly_input_names'], start=1):
+                        Button(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text=f'{input}', command=lambda iteration=iteration: ok(source_index=iteration)).pack()
+
+            if zone['zone_type'] == 'sony_pro_bravia':
+                # power
+                Label(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text=f'Set {zone["friendly_name"]} power ').grid(row=0, column=0)
+                Button(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='ON', command=lambda: command_finished(command={'args': 'power', 'value': '1'}, zone=zone)).grid(row=0, column=1)
+                Button(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='OFF', command=lambda: command_finished(command={'args': 'power', 'value': '0'}, zone=zone)).grid(row=0, column=2)
+
+                # volume
+                Label(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text=f'Set {zone["friendly_name"]} volume to ').grid(row=1, column=0)
+                percent_entry = Entry(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), width=2)
+                percent_entry.grid(row=1, column=1)
+                Label(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='%').grid(row=1, column=2)
+                Button(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Okay', command=lambda: command_finished(command={'args': 'volume', 'value': percent_entry.get()}, zone=zone)).grid(row=1, column=3)
+
+                # input
+                Label(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text=f'Set {zone["friendly_name"]} input to :').grid(row=2, column=0)
+                Button(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Input 1', command=lambda: command_finished(command={'args': 'input','value': '1'}, zone=zone)).grid(row=2, column=1)
+                Button(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Input 2', command=lambda: command_finished(command={'args': 'input','value': '2'}, zone=zone)).grid(row=2, column=2)
+                Button(zone_command_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Input 3', command=lambda: command_finished(command={'args': 'input','value': '2'}, zone=zone)).grid(row=2, column=3)
+
+
+        for zone_type in zone_types: # add a frame for each controlflex zone type. Sony bravia, qsys, etc
+            zone_frame = Frame(add_controlflex, bg=bg_color)
+            zone_frame.pack(side=LEFT, anchor='n', padx=40)
+            controlflex_zone_frames.append(zone_frame)
+
+            if zone_type == 'qsys':
+                qsys_zone_frames = []
+                for qsys_zone_type in qsys_zone_types: # if type is qsys, create a frame for each qsys zone type. name will match index of zone type above in qsys_zone_types
+                    frame = Frame(zone_frame, bg=bg_color)
+                    qsys_zone_frames.append(frame)
+                    frame.pack(pady=15, side=BOTTOM)
+                    Label(frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text=qsys_zone_type).pack()
+
+            Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text=f'{zone_type}:').pack(padx=10, pady=2, side=TOP) # create label for type of controlflex zone.
+
+            for controlflex_zone in all_controlflex_zones:
+                if controlflex_zone['zone_type'] == zone_type:  # separate controlflex zone devices into groups
+                    if zone_type == 'qsys':
+                        qsys_zone_frame = qsys_zone_frames[qsys_zone_types.index(controlflex_zone['qsys_zone_type'])]
+                        Button(qsys_zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text=controlflex_zone['friendly_name'], command=lambda controlflex_zone=controlflex_zone: zone_type_selected(controlflex_zone)).pack(padx=10, pady=2)
+                    else:
+                        Button(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text=controlflex_zone['friendly_name'], command=lambda controlflex_zone = controlflex_zone: zone_type_selected(controlflex_zone)).pack(padx=10, pady=2)
+
+            if zone_type == 'sony_pro_bravia':
+                Button(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='All Sony Pro Bravias', command=lambda zone_type = zone_type: zone_type_selected({'zone_type': 'all_sony_pro_bravias'})).pack(padx=10, pady=10)
+
     def __add_reminder_cue_clicked(self):
         # creates a new window for adding a reminder with minutes, seconds, reminder text, and okay.
         logger.debug('add reminder button clicked')
@@ -905,6 +1127,95 @@ class CueCreator:
             add_pause_window.destroy()
             self.__update_cues_display()
 
+    def __add_advance_cue(self):
+        add_advance_window = Tk()
+        add_advance_window.config(bg=bg_color)
+
+        description_frame = Frame(add_advance_window, bg=bg_color)
+        description_frame.pack()
+
+        advance_description = Label(description_frame, bg=bg_color, fg=text_color,
+                                    font=(font, current_cues_text_size),
+                                    anchor='w', justify='left', text='Advance to the next item at a certain time, ONLY if current item is still live. Multiple times can be entered if you have more than 1 service.\nPress "Add Time" to add another entry and "Okay" when you are finished.')
+        advance_description.grid(row=0, column=0)
+
+        entry_frame = Frame(add_advance_window, bg=bg_color)
+        entry_frame.pack()
+
+        total_times = 0
+
+        hours_entries = []
+        minutes_entries = []
+        seconds_entries = []
+
+        def add_advance_time():
+            nonlocal total_times
+            total_times += 1
+
+            Label(entry_frame, bg=bg_color, fg=text_color,
+                  font=(font, current_cues_text_size),
+                  anchor='w', justify='left', text=f'Advance to next item at       ').grid(row=total_times, column=0)
+
+            hours_entry = Entry(entry_frame, width=2, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size+1))
+            hours_entry.grid(row=total_times, column=1)
+            hours_entries.append(hours_entry)
+
+            Label(entry_frame, bg=bg_color, fg=text_color,
+                                    font=(font, current_cues_text_size),
+                                    anchor='w', justify='left', text=':').grid(row=total_times, column=2)
+
+            minutes_entry = Entry(entry_frame, width=2, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size+1))
+            minutes_entry.grid(row=total_times, column=3)
+            minutes_entries.append(minutes_entry)
+
+            Label(entry_frame, bg=bg_color, fg=text_color,
+                  font=(font, current_cues_text_size),
+                  anchor='w', justify='left', text=':').grid(row=total_times, column=4)
+
+            seconds_entry = Entry(entry_frame, width=2, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size+1))
+            seconds_entry.grid(row=total_times, column=5)
+            seconds_entries.append(seconds_entry)
+
+        def okay_pressed():
+
+            times = []
+            for hour, minute, second in zip(hours_entries, minutes_entries, seconds_entries):
+                hour = hour.get()
+                hour = hour if len(hour) > 1 else '0' + hour
+
+                minute = minute.get()
+                minute = minute if len(minute) > 1 else '0' + minute
+
+                second = second.get()
+                second = second if len(second) > 1 else '0' + second
+
+                times.append([hour, minute, second])
+
+            has_previous_times = False
+            previous_advance_cue_index = None
+
+            for iteration, cue in enumerate(self.current_cues):
+                if cue['uuid'] == advance_on_next_uuid:
+                    has_previous_times = True
+                    previous_advance_cue_index = iteration
+
+            if not has_previous_times:
+                self.current_cues.append({
+                    'uuid': advance_on_next_uuid,
+                    'device': 'advance_on_time',
+                    'times': times
+                })
+
+            else:
+                for time in times:
+                    self.current_cues[previous_advance_cue_index]['times'].append(time)
+
+            self.__update_cues_display()
+            add_advance_window.destroy()
+
+        Button(add_advance_window, bg=bg_color, fg=text_color, font=(font, current_cues_text_size+2), text='Add time', command=add_advance_time).pack()
+        Button(add_advance_window, bg=bg_color, fg=text_color, font=(font, current_cues_text_size+2), text='Okay', command=okay_pressed).pack()
+
     def __update_cues_display(self):
         logger.debug('Updating Cues Display: Input %s', self.current_cues)
 
@@ -913,12 +1224,54 @@ class CueCreator:
         for iteration, cue_verbose in enumerate(self.verbose_decode_cues(cuelist=self.current_cues)):
             self.current_cues_listbox.insert(iteration, cue_verbose)
 
+        # advance to next display
+        if self.cue_type == 'item':  # delete all existing labels/buttons, clear list
+            for label, button in zip(self.advance_to_next_labels, self.advance_to_next_remove_buttons):
+                label.destroy()
+                button.destroy()
+
+            self.advance_to_next_labels.clear()
+            self.advance_to_next_remove_buttons.clear()
+
+            advance_times = [] # search through all cues for single cue that contains all advance to next times, add times to list
+            advance_cue_index = None
+            for iteration, cue in enumerate(self.current_cues, start=0):
+                if cue['uuid'] == advance_on_next_uuid:
+                    advance_cue_index = iteration
+                    logger.debug('advance to next cue index is %s', advance_cue_index)
+                    logger.debug('cue_creator: found advance to next time: %s', cue['times'])
+                    for time in cue['times']:
+                        logger.debug('cue_creator: adding time %s to advance_times list', time)
+                        advance_times.append(time)
+
+            def remove_next_cue(index): # when remove button next to time is clicked, remove that time from main cue list>advance cue
+                logger.debug('Removing advance to next time: %s', self.current_cues[advance_cue_index]['times'][index])
+                self.current_cues[advance_cue_index]['times'].pop(index)
+                self.__update_cues_display()
+
+            for iteration, time in enumerate(advance_times, start=0): # looks at advance_times list above, creates label/button for each time
+                time_str = f'{time[0]}:{time[1]}:{time[2]}'
+                self.advance_to_next_labels.append(Label(self.advance_to_next_frame, bg=bg_color, fg=text_color, font=(font, other_text_size-1), text=f'Advance to next item at {time_str}'))
+                self.advance_to_next_remove_buttons.append(Button(self.advance_to_next_frame, bg=bg_color, fg=text_color, font=(font, other_text_size-1), text='Remove', command=lambda iteration=iteration : remove_next_cue(iteration)))
+
+            iteration = 0
+            for label, button in zip(self.advance_to_next_labels, self.advance_to_next_remove_buttons):
+                label.grid(row=iteration, column=0, padx=10)
+                button.grid(row=iteration, column=1, padx=10)
+                iteration += 1
+
+            Frame(self.cue_creator_window, bg=separator_color, width=1, height=300).grid(row=0, column=3)
+            self.advance_to_next_frame.grid(row=0, column=4)
+
+    def __load_cue_presets_ui(self):
+        pass
+
     def __remove_selected(self):
         logger.debug('Removing selected item: %s', self.current_cues[self.current_cues_listbox.curselection()[0]])
         self.current_cues.pop(self.current_cues_listbox.curselection()[0])
         self.current_cues_listbox.delete(self.current_cues_listbox.curselection()[0])
 
-    def __add_cues(self):
+    def __add_cues(self): # add cues to PCO
         # if adding to individual plan item, add cues to app cues note section.
         # if adding to plan or global cues, the scheme looks like: list>list>string>dict<list<list
         #
@@ -976,6 +1329,53 @@ class CueCreator:
     def __copy_from_plan_item(self):
         from_plan = SelectService(send_to=self)
         from_plan.ask_service_info()
+
+    def __create_preset(self): # create preset with currently added cues
+        create_preset_window = Tk()
+        create_preset_window.geometry('800x100')
+        create_preset_window.configure(bg=bg_color)
+
+        Label(create_preset_window, text='Create a preset with currently added cues. Preset name:', font=(font, other_text_size), bg=bg_color, fg=text_color).pack()
+        preset_name_entry = Entry(create_preset_window, font=(font, other_text_size), bg=bg_color, fg=text_color, width=75)
+        preset_name_entry.pack()
+
+        def add():  # add button clicked
+            cues = []
+            for cue in self.current_cues:
+                if not cue['uuid'] == advance_on_next_uuid:
+                    cues.append(cue)
+            to_append = {
+                    'name': preset_name_entry.get(),
+                    'cues': cues,
+                    'uuid': str(uuid.uuid4())
+                }
+
+            logger.debug('Adding cue preset to cue_presets.json: %s', to_append)
+
+            if self.cue_presets is None:
+                cue_presets = []
+                cue_presets.append(to_append)
+
+                logger.debug('cue_presets.json does not exist. Creating...')
+
+                with open('cue_presets.json', 'w') as f:
+                    f.write(json.dumps(cue_presets))
+
+            else:
+                with open('cue_presets.json', 'w') as f:
+                    logger.debug('cue_presets.json exists, appending')
+
+                    current_cue_presets = self.cue_presets
+                    current_cue_presets.append(to_append)
+                    f.write(json.dumps(current_cue_presets))
+
+            # CueCreator(startup=self.startup, ui=self.main_ui, cue_type=self.cue_type, devices=self.devices).__open_cue_creator()
+            create_preset_window.destroy()
+            self.cue_creator_window.destroy()
+
+
+        Button(create_preset_window, text='Add Preset', font=(font, other_text_size), bg=bg_color, fg=text_color, command=add).pack()
+
 
     def receive_plan_details(self, service_type_id, service_id):  # for copying actions from a specific plan item
         from_pco_plan = PcoPlan(service_type=service_type_id, plan_id=service_id)
