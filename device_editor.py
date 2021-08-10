@@ -10,6 +10,8 @@ import uuid
 import socket
 from datetime import datetime
 from shutil import copyfile
+import pprint
+
 
 class DeviceEditor:
     def __init__(self):
@@ -43,6 +45,11 @@ class DeviceEditor:
                 'user_name': 'All Kipros',
                 'uuid': '07af78bf-9149-4a12-80fc-0fa61abc0a5c'
             })
+            self.devices.append({
+                'type': 'advance_on_time',
+                'user_name': 'Advance to next',
+                'uuid': 'a0fac1cd-3bff-4286-80e2-20b284361ba0'
+            })
 
         self.root = Tk()
         self.root.withdraw()
@@ -61,6 +68,7 @@ class DeviceEditor:
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Resi Decoder', command=self.__add_resi).pack()
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add EZ Outlet 2', command=self.__add_ez_outlet_2).pack()
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add BEM104 Relay', command=self.__add_bem104).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Wave Controlflex', command=self.__add_controlflex).pack()
         # Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add AJA IPR').pack()
 
         self.new_device_window.withdraw()
@@ -105,8 +113,7 @@ class DeviceEditor:
 
         self.device_editor_window.destroy()
 
-    def __add_device(self, device):
-        # Adds date added and UUID to device info, adds to main devices dict, updates listbox
+    def __add_device(self, device): # Adds date added and UUID to device info, adds to main devices dict, updates listbox
         logger.info('__add_device: received new device to add: %s', device)
 
         device.update({
@@ -689,6 +696,272 @@ class DeviceEditor:
                 add_ez.lift()
 
         Button(add_ez, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
+
+    def __add_controlflex(self):
+        self.new_device_window.withdraw()
+
+        add_controlflex = Tk()
+        add_controlflex.title('Add Wave Controlfex')
+        add_controlflex.configure(bg=bg_color)
+
+        name_entry_frame = Frame(add_controlflex)
+        name_entry_frame.configure(bg=bg_color)
+
+        name_entry = Entry(name_entry_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        ip_address_entry = Entry(name_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+
+        device_description = Label(add_controlflex, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Add Wave Controlflex')
+        name_label = Label(name_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Name:')
+        ip_label = Label(name_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Controlflex IP Address:')
+
+        device_description.grid(row=0, column=0) # parent is main window
+
+        name_label.grid(row=0, column=0, padx=10, pady=10)
+        name_entry.grid(row=0, column=1, padx=10, pady=10)
+
+        ip_label.grid(row=1, column=0, padx=10, pady=10)
+        ip_address_entry.grid(row=1, column=1, padx=10, pady=10)
+
+        name_entry_frame.grid(row=1, column=0) # parent is main window
+
+        info_entry_canvas = Canvas(add_controlflex, bg=bg_color, width=900, height=800, highlightthickness=0)
+        info_entry_canvas.grid(row=2, column=0) # parent is main window
+
+        info_entry_frame = Frame(info_entry_canvas, width=500, height=10000, bg=bg_color)  # frame to hold all controlflex zones
+
+        canvas_scroll = Scrollbar(add_controlflex, command=info_entry_canvas.yview)
+        canvas_scroll.grid(row=2, column=2, sticky='nsew')  # parent is main window
+
+        info_entry_canvas.create_window(0, 0, anchor='nw', window=info_entry_frame) #Create window in canvas to hold info entry frame
+
+        info_entry_canvas.configure(scrollregion=info_entry_canvas.bbox('all'), yscrollcommand=canvas_scroll.set) # set scroll of canvas
+
+        zone_frames = []
+
+        zone_data = []  # All zone data is added here. Each zone is a dict
+
+        zones = 0
+        def add_zone(): #add a new controlflex zone
+            nonlocal zones
+            zones += 1
+
+            zone_frame = Frame(info_entry_frame, bg=bg_color)
+            zone_frames.append(zone_frame)
+            zone_frame.grid(row=zones+1, column=1, pady=10)
+
+            Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size-2), text='Controlflex zone type:').grid(row=0, column=0)
+
+            zone_type_options = ['Sony Pro Bravia', 'QSys Zone']
+            zone_type = StringVar(zone_frame)
+            zone_type.set(zone_type_options[0])
+
+            zone_type_dropdown = OptionMenu(zone_frame, zone_type, *zone_type_options)
+            zone_type_dropdown.grid(row=0, column=1)
+
+            def update_zone(): # controlflex zone has been selected
+                zone_type_set = zone_type.get()
+
+                zone_type_dropdown.destroy()
+                Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2),text=zone_type_set).grid(row=0, column=1) # When a controlflex zone is selected, the dropdown menu is destroyed to prevent user from changing it
+
+                if zone_type_set == 'Sony Pro Bravia':
+                    sony_label = Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size-2), text='Sony Pro Bravia Name in controlflex config:')
+                    sony_pro_bravia_name = Entry(zone_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+                    sony_label.grid(row=1, column=0, padx=10)
+                    sony_pro_bravia_name.grid(row=1, column=1, padx=10)
+
+                    friendly_sony_label = Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size-2), text='Friendly TV name:')
+                    friendly_sony_name = Entry(zone_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+                    friendly_sony_label.grid(row=2, column=0, padx=10)
+                    friendly_sony_name.grid(row=2, column=1, padx=10)
+
+                    def ok():
+                        sony_pro_bravia_name_entry = sony_pro_bravia_name.get()
+                        sony_pro_bravia_name.destroy()
+                        Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text=sony_pro_bravia_name_entry).grid(row=1, column=1)
+
+                        sony_pro_bravia_friendly_name_entry = friendly_sony_name.get()
+                        friendly_sony_name.destroy()
+                        Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text=sony_pro_bravia_friendly_name_entry).grid(row=2, column=1)
+
+                        zone_data.append({
+                            'zone_type': 'sony_pro_bravia',
+                            'flex_name': sony_pro_bravia_name_entry,
+                            'friendly_name': sony_pro_bravia_friendly_name_entry
+                        })
+
+                    sony_pro_bravia_okay = Button(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Okay', command=lambda: (ok(), sony_pro_bravia_okay.destroy()))
+                    sony_pro_bravia_okay.grid(row=1, column=2, padx=5)
+
+                if zone_type_set == 'QSys Zone':
+                    Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='QSys Zone Type: ').grid(row=1, column=0)
+
+                    qsys_device_name_label = Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Qsys device name in ControlFlex: ')
+                    qsys_device_name_label.grid(row=1, column=2)
+                    controlflex_qsys_name_entry = Entry(zone_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+                    controlflex_qsys_name_entry.grid(row=1, column=3)
+
+                    qsys_zone_types = ['Gain', 'Mute', 'Source']
+                    qsys_zone_type = StringVar(zone_frame)
+                    qsys_zone_type.set(qsys_zone_types[0])
+                    qsys_zone_type_dropdown = OptionMenu(zone_frame, qsys_zone_type, *qsys_zone_types)
+                    qsys_zone_type_dropdown.grid(row=1, column=1, padx=10)
+
+                    def update_qsys_zone(): # qsys zone type selected
+                        qsys_zone = qsys_zone_type.get()
+                        controlflex_qsys_name = controlflex_qsys_name_entry.get()
+                        qsys_ui_name = f'{controlflex_qsys_name} ({qsys_zone})'
+
+                        qsys_zone_type_dropdown.destroy()
+                        qsys_device_name_label.destroy()
+                        controlflex_qsys_name_entry.destroy()
+
+                        Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text=qsys_ui_name).grid(row=1, column=1)
+
+                        if qsys_zone == 'Gain':
+                            Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='QSys Control ID listed in Controlflex UI: ').grid(row=2, column=0)
+                            qsys_control_id = Entry(zone_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+                            qsys_control_id.grid(row=2, column=1)
+
+                            Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Friendly Zone Name: ').grid(row=3, column=0)
+                            friendly_zone_name = Entry(zone_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+                            friendly_zone_name.grid(row=3, column=1)
+
+                            def ok():  # okay clicked on gain qsys control id
+                                qsys_control_id_entry = qsys_control_id.get()
+                                friendly_zone_name_entry = friendly_zone_name.get()
+
+                                qsys_control_id.destroy()
+                                friendly_zone_name.destroy()
+
+                                Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text=qsys_control_id_entry).grid(row=2, column=1)
+                                Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text=friendly_zone_name_entry).grid(row=3, column=1)
+
+                                zone_data.append({
+                                    'zone_type': 'qsys',
+                                    'qsys_name': controlflex_qsys_name,
+                                    'qsys_zone_type': 'qsys_gain',
+                                    'control_id': qsys_control_id_entry,
+                                    'friendly_name': friendly_zone_name_entry
+                                })
+
+                            qsys_zone_okay = Button(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Okay', command=lambda: (ok(), qsys_zone_okay.destroy()))
+                            qsys_zone_okay.grid(row=3, column=3, padx=5)
+
+                        if qsys_zone == 'Mute':
+                            Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='QSys Control ID listed in Controlflex UI: ').grid(row=2, column=0)
+                            qsys_control_id = Entry(zone_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+                            qsys_control_id.grid(row=2, column=1)
+
+                            Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Friendly Zone Name: ').grid(row=3, column=0)
+                            friendly_zone_name = Entry(zone_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+                            friendly_zone_name.grid(row=3, column=1)
+
+                            def ok():  # okay clicked on mute qsys control id
+                                qsys_control_id_entry = qsys_control_id.get()
+                                friendly_zone_name_entry = friendly_zone_name.get()
+
+                                qsys_control_id.destroy()
+                                friendly_zone_name.destroy()
+
+                                Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text=qsys_control_id_entry).grid(row=2, column=1)
+                                Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text=friendly_zone_name_entry).grid(row=3, column=1)
+
+                                zone_data.append({
+                                    'zone_type': 'qsys',
+                                    'qsys_name': controlflex_qsys_name,
+                                    'qsys_zone_type': 'qsys_mute',
+                                    'control_id': qsys_control_id_entry,
+                                    'friendly_name': friendly_zone_name_entry
+                                })
+
+                            qsys_zone_okay = Button(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Okay', command=lambda: (ok(), qsys_zone_okay.destroy()))
+                            qsys_zone_okay.grid(row=3, column=3, padx=5)
+
+                        if qsys_zone == 'Source':
+                            Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='QSys Control ID listed in Controlflex UI: ').grid(row=2, column=0)
+                            qsys_control_id = Entry(zone_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+                            qsys_control_id.grid(row=2, column=1)
+
+                            Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Friendly Zone Name: ').grid(row=3, column=0)
+                            friendly_zone_name = Entry(zone_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+                            friendly_zone_name.grid(row=3, column=1)
+
+                            def ok():  # okay clicked on source qsys control id
+                                qsys_control_id_entry = qsys_control_id.get()
+                                friendly_zone_name_entry = friendly_zone_name.get()
+
+                                qsys_control_id.destroy()
+                                friendly_zone_name.destroy()
+
+                                Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text=qsys_control_id_entry).grid(row=2, column=1)
+                                Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text=friendly_zone_name_entry).grid(row=3, column=1)
+
+                                source_name_entries = []  # add source name entries to this list so they can be destroyed later and replaced with a label when ok is pressed
+                                source_names = [] # friendly input name of each source. postion 0 in list is input 1 in controlflex
+
+                                inputs = 0
+                                def add_input():
+                                    nonlocal inputs
+                                    inputs += 1
+
+                                    Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text=f'Input #{inputs} in ControlFlex. Friendly Input Name:  ').grid(row=3+inputs, column=0)
+
+                                    input_name_entry = Entry(zone_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+                                    input_name_entry.grid(row=3+inputs, column=1)
+                                    source_name_entries.append(input_name_entry)
+
+                                    def input_added(): # destroys buttons for current source
+                                        input_okay.destroy()
+                                        add_input_button.destroy()
+
+                                    def finished_with_source_inputs(): # destroys all source entry boxes and replaces them with what was entered. Destroys okay/add buttons. Adds entered qsys sources to zone_data list
+                                        for input_entry in source_name_entries:
+                                            grid_info = input_entry.grid_info()
+                                            Label(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text=input_entry.get()).grid(row=grid_info['row'], column=grid_info['column'])
+                                            source_names.append(input_entry.get())
+                                            input_entry.destroy()
+                                        input_added()
+
+                                        zone_data.append({
+                                            'zone_type': 'qsys',
+                                            'qsys_name': controlflex_qsys_name,
+                                            'qsys_zone_type': 'qsys_source',
+                                            'control_id': qsys_control_id_entry,
+                                            'friendly_name': friendly_zone_name_entry,
+                                            'friendly_input_names': source_names
+                                        })
+
+                                    add_input_button = Button(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Another Input', command=lambda: (add_input(), input_added()))
+                                    add_input_button.grid(row=3 + inputs, column=2)
+
+                                    input_okay = Button(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Finished with inputs', command=finished_with_source_inputs)
+                                    input_okay.grid(row=3+inputs, column=3)
+
+                                add_input()
+
+                            qsys_zone_okay = Button(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Okay', command=lambda: (ok(), qsys_zone_okay.destroy()))
+                            qsys_zone_okay.grid(row=3, column=3, padx=5)
+
+                    qsys_okay = Button(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Okay', command=lambda: (update_qsys_zone(), qsys_okay.destroy()))
+                    qsys_okay.grid(row=1, column=4, padx=10)
+
+            zone_okay = Button(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Okay', command=lambda: (update_zone(), zone_okay.destroy()))
+            zone_okay.grid(row=0, column=2, padx=10)
+
+        def finished():
+            self.__add_device(device={
+                'type': 'controlflex',
+                'user_name': name_entry.get(),
+                'ip_address': ip_address_entry.get(),
+                'zones': zone_data
+            })
+            add_controlflex.destroy()
+
+        Button(add_controlflex, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add new Zone', command=add_zone).grid()  # add new controlflex zone, parent is main window
+        Button(add_controlflex, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Finished: add controlflex device and all zones', command=finished).grid()  # Add controlflex device. Pressed when finished, parent is main window
+
+
 
 if __name__ == '__main__':
     device_editor = DeviceEditor()
