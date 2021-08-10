@@ -23,6 +23,7 @@ try:
     import urllib.parse
     from device_editor import DeviceEditor
     from select_service import SelectService
+    import datetime as dt
 
 except Exception as e:
     from setup import *
@@ -311,8 +312,15 @@ class MainUI:
         self.item_person_labels = []
         self.item_producer_note_labels = []
         self.item_app_cue_labels = []
+        self.item_advance_cue_labels = []
+
 
         self.progress_bar = None
+
+        self.auto_advance_cancelled_by_user = False
+        self.auto_advance_reminder_frame = None
+        self.auto_advance_reminder_label = None
+
 
         self.all_kipros = []
         if self.startup.devices is not None:
@@ -337,6 +345,8 @@ class MainUI:
             self.webserver_thread = None
             self.__start_webserver()
 
+        # pprint.pprint(self.plan_items)
+
     def build_plan_window(self):
 
         self.plan_window.title('Service Control')
@@ -344,10 +354,12 @@ class MainUI:
 
         self.__build_current_service_time()
         # self.__build_time_remaining_progress_bar()
+        self.__build_auto_advance_reminder_ui()
         self.__build_clock()
         self.__build_item_timer()
         self.__build_items_view()
         self.__build_aux_controls()
+
 
         if self.global_cues is not None:
             self.__build_global_cues_button()
@@ -422,7 +434,8 @@ class MainUI:
                     self.item_title_labels[item['sequence'] - 1],
                     self.item_person_labels[item['sequence'] - 1],
                     self.item_producer_note_labels[item['sequence'] - 1],
-                    self.item_app_cue_labels[item['sequence'] - 1]
+                    self.item_app_cue_labels[item['sequence'] - 1],
+                    self.item_advance_cue_labels[item['sequence'] - 1]
                 ]
 
                 for label in labels_to_update:
@@ -461,7 +474,8 @@ class MainUI:
                 self.item_title_labels[index],
                 self.item_person_labels[index],
                 self.item_producer_note_labels[index],
-                self.item_app_cue_labels[index]
+                self.item_app_cue_labels[index],
+                self.item_advance_cue_labels[index]
             ]
             return labels
 
@@ -589,7 +603,10 @@ class MainUI:
             Label(self.current_service_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Current Live Service:  ').grid(row=0, column=0)
             Label(self.current_service_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text=current_service_time['local']).grid(row=0, column=1)
 
-    def __build_clock(self):
+    def __set_advance_to_next_reminder(self):
+        pass
+
+    def __build_clock(self): # also checks for advance to next cues on each tick
         time_label = Label(self.clock_frame,
                            fg=clock_text_color,
                            bg=bg_color,
@@ -603,7 +620,56 @@ class MainUI:
             time_label.config(text=time_string)
             time_label.after(1000, tick)
 
+            current_item_notes = self.plan_items[self.current_item_index-1]['notes']
+
+            if 'App Cues' in current_item_notes:
+                for cue in current_item_notes['App Cues']:
+                    if cue['uuid'] == advance_on_next_uuid and len(cue['times']) > 0: # advance to next cue exists in current item
+                        current_time = dt.datetime.now().time()
+                        current_time_in_seconds = (current_time.hour * 3600) + (current_time.minute * 60) + current_time.second
+
+                        def cue_time_to_seconds(cue_time_list):
+                            return (int(cue_time_list[0]) * 3600) + (int(cue_time_list[1]) * 60) + (int(cue_time_list[2]))
+
+                        def find_difference(cue_time):
+                            return cue_time_to_seconds(cue_time)-current_time_in_seconds
+
+                        soonest_advance_time_index = 0
+                        for iteration, cue_time in enumerate(cue['times'], start=0):
+                            difference = find_difference(cue_time)
+                            if difference < 0:
+                                pass
+                            else:
+                                current_smallest_time = find_difference(cue['times'][soonest_advance_time_index])
+                                if current_smallest_time < 0:
+                                    soonest_advance_time_index = iteration
+                                else:
+                                    if difference < current_smallest_time:
+                                            soonest_advance_time_index = iteration
+
+                        countdown = find_difference(cue['times'][soonest_advance_time_index])
+                        if countdown == 0 and not self.auto_advance_cancelled_by_user: #advance to next
+                            logger.info(f'Auto advancing to next because of cue: {cue}')
+                            self.next(cue_items=True)
+                        if countdown == 0:
+                            self.auto_advance_cancelled_by_user = False
+                            self.auto_advance_reminder_frame.place_forget()
+                        elif countdown in list(range(30)) and not self.auto_advance_cancelled_by_user:
+                            self.auto_advance_reminder_label.configure(text=f'Advancing to next item in {countdown} seconds')
+                            self.auto_advance_reminder_frame.place(relx=.5, rely=.45, anchor=CENTER)
+
         tick()
+
+    def __build_auto_advance_reminder_ui(self):
+        self.auto_advance_reminder_frame = Frame(self.plan_window, bg=accent_color_1)
+        self.auto_advance_reminder_label = Label(self.auto_advance_reminder_frame, fg=reminder_color, bg=accent_color_1, font=(font, reminder_font_size))
+        self.auto_advance_reminder_label.grid(row=0, column=0)
+
+        def cancel():
+            self.auto_advance_cancelled_by_user = True
+            self.auto_advance_reminder_frame.place_forget()
+
+        Button(self.auto_advance_reminder_frame, bg=accent_color_1, fg=reminder_color, font=(font, reminder_font_size), text='CANCEL', command=cancel).grid(row=0, column=1)
 
     def __build_item_timer(self):
         time_label = Label(self.clock_frame,
@@ -652,9 +718,13 @@ class MainUI:
             global_cues_menu.title('Global Cues')
             global_cues_menu.configure(bg=bg_color)
 
+            def if_close():
+                if close_global_cues_menu_after_cue:
+                    global_cues_menu.destroy()
+
             for cue in self.global_cues:
                 Button(global_cues_menu, bg=bg_color, fg=text_color, font=(font, other_text_size+2), text=cue[0], padx=30, pady=5,
-                       command=lambda cue = cue: (self.cue_handler_global.activate_cues(cues=cue[1]), global_cues_menu.destroy())).pack()
+                       command=lambda cue = cue: (self.cue_handler_global.activate_cues(cues=cue[1]), if_close())).pack()
 
     def __build_items_view(self):
         self.service_plan_frame.grid(row=2, column=0)
@@ -663,10 +733,10 @@ class MainUI:
         for item in self.plan_items:
             # Add item frames to list
             if item['type'] == 'header':
-                item_frame_height = 20
+                item_frame_height = 25
                 item_frame_color = header_color
             else:
-                item_frame_height = 50
+                item_frame_height = 28
                 item_frame_color = bg_color
             item_frame = Frame(self.service_plan_frame, bg=item_frame_color, width=plan_item_frame_width, height=item_frame_height)
             self.item_frames.append(item_frame)
@@ -745,8 +815,44 @@ class MainUI:
                       font=(font, app_cue_font_size))
                 self.item_app_cue_labels.append(label)
                 label.place(anchor='nw', x=1050)
+
+                # if number of cues on an item is greater than 4, increase height of item frame so nothing is cut off
+                number_of_cues = len(self.cue_handler.verbose_decode_cues(cuelist=item['notes']['App Cues']))
+                if number_of_cues > 2:
+                    over = number_of_cues - 2
+                    height = 28 + (8 * over)
+                    frame.configure(height=height)
+                    logger.debug(f'{item["title"]} height: {height}, {frame.winfo_height()}')
+
             else:
                 self.item_app_cue_labels.append(None)
+
+        # Item auto advance labels
+        for item, frame in zip(self.plan_items, self.item_frames):
+            if 'App Cues' in item['notes']:
+                advance_cue_times = []
+                for cue in item['notes']['App Cues']:
+                    if cue['uuid'] == advance_on_next_uuid:
+                        for advance_time in cue['times']:
+                            advance_cue_times.append(advance_time)
+
+                        auto_advance_label = Label(frame, bg=bg_color, fg=text_color, font=(font, app_cue_font_size + 1),
+                                                   justify=LEFT)
+                        auto_advance_label.place(anchor='nw', x=900)
+
+                if len(advance_cue_times) == 0:
+                    self.item_advance_cue_labels.append(None)
+                else:
+                    self.item_advance_cue_labels.append(auto_advance_label)
+
+                advance_time_text = ''
+                for iteration, advance_time in enumerate(advance_cue_times):
+                    advance_time_text += f'ADVANCE TO NEXT AT {advance_time[0]}:{advance_time[1]}:{advance_time[2]}'
+                    if not iteration + 1 == len(advance_cue_times):
+                        advance_time_text += '\n'
+                    auto_advance_label.configure(text=advance_time_text)
+            else:
+                self.item_advance_cue_labels.append(None)
 
         # Item 'options' button
         for item, frame in zip(self.plan_items, self.item_frames):
@@ -830,7 +936,7 @@ class MainUI:
         Button(reminder_frame, fg=reminder_color, bg=accent_color_1, text='clear', font=(accent_text_font, accent_text_size), command=reminder_frame.destroy).grid(row=0, column=2)
 
         def show_reminder():
-            logger.debug('Showing remidner %s', reminder_text)
+            logger.debug('Showing reminder %s', reminder_text)
             reminder_frame.place(relx=.5, rely=.5, anchor=CENTER)
 
         reminder_frame.after(reminder_time*1000, show_reminder)
