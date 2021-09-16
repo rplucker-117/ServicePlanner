@@ -65,12 +65,12 @@ class ShureQLXD:
 
         try:
             response = await asyncio.wait_for(
-                asyncio.gather((self.reader.readuntil(str.encode('ascii'))), return_exceptions=False),
+                asyncio.gather((self.reader.readuntil(str.encode('ascii')))),
                 timeout=self.meter_timeout, )
             # logger.debug('__listen for found string')
             return response
 
-        except asyncio.TimeoutError:
+        except asyncio.TimeoutError or asyncio.CancelledError:
             # logger.debug('__Listen for timed out')
             pass
 
@@ -151,6 +151,7 @@ class ShureQLXD:
 
             # logger.debug(f'Got metering info for device {self.IP_ADDR}: {info}')
         except TypeError:
+
             self.get_meter_info()
 
         return info
