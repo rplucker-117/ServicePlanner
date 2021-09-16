@@ -25,6 +25,7 @@ from sheet_reader import ReadSheet
 from bem104 import BEM104
 from controlflex import Flex
 import uuid
+from aja_kumo import AJAKumo
 
 class CueCreator:
     def __init__(self, startup, ui, cue_type='item', devices=None, imported_cues=None):
@@ -249,6 +250,20 @@ class CueCreator:
 
                     cues_verbose_list.append(cue_verbose)
 
+                if device['type'] == 'aja_kumo':
+                    kumo_api = AJAKumo(ip=device['ip_address'])
+
+                    input_name = kumo_api.get_source_name(source_num=cue['input'])
+                    output_name = kumo_api.get_dest_name(dest_num=cue['output'])
+
+                    if input_name is not None and output_name is not None:
+                        cue_verbose = f'{device["user_name"]}: route {input_name} (ip{cue["input"]}) to {output_name} (op{cue["output"]})'
+                    if input_name is None:
+                        cue_verbose = f'{device["user_name"]}: route Input {cue["input"]} to {output_name} (op{cue["output"]})'
+                    if output_name is None:
+                        cue_verbose = f'{device["user_name"]}: route {input_name} (ip{cue["input"]}) to Output {cue["output"]})'
+                    cues_verbose_list.append(cue_verbose)
+
             logger.debug('verbose_decode_cues: returning %s', cues_verbose_list)
             return cues_verbose_list
 
@@ -337,6 +352,10 @@ class CueCreator:
                                 if cue['command']['args'] == 'source':  # cue is source
                                     flex.qsys_source(qsys_name=cue['zone']['qsys_name'], qsys_zone=cue['zone']['control_id'], source_number=cue['command']['value'])
 
+                        elif device['type'] == 'aja_kumo':
+                            logger.debug('aja kumo: route input %s to output %s', cue['input'], cue['output'])
+                            AJAKumo(ip=device['ip_address']).route_source_to_dest(source_num=cue['input'], dest_num=cue['output'])
+
                         else:
                             logger.warning('Received cue not in activate_cues list: %s', cue)
                             pass
@@ -422,6 +441,8 @@ class CueCreator:
                 self.__add_bem104(device)
             elif device['type'] == 'controlflex':
                 self.__add_controlflex(device)
+            elif device['type'] == 'aja_kumo':
+                self.__add_aja_kumo(device)
 
         if self.devices is not None: # if the device is not pause, reminder, or kipro, create a button for it
             for device in self.devices:
@@ -1049,6 +1070,87 @@ class CueCreator:
 
             if zone_type == 'sony_pro_bravia':
                 Button(zone_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='All Sony Pro Bravias', command=lambda zone_type = zone_type: zone_type_selected({'zone_type': 'all_sony_pro_bravias'})).pack(padx=10, pady=10)
+
+    def __add_aja_kumo(self, device):
+        add_kumo = Tk()
+        add_kumo.configure(bg=bg_color)
+
+        kumo_api = AJAKumo(ip=device['ip_address'])
+
+        total_inputs = kumo_api.num_source
+        total_outputs = kumo_api.num_dest
+
+        input_names = kumo_api.get_all_source_names()
+        output_names = kumo_api.get_all_dest_names()
+
+        inputs_frame = Frame(add_kumo, bg=bg_color)
+        inputs_buttons = []
+
+        selected_input = IntVar(inputs_frame)
+
+        for iteration, input in enumerate(input_names, start=1):
+            if input is None:
+                input = f'Input {iteration}'
+
+            inputs_buttons.append(Radiobutton(inputs_frame,
+                                              bg=bg_color,
+                                              selectcolor=bg_color,
+                                              fg=text_color, font=(font, other_text_size-2),
+                                              text=input,
+                                              variable=selected_input,
+                                              value=iteration))
+
+        for iteration, button in enumerate(inputs_buttons):
+            row = math.floor(iteration/6)
+            column = iteration % 6
+            button.grid(row=row, column=column, sticky='w')
+
+        outputs_frame = Frame(add_kumo, bg=bg_color)
+
+        selected_output = IntVar(outputs_frame)
+        selected_output.set(value=1)
+
+        outputs_buttons = []
+
+        def show_current_route():
+            current_route = kumo_api.get_route_from_dest(selected_output.get())
+            inputs_buttons[current_route-1].flash()
+            inputs_buttons[current_route-1].select()
+
+        for iteration, output in enumerate(output_names, start=1):
+            if output is None:
+                output = f'Output {iteration}'
+
+            outputs_buttons.append(Radiobutton(outputs_frame,
+                                               bg=bg_color,
+                                               fg=text_color,
+                                               selectcolor=bg_color,
+                                               font=(font, other_text_size-2),
+                                               text=output,
+                                               variable=selected_output,
+                                               value=iteration,
+                                               command=show_current_route))
+
+        for iteration, button in enumerate(outputs_buttons):
+            row = math.floor(iteration/6)
+            column = iteration % 6
+            button.grid(row=row, column=column, sticky='w')
+
+        def add():
+            self.current_cues.append({
+                'uuid': device['uuid'],
+                'input': selected_input.get(),
+                'output': selected_output.get()
+            })
+
+            self.__update_cues_display()
+            add_kumo.destroy()
+
+        okay = Button(add_kumo, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Cue', command=add)
+
+        outputs_frame.pack(anchor='w', padx=20, pady=10)
+        inputs_frame.pack(anchor='w', padx=20, pady=10)
+        okay.pack()
 
     def __add_reminder_cue_clicked(self):
         # creates a new window for adding a reminder with minutes, seconds, reminder text, and okay.
