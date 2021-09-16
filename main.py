@@ -24,6 +24,9 @@ try:
     from device_editor import DeviceEditor
     from select_service import SelectService
     import datetime as dt
+    import math
+    from shure_qlxd_async import ShureQLXD
+    import asyncio
 
 except Exception as e:
     from setup import *
@@ -264,6 +267,7 @@ class MainUI:
         self.cue_handler_plan = CueCreator(ui=self, startup=startup, devices=startup.devices, cue_type='plan')
         self.kipro_ui = KiProUi()
         self.kipro = KiPro()
+        self.qlxd = None
 
         self.plan_items = self.pco_plan.get_service_items()[1]
 
@@ -292,12 +296,13 @@ class MainUI:
         # plan window frames
         self.reminder_frame = Frame(self.plan_window, bg=bg_color)
         self.clock_frame = Frame(self.plan_window, bg=bg_color)
-        self.service_plan_frame = Frame(self.plan_window, bg=bg_color)
+
         self.adjacent_plan_frame = Frame(self.clock_frame, bg=bg_color)
         self.aux_controls_frame = Frame(self.plan_window, bg=bg_color)
         self.kipro_control_frame = Frame(self.plan_window, bg=bg_color)
         self.plan_cues_frame = Frame(self.plan_window, bg=bg_color)
         self.current_service_frame = Frame(self.plan_window, bg=bg_color)
+        self.qlxd_frame = Frame(self.plan_window, bg=bg_color)
 
         self.service_controls_frame = Frame(self.plan_window, bg=bg_color)
         self.next_previous_frame = Frame(self.service_controls_frame, bg=bg_color)
@@ -314,13 +319,27 @@ class MainUI:
         self.item_app_cue_labels = []
         self.item_advance_cue_labels = []
 
+        #scrollbar for plan items frame (service_plan_frame)
+        self.plan_items_canvas = Canvas(self.plan_window, bg=bg_color, width=plan_item_frame_width, height=plan_item_view_height, highlightthickness=0)
+        self.items_view_scrollbar = None
+
+        self.service_plan_frame = Frame(self.plan_items_canvas, bg=bg_color)
+
+        self.plan_items_canvas.create_window(0, 0, anchor='nw', window=self.service_plan_frame)
+
+
+        self.plan_items_canvas.grid(row=2, column=0)
+
+
+        # height of all plan item frames added together
+        self.service_plan_frame_height = None
+
 
         self.progress_bar = None
 
         self.auto_advance_cancelled_by_user = False
         self.auto_advance_reminder_frame = None
         self.auto_advance_reminder_label = None
-
 
         self.all_kipros = []
         if self.startup.devices is not None:
@@ -348,7 +367,6 @@ class MainUI:
         # pprint.pprint(self.plan_items)
 
     def build_plan_window(self):
-
         self.plan_window.title('Service Control')
         self.plan_window.configure(bg=bg_color)
 
@@ -360,19 +378,26 @@ class MainUI:
         self.__build_items_view()
         self.__build_aux_controls()
 
-
         if self.global_cues is not None:
             self.__build_global_cues_button()
 
         self.__build_utilities_button()
-
         if display_kipros:
             self.__build_kipro_status()
 
         self.__build_plan_cue_buttons()
-
         self.update_live()
 
+        contains_qlxd = False
+        for device in self.startup.devices:
+            if device['type'] == 'shure_qlxd':
+                contains_qlxd = True
+                break
+
+        if contains_qlxd:
+            self.__build_qlxd_ui()
+
+        self.__cleanup()
         self.plan_window.mainloop()
 
     def update_item_timer(self, time):
@@ -565,16 +590,21 @@ class MainUI:
 
     def update_kipro_status(self, kipro_unit, status):
         # logger.debug('Got kipro status: unit: %s, status: %s', kipro_unit, status)
-
-        if status == 1:
-            self.kipro_buttons[kipro_unit].configure(bg=kipro_idle_color)
-        elif status == 2:
-            self.kipro_buttons[kipro_unit].configure(bg=kipro_recording_color)
-        else:
-            self.kipro_buttons[kipro_unit].configure(bg=kipro_error_color)
+        try:
+            if status == 1:
+                self.kipro_buttons[kipro_unit].configure(bg=kipro_idle_color)
+            elif status == 2:
+                self.kipro_buttons[kipro_unit].configure(bg=kipro_recording_color)
+            else:
+                self.kipro_buttons[kipro_unit].configure(bg=kipro_error_color)
+        except Exception as e: # plan window has been closed by user. Throws a _tkinter.Tclerror
+            pass
 
     def update_kipro_storage(self, kipro_unit, percent):
-        self.kipro_storage_remaining_bars[kipro_unit].configure(value=percent)
+        try:
+            self.kipro_storage_remaining_bars[kipro_unit].configure(value=percent)
+        except Exception as e: # plan window has been closed by user. Throws a _tkinter.Tclerror
+            pass
 
     def reload(self):
         # self.webserver_thread.join() #todo stop webserver thread
@@ -727,7 +757,6 @@ class MainUI:
                        command=lambda cue = cue: (self.cue_handler_global.activate_cues(cues=cue[1]), if_close())).pack()
 
     def __build_items_view(self):
-        self.service_plan_frame.grid(row=2, column=0)
 
         # Item frames
         for item in self.plan_items:
@@ -820,7 +849,7 @@ class MainUI:
                 number_of_cues = len(self.cue_handler.verbose_decode_cues(cuelist=item['notes']['App Cues']))
                 if number_of_cues > 2:
                     over = number_of_cues - 2
-                    height = 28 + (8 * over)
+                    height = 28 + (10 * over)
                     frame.configure(height=height)
                     logger.debug(f'{item["title"]} height: {height}, {frame.winfo_height()}')
 
@@ -863,7 +892,7 @@ class MainUI:
                     ).pack(side=RIGHT)
 
     def __build_kipro_status(self):
-        self.kipro_control_frame.grid(row=2, column=1, sticky='n')
+        self.kipro_control_frame.grid(row=2, column=2, sticky='n')
 
         # Buttons
         for kipro_unit in self.all_kipros:
@@ -882,6 +911,13 @@ class MainUI:
 
         self.kipro_ui.update_kipro_status(ui=self)
 
+    def __build_qlxd_ui(self):
+        self.qlxd = ShureQLXDUi(devices=self.startup.devices, ui=self)
+        self.qlxd_frame.grid(row=5, column=0, sticky='e')
+        self.qlxd_frame.configure(height=60, width=plan_item_frame_width)
+
+        threading.Thread(target=self.qlxd.main_loop).start()
+
     def __build_plan_cue_buttons(self):
         if self.pco_plan.check_if_plan_app_cue_exists():
             logger.debug('MainUI.__build_plan_cue_buttons: adding plan cue buttons')
@@ -892,7 +928,7 @@ class MainUI:
                 cue_data = cue[1]
                 logger.debug('Creating plan cues button: %s, cue_data = %s', cue_name, cue_data)
                 Button(self.plan_cues_frame, bg=bg_color, fg=text_color, font=(font, other_text_size),
-                       text=cue_name, command=lambda cue_data=cue_data: self.cue_handler.activate_cues(cue_data)).grid(row=0, column=iteration, padx=2, pady=10)
+                       text=cue_name, command=lambda cue_data=cue_data: self.cue_handler.activate_cues(cue_data)).grid(row=0, column=iteration, padx=plan_cue_pad_x, pady=10)
         else:
             logger.debug('No plan cues were added because none were found')
 
@@ -900,10 +936,30 @@ class MainUI:
         self.aux_controls_frame.grid(row=4, column=0)
         self.aux_controls_frame.configure(height=60, width=plan_item_frame_width)
 
-        Button(self.aux_controls_frame, bg=accent_color_1, fg=accent_text_color, text='Previous (no actions)', font=(accent_text_font, 10), command=lambda: self.previous(cue_items=False)).grid(row=1, column=1)
-        Button(self.aux_controls_frame, bg=accent_color_1, fg=accent_text_color, text='Previous', font=(accent_text_font, accent_text_size), command=lambda: self.previous(cue_items=True)).grid(row=1, column=2)
-        Button(self.aux_controls_frame, bg=accent_color_1, fg=accent_text_color, text='Next', font=(accent_text_font, accent_text_size), command=lambda: self.next(cue_items=True)).grid(row=1, column=3)
-        Button(self.aux_controls_frame, bg=accent_color_1, fg=accent_text_color, text='Next (no actions)', font=(accent_text_font, 10), command=lambda: self.next(cue_items=False)).grid(row=1, column=4)
+        Button(self.aux_controls_frame, bg=accent_color_1, fg=accent_text_color, text='Previous (no actions)', font=(accent_text_font, 10), command=lambda: self.previous(cue_items=False)).grid(row=1, column=1, padx=next_previous_pad_x)
+        Button(self.aux_controls_frame, bg=accent_color_1, fg=accent_text_color, text='Previous', font=(accent_text_font, accent_text_size), command=lambda: self.previous(cue_items=True)).grid(row=1, column=2, padx=next_previous_pad_x)
+        Button(self.aux_controls_frame, bg=accent_color_1, fg=accent_text_color, text='Next', font=(accent_text_font, accent_text_size), command=lambda: self.next(cue_items=True)).grid(row=1, column=3, padx=next_previous_pad_x)
+        Button(self.aux_controls_frame, bg=accent_color_1, fg=accent_text_color, text='Next (no actions)', font=(accent_text_font, 10), command=lambda: self.next(cue_items=False)).grid(row=1, column=4, padx=next_previous_pad_x)
+
+    def __on_mousewheel(self, event):
+        self.plan_items_canvas.yview_scroll(math.floor(-1*(int(event.delta))/120), 'units')
+
+    def __cleanup(self):
+        self.service_plan_frame_height = 0 if self.service_plan_frame_height is None else self.service_plan_frame_height
+
+        for frame in self.item_frames:  # find height of all item frames together, used to pass to the plan frame before creation of the scrollbar
+            frame.update()
+            height = frame.winfo_height()
+            self.service_plan_frame_height += height
+        logger.debug('service_plan_frame height is %s', self.service_plan_frame_height)
+
+        self.service_plan_frame.configure(height=self.service_plan_frame_height)
+        self.items_view_scrollbar = Scrollbar(self.plan_window, command=self.plan_items_canvas.yview)
+        self.plan_items_canvas.configure(scrollregion=self.plan_items_canvas.bbox('all'), yscrollcommand=self.items_view_scrollbar.set)
+        self.items_view_scrollbar.grid(row=2, column=1, sticky='nsw')
+
+        self.service_plan_frame.bind_all('<MouseWheel>', self.__on_mousewheel)
+
 
     def __cue(self, next=True):
         # Called when next or previous functions are called. it will cue actions on the next item when next=True,
@@ -1059,6 +1115,198 @@ class KiProUi:
             logger.debug('KiProUi.__refresh: exit event set, stopping loop')
 
 
+class ShureQLXDUi:
+    def __init__(self, devices, ui):
+        self.devices = devices
+        self.main_ui = ui
+
+        self.qlxd_class_inits = []
+        self.qlxd_device_names = []
+
+        self.qlxd_channel_boxes = []
+        self.qlxd_box_names = []
+        self.qlxd_box_rf_labels = []
+        self.qlxd_box_rf_levels = []
+        self.qlxd_box_audio_labels = []
+        self.qlxd_box_audio_levels = []
+        self.qlxd_box_battery_levels = []
+        self.battery_icon_canvases = []
+
+        self.battery_levels = None
+        self.metering_data = None
+
+        for device in devices:
+            if device['type'] == 'shure_qlxd':
+                self.qlxd_class_inits.append(ShureQLXD(ip=device['ip_address']))
+                for name in device['channel_names']:
+                    self.qlxd_device_names.append(name)
+
+        self.box_problem_color = live_color
+
+        subsample_x = 16
+        subsample_y = 16
+
+        self.battery_level_off_image = PhotoImage(file=os.path.join(abs_path, 'battery_level_off.png')).subsample(subsample_x, subsample_y)
+        self.battery_level_0_image = PhotoImage(file=os.path.join(abs_path, 'battery_level_0.png')).subsample(subsample_x, subsample_y)
+        self.battery_level_1_image = PhotoImage(file=os.path.join(abs_path, 'battery_level_1.png')).subsample(subsample_x, subsample_y)
+        self.battery_level_2_image = PhotoImage(file=os.path.join(abs_path, 'battery_level_2.png')).subsample(subsample_x, subsample_y)
+        self.battery_level_3_image = PhotoImage(file=os.path.join(abs_path, 'battery_level_3.png')).subsample(subsample_x, subsample_y)
+        self.battery_level_4_image = PhotoImage(file=os.path.join(abs_path, 'battery_level_4.png')).subsample(subsample_x, subsample_y)
+        self.battery_level_5_image = PhotoImage(file=os.path.join(abs_path, 'battery_level_5.png')).subsample(subsample_x, subsample_y)
+
+        self.battery_images = [self.battery_level_off_image, self.battery_level_0_image, self.battery_level_1_image,
+                               self.battery_level_2_image, self.battery_level_3_image, self.battery_level_4_image,
+                               self.battery_level_5_image]
+
+        self.__start_all_metering()
+        self.__create_channel_boxes()
+
+        self.loop_counter = 0
+
+    def __create_channel_boxes(self):
+        for _ in self.qlxd_device_names:
+            f = Frame(self.main_ui.qlxd_frame, bg=bg_color, width=100, height=50)
+            f.pack_propagate(0)
+            f.pack(side=LEFT, padx=5, pady=10)
+            self.qlxd_channel_boxes.append(f)
+
+        for box, channel_info in zip(self.qlxd_channel_boxes, self.qlxd_device_names):  # Channel name labels
+            name = Label(box, bg=bg_color, fg=text_color, text=channel_info, font=(font, 9))
+            self.qlxd_box_names.append(name)
+            name.place(x=0, y=0)
+
+        for box in self.qlxd_channel_boxes: # channel RF labels
+            r = Label(box, bg=bg_color, fg=text_color, text='RF:', font=(font, 6))
+            self.qlxd_box_rf_labels.append(r)
+            r.place(x=0, y=20)
+
+        for box in self.qlxd_channel_boxes: # channel RF strength
+            r = Label(box, bg=bg_color, fg='#ffffff', text='', font=(font, 3))
+            self.qlxd_box_rf_levels.append(r)
+            r.place(x=24, y=23)
+
+        for box in self.qlxd_channel_boxes: # channel audio labels
+            r = Label(box, bg=bg_color, fg=text_color, text='AUD:', font=(font, 6))
+            self.qlxd_box_audio_labels.append(r)
+            r.place(x=0, y=33)
+
+        for box in self.qlxd_channel_boxes:  # channel audio strength
+            r = Label(box, bg=bg_color, fg='#ffffff', text='', font=(font, 3))
+            self.qlxd_box_audio_levels.append(r)
+            r.place(x=24, y=36)
+
+        for box in self.qlxd_channel_boxes:
+            b = Label(box, image=self.battery_images[0], bg=bg_color)
+            self.qlxd_box_battery_levels.append(b)
+            b.place(x=63, y=0)
+
+    def __start_all_metering(self):
+        for init in self.qlxd_class_inits:
+            init.start_all_metering()
+
+    def __stop_all_metering(self):
+        for init in self.qlxd_class_inits:
+            init.stop_all_metering()
+
+    def __get_battery_levels(self):
+        data = []
+        for init in self.qlxd_class_inits:
+            results = init.check_battery_levels()
+            for result in results:
+                data.append(result)
+        return data
+
+    def __get_metering_results(self):
+        data = []
+        for init in self.qlxd_class_inits:
+            results = init.get_meter_info()
+            for result in results:
+                data.append(result)
+        return data
+
+    def __update_ui_rf_and_audio(self, levels):
+        total_characters_in_progress_bar = 36
+        for channel, rf_label, aud_label in zip(levels, self.qlxd_box_rf_levels, self.qlxd_box_audio_levels):
+            try:
+                characters_in_rf = round(int(channel['rf_level']) * (total_characters_in_progress_bar/115))
+                rf_str = ''
+                for _ in range(characters_in_rf):
+                    rf_str += '#'
+                rf_label.configure(text=rf_str)
+
+                characters_in_aud = round(int(channel['audio_level']) * (total_characters_in_progress_bar / 15))
+                aud_str = ''
+                for _ in range(characters_in_aud):
+                    aud_str += '#'
+                aud_label.configure(text=aud_str)
+            except TypeError:
+                pass
+
+    def __update_battery_ui(self, levels):
+        for level, box_image in zip(levels, self.qlxd_box_battery_levels):
+            try:
+                box_image.configure(image=self.battery_images[level+1])
+            except IndexError:
+                box_image.configure(image=self.battery_images[0])
+
+    def main_loop(self):
+        self.__stop_all_metering()
+        self.__start_all_metering()
+
+        while True:
+            # logger.debug(f'loop counter: {self.loop_counter}')
+            if self.loop_counter == 0:
+                # logger.debug('Checking battery levels')
+                self.battery_levels = self.__get_battery_levels()
+                self.__update_battery_ui(levels=self.battery_levels)
+
+                self.__start_all_metering()
+
+            self.metering_data = self.__get_metering_results()
+            self.__update_ui_rf_and_audio(levels=self.metering_data)
+
+            iteration = 0
+            for level, battery in zip(self.metering_data, self.battery_levels):
+                try:
+                    if int(level['rf_level']) < 40 or battery == 255:
+                        self.qlxd_channel_boxes[iteration].configure(bg=live_color)
+                        self.qlxd_box_names[iteration].configure(bg=live_color)
+                        self.qlxd_box_rf_labels[iteration].configure(bg=live_color)
+                        self.qlxd_box_rf_levels[iteration].configure(bg=live_color)
+                        self.qlxd_box_audio_labels[iteration].configure(bg=live_color)
+                        self.qlxd_box_audio_levels[iteration].configure(bg=live_color)
+                        self.qlxd_box_battery_levels[iteration].configure(bg=live_color)
+
+                    elif int(level['rf_level']) > 40 and battery <= 2:
+                        self.qlxd_channel_boxes[iteration].configure(bg='#bf7831')
+                        self.qlxd_box_names[iteration].configure(bg='#bf7831')
+                        self.qlxd_box_rf_labels[iteration].configure(bg='#bf7831')
+                        self.qlxd_box_rf_levels[iteration].configure(bg='#bf7831')
+                        self.qlxd_box_audio_labels[iteration].configure(bg='#bf7831')
+                        self.qlxd_box_audio_levels[iteration].configure(bg='#bf7831')
+                        self.qlxd_box_battery_levels[iteration].configure(bg='#bf7831')
+
+                    else:
+                        self.qlxd_channel_boxes[iteration].configure(bg=kipro_idle_color)
+                        self.qlxd_box_names[iteration].configure(bg=kipro_idle_color)
+                        self.qlxd_box_rf_labels[iteration].configure(bg=kipro_idle_color)
+                        self.qlxd_box_rf_levels[iteration].configure(bg=kipro_idle_color)
+                        self.qlxd_box_audio_labels[iteration].configure(bg=kipro_idle_color)
+                        self.qlxd_box_audio_levels[iteration].configure(bg=kipro_idle_color)
+                        self.qlxd_box_battery_levels[iteration].configure(bg=kipro_idle_color)
+
+                    iteration += 1
+
+                except TypeError:
+                    pass
+
+                if self.loop_counter == 20:
+                    self.loop_counter = 0
+                else:
+                    self.loop_counter += 1
+
+
+
 class Main:  #startup
     def __init__(self):
         os.chdir(abs_path)
@@ -1082,7 +1330,6 @@ class Main:  #startup
         self.main_ui = MainUI(startup=self)
 
         self.main_ui.build_plan_window()
-
 
 start = Main()
 
