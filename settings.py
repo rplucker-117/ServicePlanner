@@ -22,6 +22,10 @@ live_color = '#a34444'
 default_font = 'Arial'
 item_time_size = 8
 plan_item_frame_width = 1400
+plan_item_view_height = 600
+
+plan_cue_pad_x = 5
+next_previous_pad_x = 0
 
 separator_color ='#3f3f3f'
 
