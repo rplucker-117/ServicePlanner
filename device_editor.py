@@ -69,6 +69,8 @@ class DeviceEditor:
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add EZ Outlet 2', command=self.__add_ez_outlet_2).pack()
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add BEM104 Relay', command=self.__add_bem104).pack()
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Wave Controlflex', command=self.__add_controlflex).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add AJA Kumo Router', command=self.__add_aja_kumo).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Shure QLXD reciver', command=self.__add_shure_qlxd).pack()
         # Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add AJA IPR').pack()
 
         self.new_device_window.withdraw()
@@ -83,7 +85,7 @@ class DeviceEditor:
                    "-When finished, reload the program for your changes to take effect.\n"
                    "-You can use a devices file from a different machine or program version if you wish, just make sure it's named devices.json and in the same directory.\n", justify=LEFT).pack()
 
-        self.devices_listbox.configure(bg=bg_color, fg=text_color, font=(font, current_cues_text_size), width=50, height=20)
+        self.devices_listbox.configure(bg=bg_color, fg=text_color, font=(font, current_cues_text_size), width=50, height=40)
         self.devices_listbox.pack(pady=20)
 
         Button(self.device_editor_window, text='Add New Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self.__add_new_device_window).pack(side=LEFT, padx=10)
@@ -961,6 +963,141 @@ class DeviceEditor:
         Button(add_controlflex, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add new Zone', command=add_zone).grid()  # add new controlflex zone, parent is main window
         Button(add_controlflex, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Finished: add controlflex device and all zones', command=finished).grid()  # Add controlflex device. Pressed when finished, parent is main window
 
+    def __add_aja_kumo(self):
+        self.new_device_window.withdraw()
+
+        add_kumo = Tk()
+        add_kumo.title('Add AJA Kumo Router')
+        add_kumo.configure(bg=bg_color)
+        add_kumo.geometry('500x200')
+
+        name_entry_frame = Frame(add_kumo)
+        name_entry_frame.configure(bg=bg_color)
+
+        info_entry_frame = Frame(add_kumo)
+        info_entry_frame.configure(bg=bg_color)
+
+        name_entry = Entry(name_entry_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        ip_address_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+
+        device_description = Label(add_kumo, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Add AJA Kumo Video Router')
+        name_label = Label(name_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Name:')
+        ip_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Target IP Address:')
+
+        device_description.pack()
+
+        name_label.grid(row=0, column=0, padx=10, pady=10)
+        name_entry.grid(row=0, column=1, padx=10, pady=10)
+
+        ip_label.grid(row=0, column=0, padx=10, pady=10)
+        ip_address_entry.grid(row=0, column=1, padx=10, pady=10)
+
+        name_entry_frame.pack(pady=10)
+        info_entry_frame.pack(pady=10)
+
+        def add():
+            if self.__verify_ip(ip_address_entry.get()):
+
+                to_add = {
+                    'type': 'aja_kumo',
+                    'user_name': name_entry.get(),
+                    'ip_address': ip_address_entry.get()
+                }
+
+                self.__add_device(device=to_add)
+                add_kumo.destroy()
+            else:
+                messagebox.showerror(title='Invalid IP address', message='An Invalid IP address was entered')
+                logger.error('__add_aja_kumo: IP address not valid: %s', ip_address_entry.get())
+                add_kumo.lift()
+
+        Button(add_kumo, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
+
+    def __add_shure_qlxd(self):
+        self.new_device_window.withdraw()
+
+        add_qlxd = Tk()
+        add_qlxd.title('Add a Shure QLXD receiver')
+        add_qlxd.configure(bg=bg_color)
+        add_qlxd.geometry('500x600')
+
+        name_entry_frame = Frame(add_qlxd)
+        name_entry_frame.configure(bg=bg_color)
+
+        info_entry_frame = Frame(add_qlxd)
+        info_entry_frame.configure(bg=bg_color)
+
+        name_entry = Entry(name_entry_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        ip_address_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+
+        device_description = Label(add_qlxd, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Add Shure QLXD Wireless Microphone Receiver')
+        name_label = Label(name_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Name:')
+        ip_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Target IP Address:')
+
+        channel_description_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Channel Names (leave empty for none)')
+        channel_description_label.grid(row=1, column=0)
+
+        channel_1_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        channel_2_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        channel_3_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        channel_4_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+
+        all_channel_entries = [channel_1_entry, channel_2_entry, channel_3_entry, channel_4_entry]
+
+        channel_1_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Channel 1 Name')
+        channel_2_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Channel 2 Name')
+        channel_3_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Channel 3 Name')
+        channel_4_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Channel 4 Name')
+
+        all_channel_labels = [channel_1_label, channel_2_label, channel_3_label, channel_4_label]
+
+        device_description.pack()
+
+        name_label.grid(row=0, column=0, padx=10, pady=10)
+        name_entry.grid(row=0, column=1, padx=10, pady=10)
+
+        ip_label.grid(row=0, column=0, padx=10, pady=15)
+        ip_address_entry.grid(row=0, column=1, padx=10, pady=15)
+
+        iteration = 1
+        for entry, label in zip(all_channel_entries, all_channel_labels):
+            entry.grid(row=iteration+2, column=1, padx=10, pady=5)
+            label.grid(row=iteration+2, column=0, padx=10, pady=5)
+            iteration += 1
+
+        name_entry_frame.pack(pady=5)
+        info_entry_frame.pack(pady=5)
+
+        def add():
+            if self.__verify_ip(ip_address_entry.get()):
+
+                channel_names = []
+                for channel in all_channel_entries:
+                    channel_names.append(channel.get())
+
+                channels_to_add = []
+
+                for channel in channel_names:
+                    if channel == '':
+                        channels_to_add.append(None)
+                    else:
+                        channels_to_add.append(channel)
+
+                to_add = {
+                    'type': 'shure_qlxd',
+                    'user_name': name_entry.get(),
+                    'ip_address': ip_address_entry.get(),
+                    'channel_names': channels_to_add,
+                }
+
+                self.__add_device(device=to_add)
+                add_qlxd.destroy()
+            else:
+                messagebox.showerror(title='Invalid IP address', message='An Invalid IP address was entered')
+                logger.error('__add_shure_qlxd: IP address not valid: %s', ip_address_entry.get())
+                add_qlxd.lift()
+
+        Button(add_qlxd, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
 
 
 if __name__ == '__main__':
