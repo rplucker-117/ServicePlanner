@@ -6,7 +6,7 @@ class ReadSheet:
     def __init__(self, spreadsheet_path):
         self.sheet_path = spreadsheet_path
         self.spreadsheet = None
-        logger.debug('Opening spreadsheet %s', self.sheet_path)
+        # logger.debug('Opening spreadsheet %s', self.sheet_path)
 
     def read_cc_sheet(self):
         # Numberical input = [COLUMN, ROW]
@@ -18,7 +18,6 @@ class ReadSheet:
         # }
         # from a specified spreadsheet in .ods format. Use carbonite_cc_name_template.ods.
 
-        logger.debug('Reading rosstalk custom control spreadsheet: %s', self.sheet_path)
         self.spreadsheet = ezodf.opendoc(self.sheet_path)
         sheet = self.spreadsheet.sheets['Sheet1']
 
@@ -32,12 +31,10 @@ class ReadSheet:
                 bank_data.append(sheet[cc, bank].value)
 
             cc_data.update({bank_name: bank_data})
-        logger.debug('Got sheet data: %s', cc_data)
+        # logger.debug('Got sheet data: %s', cc_data)
         return cc_data
 
     def read_lbl_file(self):  # reads a nk .lbl sheet, outputs a dict>list containing names of each input/output
-        logger.debug('reading nk lbl sheet: %s', self.sheet_path)
-
         inputs = []
         outputs = []
 
