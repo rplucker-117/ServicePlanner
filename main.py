@@ -1,102 +1,99 @@
-try:
-    from tkinter import *
-    from tkinter import messagebox
-    from settings import *
-    import time
-    from logzero import logger, logfile
-    from pco_plan import PcoPlan
-    from pco_live import PcoLive
-    from tkinter import ttk
-    import threading
-    from cue_creator import CueCreator
-    import logging
-    import json
-    import os
-    from kipro import KiPro
-    from rosstalk import rosstalk as rt
-    import wget
-    import pprint
-    from sheet_reader import *
-    from multiprocessing import Process, Lock
-    import requests
-    from flask_server import flask_server as fs
-    import urllib.parse
-    from device_editor import DeviceEditor
-    from select_service import SelectService
-    import datetime as dt
-    import math
-    from shure_qlxd_async import ShureQLXD
-    import asyncio
+# try:
+import _tkinter
+from tkinter import *
+from tkinter import messagebox
 
-except Exception as e:
-    from setup import *
-    import os
-    print(e)
-    os.system("Python main.py")
+import urllib3.exceptions
 
+import flask_server
+from configs.settings import *
+import time
+from logzero import logfile
+from typing import List
+
+from cue_handler import CueHandler
+from pco_plan import PcoPlan
+from pco_live import PcoLive
+from tkinter import ttk
+import threading
+from cue_creator import CueCreator
+import json
+import os
+from kipro import KiPro
+from rosstalk import rosstalk as rt
+from sheet_reader import *
+from device_editor import DeviceEditor
+from select_service import SelectService
+import datetime as dt
+import math
+from shure_qlxd_async import ShureQLXD
+import multiprocessing as mp
+import logging
+from timeit import default_timer as timer
+from pvp import PVP
+from general_networking import is_host_online
+from global_cues import GlobalCues
+from typing import List, Dict
+import webbrowser
+from persistent_plan_data import PersistentPlanData
 
 abs_path = os.path.dirname(__file__)
 
-#logging: absolute paths
+# logging: absolute paths
 if not os.path.exists(os.path.join(abs_path, 'logs')):
     os.mkdir(os.path.join(abs_path, 'logs'))
 
-log_file_name = os.path.join(os.path.join(abs_path, 'logs'),time.strftime('%Y_%m_%d__%H_%M') + '.log')
+log_file_name = os.path.join(os.path.join(abs_path, 'logs'), time.strftime('%Y_%m_%d__%H_%M') + '.log')
 logfile(log_file_name)
 
 logging.getLogger('urllib3').setLevel(logging.INFO)
 
-class Utilities:
-    def __init__(self, main_ui_window_init):
+
+# main utilities menu under settings gear at top of plan window
+class UtilitiesMenu:
+    def __init__(self, main_ui_window_init, startup):
+        self.startup = startup
         self.main_ui_window = main_ui_window_init
         self.cue_handler = main_ui_window_init.cue_handler
-        self.cue_handler_global = main_ui_window_init.cue_handler_global
-        self.cue_handler_plan = main_ui_window_init.cue_handler_plan
 
         self.pco_live = PcoLive(service_type_id = self.main_ui_window.service_type_id, plan_id=self.main_ui_window.service_id)
         self.pco_plan = PcoPlan(service_type = self.main_ui_window.service_type_id, plan_id=self.main_ui_window.service_id)
 
-
         self.utilities_menu = Tk()
+
+        self.contains_kipro = False
+
+        for device in self.startup.devices:
+            if device['type'] == 'kipro':
+                self.contains_kipro = True
 
         self.kipro = KiPro()
 
     def open_utilities_menu(self):
-        self.utilities_menu.geometry('400x400')
+        # self.utilities_menu.geometry('400x450')
         self.utilities_menu.configure(bg=bg_color)
 
-        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Start Live Service', font=(font, other_text_size), command=self.__start_live).pack()
-        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Advance to Next Service', font=(font, other_text_size), command=self.__advance_to_next_service).pack()
-        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Reload Plan', font=(font, other_text_size), command=self.__reload_plan).pack()
-        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Load Adjacent Plan', font=(font, other_text_size), command=self.__load_adjacent).pack()
-        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Format Kipros', font=(font, other_text_size), command=self.__format).pack()
-        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Download Kipro Clips', font=(font, other_text_size), command=self.__download).pack()
-        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Add Plan Cue', font=(font, other_text_size), command=self.__add_plan_cue).pack()
-        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Remove Plan Cue', font=(font, other_text_size), command=self.__remove_plan_cue).pack()
-        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Add Global Cue', font=(font, other_text_size), command=self.__add_global_cue).pack()
-        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Remove Global Cue', font=(font, other_text_size), command=self.__remove_global_cue).pack()
-        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Update switcher cam names from PCO positions', font=(font, other_text_size), command=self.__update_cam_names).pack()
-        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Open Device Editor', font=(font, other_text_size), command=self.__open_device_editor).pack()
+        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Advance to Next Service', font=(font, other_text_size), command=self._advance_to_next_service).pack()
+        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Add Plan Cue', font=(font, other_text_size), command=self._add_plan_cue).pack()
+        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Edit Plan Cue', font=(font, other_text_size), command=self._edit_plan_cue).pack()
+        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Remove Plan Cue', font=(font, other_text_size), command=self._remove_plan_cue).pack()
+        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Open Device Editor', font=(font, other_text_size), command=self._open_device_editor).pack()
+        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Hard Reload App', font=(font, other_text_size), command=self._hard_reload_app).pack()
+
+        if self.contains_kipro:
+            Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Format Kipros', font=(font, other_text_size), command=self._format_kipros).pack()
+            Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Download Kipro Clips', font=(font, other_text_size), command=self._download_kipro_clips).pack()
+        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Update switcher cam names from PCO positions (Lakeland)', font=(font, other_text_size), command=self._update_cam_names).pack()
+
+        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Open PCO plan in browser', font=(font, other_text_size), command=self._open_pco_plan_in_browser).pack()
 
         self.utilities_menu.mainloop()
 
-    def __reload_plan(self):
-        self.utilities_menu.destroy()
-        self.main_ui_window.reload()
-
-    def __open_device_editor(self):
+    def _open_device_editor(self):
         self.utilities_menu.destroy()
         DeviceEditor().build_ui()
 
-    def __start_live(self):
-        if self.pco_live.get_current_live_item() is None:
-            self.pco_live.go_to_next_item()
-            self.utilities_menu.destroy()
-            self.main_ui_window.update_live(service_time=True)
-        else:
-            self.utilities_menu.destroy()
-
-    def __advance_to_next_service(self):
+    def _advance_to_next_service(self):
         # Set each frame and label in the plan items view back to its original bg color. For more info
         # on this absolute thicc boy, see the update_live function
         for frame, time_label, spacer_label, title_label, person_label, producer_note_label, app_cue_label, item in \
@@ -133,16 +130,12 @@ class Utilities:
                 except AttributeError:
                     pass
 
+
         self.pco_live.go_to_next_service()
         self.pco_live.go_to_previous_item()
         self.utilities_menu.destroy()
 
-    def __load_adjacent(self):
-        self.utilities_menu.destroy()
-        adjacent_plan = AdjacentPlanView(ui=self.main_ui_window)
-        adjacent_plan.ask_adjacent_plan()
-
-    def __format(self):
+    def _format_kipros(self):
         yes_no = messagebox.askyesno('Format KiPros', message="Are you sure you want to format ALL KiPros?")
         if yes_no:
             for kipro_unit in self.main_ui_window.all_kipros:
@@ -150,13 +143,16 @@ class Utilities:
 
         self.utilities_menu.destroy()
 
-    def __download(self):
+    def _download_kipro_clips(self):
+        """Download all clips from all kipros in devices file."""
         logger.debug('download kipro clips button pressed')
         self.utilities_menu.destroy()
         threading.Thread(target=self.kipro.download_clips).start()
         self.main_ui_window.kipro_ui.kill_threads()
 
-    def __update_cam_names(self):
+    # Finds the FIRST ross carbonite device in the devices file to use, pulls people down from pco,
+    # updates input mnemonics
+    def _update_cam_names(self):
         people = self.pco_plan.get_assigned_people()
 
         for device in self.main_ui_window.startup.devices:
@@ -177,47 +173,68 @@ class Utilities:
                 logger.debug('Updating camera position name via rosstalk: %s, %s', person['position'], name[0:6])
                 rt(rosstalk_ip=switcher_ip, rosstalk_port=switcher_port, command=f"MNEM IN:{cam_pos}:{cam_pos} {name[0:6]}")
 
-    def __add_plan_cue(self):
+    def _add_plan_cue(self):
         self.utilities_menu.destroy()
-        self.cue_handler_plan.create_cues()
+        CueCreator(startup=self.startup, ui=self.main_ui_window, devices=self.startup.devices).create_plan_cue(cuelist=self.main_ui_window.plan_cues)
 
-    def __remove_plan_cue(self):
+    def _edit_plan_cue(self):
+        self.utilities_menu.destroy()
+        logger.debug('Utilities._edit_plan_cue clicked.')
+        if len(self.main_ui_window.plan_cues) > 0:
+            current_plan_cues = self.main_ui_window.plan_cues
+
+            edit_plan_cue_window = Tk()
+            edit_plan_cue_window.configure(bg=bg_color)
+            listbox = Listbox(edit_plan_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size))
+            listbox.pack()
+
+            for iteration, item in enumerate(current_plan_cues):
+                name = item[0]
+                listbox.insert(iteration, name)
+
+            def edit(index: int) -> None:
+                logger.debug(f'_edit_plan_cue: editing item {current_plan_cues[index][0]}')
+                edit_plan_cue_window.destroy()
+                CueCreator(startup=self.startup, ui=self.main_ui_window, devices=self.startup.devices).edit_plan_cue(cuelist=self.main_ui_window.plan_cues, cue_index=index)
+
+            Button(edit_plan_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Edit',
+                   command=lambda: edit(listbox.curselection()[0])).pack(side=LEFT)
+            Button(edit_plan_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Cancel',
+                   command=lambda: edit_plan_cue_window.destroy()).pack(side=RIGHT)
+
+    def _remove_plan_cue(self):
         logger.debug('Utilities.__remove_plan_cue clicked')
         self.utilities_menu.destroy()
-        if self.pco_plan.check_if_plan_app_cue_exists():
-            current_cues = self.pco_plan.get_plan_app_cues()
+        if len(self.main_ui_window.plan_cues) > 0:
+            current_plan_cues = self.main_ui_window.plan_cues
 
             remove_plan_cue_window = Tk()
             remove_plan_cue_window.configure(bg=bg_color)
             listbox = Listbox(remove_plan_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size))
             listbox.pack()
 
-            for iteration, item in enumerate(current_cues):
+            for iteration, item in enumerate(current_plan_cues):
                 name = item[0]
                 listbox.insert(iteration, name)
 
             def okay():
-                logger.debug('Utilities.__remove_plan: sending updated cues: %s', current_cues)
+                logger.debug('Utilities.__remove_plan: sending updated cues: %s', current_plan_cues)
                 remove_plan_cue_window.destroy()
-                self.pco_plan.create_and_update_plan_app_cues(note_content=json.dumps(current_cues))
-                self.main_ui_window.reload()
+                self.pco_plan.create_and_update_plan_app_cues(app_cue=json.dumps(current_plan_cues))
+                self.main_ui_window.update_plan_cues()
 
             Button(remove_plan_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Remove',
-                   command=lambda: (current_cues.pop(listbox.curselection()[0]), listbox.delete(first=listbox.curselection()[0]))).pack(side=LEFT)
+                   command=lambda: (current_plan_cues.pop(listbox.curselection()[0]), listbox.delete(first=listbox.curselection()[0]))).pack(side=LEFT)
             Button(remove_plan_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Okay',
                    command=okay).pack(side=RIGHT)
 
-    def __add_global_cue(self):
-        self.utilities_menu.destroy()
-        self.cue_handler_global.create_cues()
-
-    def __remove_global_cue(self):
+    def _remove_global_cue(self):
         logger.debug('Utilities.__remove_global_cue clicked')
         self.utilities_menu.destroy()
 
         global_cues = []
 
-        with open('global_cues.json', 'r') as f:
+        with open(os.path.join('configs', 'global_cues.json'), 'r') as f:
             global_cues = json.loads(f.read())
 
         remove_global_cue_window = Tk()
@@ -233,10 +250,10 @@ class Utilities:
             logger.debug('Utilities.__remove_plan: sending updated cues: %s', global_cues)
             remove_global_cue_window.destroy()
 
-            with open('global_cues.json', 'w') as f:
+            with open(os.path.join('configs', 'global_cues.json'), 'w') as f:
                 f.writelines(json.dumps(global_cues))
 
-            self.main_ui_window.reload()
+            self.main_ui_window._reload()
 
         Button(remove_global_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Remove',
                command=lambda: (
@@ -246,14 +263,22 @@ class Utilities:
         Button(remove_global_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Okay',
                command=okay).pack(side=RIGHT)
 
-    def __add_device(self):
-        pass
+    def _hard_reload_app(self):
+        self.utilities_menu.destroy()
+        self.main_ui_window.reload()
+
+    def _open_pco_plan_in_browser(self):
+        logger.debug(f'{__class__.__name__}.{self._open_pco_plan_in_browser.__name__}')
+
+        pco_plan_id: int = self.main_ui_window.service_id
+        webbrowser.open(f'https://www.planningcenteronline.com/plans/{pco_plan_id}')
+        self.utilities_menu.destroy()
 
 
 class MainUI:
     def __init__(self, startup):
-
         self.startup = startup
+        self.startup.has_started = True
 
         # service info
         self.service_type_id = self.startup.service_type_id
@@ -262,17 +287,16 @@ class MainUI:
         # class initiations
         self.pco_live = PcoLive(service_type_id=self.service_type_id, plan_id=self.service_id)
         self.pco_plan = PcoPlan(service_type=self.service_type_id, plan_id=self.service_id)
-        self.cue_handler = CueCreator(ui=self, startup=startup, devices=startup.devices)
-        self.cue_handler_global = CueCreator(ui=self, startup=startup, devices=startup.devices, cue_type='global')
-        self.cue_handler_plan = CueCreator(ui=self, startup=startup, devices=startup.devices, cue_type='plan')
+        self.cue_handler = CueHandler(devices=startup.devices)
         self.kipro_ui = KiProUi()
         self.kipro = KiPro()
         self.qlxd = None
 
-        self.plan_items = self.pco_plan.get_service_items()[1]
+        self.plan_items = self.convert_service_items_app_cues_to_dict_and_validate(self.pco_plan.get_plan_items())
+        self.pco_plan.include_all_items_in_live()
 
         self.previous_item_index = None
-        self.current_item_index = 0
+        self.current_item_index = 0  # index of the current live item
         self.next_item_index = None
 
         self.current_live_item_id = self.pco_live.get_current_live_item()
@@ -282,22 +306,17 @@ class MainUI:
             if item['id'] == self.current_live_item_id:
                 self.current_item_index = item['sequence']
 
-        # plan view data variables
+        # plan item timer
         self.time_remaining_is_positive = True
-        self.current_item_timer_input = 0
-        self.adjacent_plan_current_item = None
-        self.adjacent_plan_next_item = None
-        self.adjacent_plan_timer_input = 0
-        self.adjacent_plan_time_remaining_is_positive = True
+        self.current_item_timer_input = 60
 
-        # plan windows
-        self.plan_window = Toplevel()
+        # plan window
+        self.plan_window = Tk()
 
         # plan window frames
         self.reminder_frame = Frame(self.plan_window, bg=bg_color)
         self.clock_frame = Frame(self.plan_window, bg=bg_color)
 
-        self.adjacent_plan_frame = Frame(self.clock_frame, bg=bg_color)
         self.aux_controls_frame = Frame(self.plan_window, bg=bg_color)
         self.kipro_control_frame = Frame(self.plan_window, bg=bg_color)
         self.plan_cues_frame = Frame(self.plan_window, bg=bg_color)
@@ -308,18 +327,26 @@ class MainUI:
         self.next_previous_frame = Frame(self.service_controls_frame, bg=bg_color)
 
         self.gear_icon = PhotoImage(file=os.path.join(abs_path, 'gear_icon_gray.png'))
-        self.gear_icon = self.gear_icon.subsample(12, 12)
+        self.gear_icon = self.gear_icon.subsample(11, 11)
+
+        self.update_items_view_icon = PhotoImage(file=os.path.join(abs_path, 'refresh_icon.png'))
+        self.update_items_view_icon = self.update_items_view_icon.subsample(11, 11)
+
+        self.cue_warning_icon = PhotoImage(file=os.path.join(abs_path, 'cue_warning_icon.png'))
+        self.cue_warning_icon = self.cue_warning_icon.subsample(11, 11)
 
         self.item_frames = []
         self.item_time_labels = []
         self.item_spacer_labels = []
+        self.separators = []
         self.item_title_labels = []
         self.item_person_labels = []
         self.item_producer_note_labels = []
         self.item_app_cue_labels = []
         self.item_advance_cue_labels = []
+        self.item_advance_to_next_automatically_arrow_images = []
 
-        #scrollbar for plan items frame (service_plan_frame)
+        # scrollbar for plan items frame (service_plan_frame)
         self.plan_items_canvas = Canvas(self.plan_window, bg=bg_color, width=plan_item_frame_width, height=plan_item_view_height, highlightthickness=0)
         self.items_view_scrollbar = None
 
@@ -327,17 +354,16 @@ class MainUI:
 
         self.plan_items_canvas.create_window(0, 0, anchor='nw', window=self.service_plan_frame)
 
-
         self.plan_items_canvas.grid(row=2, column=0)
-
 
         # height of all plan item frames added together
         self.service_plan_frame_height = None
 
+        self.auto_advance_arrow_image = PhotoImage(file=os.path.join(abs_path, 'advance_to_next_arrow.png')).subsample(65, 65)
 
-        self.progress_bar = None
+        self.auto_advance_automatically_cancelled_by_user = False
 
-        self.auto_advance_cancelled_by_user = False
+        self.auto_advance_on_time_cancelled_by_user = False
         self.auto_advance_reminder_frame = None
         self.auto_advance_reminder_label = None
 
@@ -351,101 +377,97 @@ class MainUI:
         self.kipro_storage_remaining_bars = []
 
         self.plan_cues = []
+        self.plan_cue_buttons: List[Button] = []
 
-        #  if global_cues.json exists, read. If file does not exist, variable is set to None
-        self.global_cues = []
-        if os.path.exists(os.path.join(abs_path, 'global_cues.json')):
-            with open('global_cues.json', 'r') as f:
-                self.global_cues = json.loads(f.read())
-
-        self.global_cues = None if len(self.global_cues) == 0 else self.global_cues  # reset global_cues variable back to None if it's empty
-
-        if enable_webserver:
-            self.webserver_thread = None
-            self.__start_webserver()
-
-        # pprint.pprint(self.plan_items)
+        self._build_global_cues_button()
 
     def build_plan_window(self):
         self.plan_window.title('Service Control')
         self.plan_window.configure(bg=bg_color)
 
-        self.__build_current_service_time()
-        # self.__build_time_remaining_progress_bar()
-        self.__build_auto_advance_reminder_ui()
-        self.__build_clock()
-        self.__build_item_timer()
-        self.__build_items_view()
-        self.__build_aux_controls()
+        #TODO update this when advancing to next service
+        # self._build_current_service_time()
+        self._build_auto_advance_reminder_ui()
 
-        if self.global_cues is not None:
-            self.__build_global_cues_button()
+        self._build_clock()
+        self._build_item_timer()
+        self._build_items_view()
+        self._build_aux_control()
 
-        self.__build_utilities_button()
+
+        Button(self.clock_frame, bg=bg_color, image=self.update_items_view_icon, command=self.update_items_view).pack(side=RIGHT, padx=10)
+
+        Button(self.clock_frame, bg=bg_color, image=self.gear_icon, command=lambda:
+            UtilitiesMenu(main_ui_window_init=self, startup=self.startup).open_utilities_menu()).pack(side=RIGHT, padx=10)
+
         if display_kipros:
-            self.__build_kipro_status()
+            self._build_kipro_status()
 
-        self.__build_plan_cue_buttons()
+        self._build_plan_cue_buttons()
+
+        self.check_if_current_added_cues_and_devices_valid()
+
         self.update_live()
 
-        contains_qlxd = False
-        for device in self.startup.devices:
-            if device['type'] == 'shure_qlxd':
-                contains_qlxd = True
-                break
+        threading.Thread(target=lambda: flask_server.start_flask_server(main_ui=self)).start()
 
-        if contains_qlxd:
-            self.__build_qlxd_ui()
+        if self.startup.contains_qlxd:
+            self._build_qlxd_ui()
 
-        self.__cleanup()
-        self.plan_window.mainloop()
+        self._ui_cleanup()
 
-    def update_item_timer(self, time):
+
+
+        logger.debug('All running threads: %s', threading.enumerate())
+
+        if __name__ == '__main__':
+            mp.Process(target=self.plan_window.mainloop()).start()
+
+    def update_item_timer(self, time_value):
         self.time_remaining_is_positive = True
-        self.current_item_timer_input = time
+        self.current_item_timer_input = time_value
 
     def next(self, cue_items, from_web=False):
-        logger.debug('Next button pressed')
-        self.update_item_timer(time=self.plan_items[self.next_item_index]['length'])
+        logger.debug('Next button pressed. Next item index: %s', self.next_item_index)
+
+        self.auto_advance_on_time_cancelled_by_user = False
+        self.auto_advance_automatically_cancelled_by_user = False
+
 
         if cue_items:
-            self.__cue()
+            self._cue()
+
+        self.update_item_timer(time_value=self.plan_items[self.next_item_index]['length'])
 
         self.pco_live.go_to_next_item()
         self.update_live()
 
-        if enable_webserver is True and not from_web:
-            logger.debug('MainUI.next: sending next command to webserver')
-            next_web_data = {'action': 'app_next'}
-            requests.post('http://127.0.0.1/action', json=json.dumps(next_web_data))
-
     def previous(self, cue_items, from_web=False):
-        self.update_item_timer(time=self.plan_items[self.previous_item_index]['length'])
+        logger.debug('Previous button pressed. Previous item index: %s', self.previous_item_index)
+
+        self.auto_advance_on_time_cancelled_by_user = False
+        self.auto_advance_automatically_cancelled_by_user = False
+
+        self.update_item_timer(time_value=self.plan_items[self.previous_item_index]['length'])
 
         if cue_items:
-            self.__cue(next=False)
+            self._cue(is_next=False)
 
         self.pco_live.go_to_previous_item()
         self.update_live()
 
-        if not from_web and enable_webserver is True:
-            logger.debug('MainUI.next: sending previous command to webserver')
-            previous_web_data = {'action': 'app_previous'}
-            requests.post('http://127.0.0.1/action', json=json.dumps(previous_web_data))
-
     def update_live(self, service_time=False):
         # Get index of current live item
-        current_live_item_id = self.pco_live.get_current_live_item()
+        self.current_live_item_id = self.pco_live.get_current_live_item()
 
-        # Colors CURRENT live item
-        # Normally, we would configure each label/frame item separately, but if the label doesn't exist for that item, the source list
-        # contains None. Adding None makes the index consistent across lists.
-        # Each action has it's own try/except loop, because if we configured all labels at the same time, a single exception
-        # would stop at the exception, skipping all labels after it
-
+        '''Colors CURRENT live item
+        Normally, we would configure each label/frame item separately, but if the label doesn't exist for that item, the source list
+        contains None. Adding None makes the index consistent across lists.
+        Each action has it's own try/except loop, because if we configured all labels at the same time, a single exception
+        would stop at the exception, skipping all labels after it'''
 
         for item in self.plan_items:
-            if item['id'] == current_live_item_id:
+            if item['id'] == self.current_live_item_id:
                 logger.debug('Current live item is index %s, %s', item['sequence'], item['title'])
 
                 live_index = item['sequence']
@@ -460,7 +482,8 @@ class MainUI:
                     self.item_person_labels[item['sequence'] - 1],
                     self.item_producer_note_labels[item['sequence'] - 1],
                     self.item_app_cue_labels[item['sequence'] - 1],
-                    self.item_advance_cue_labels[item['sequence'] - 1]
+                    self.item_advance_cue_labels[item['sequence'] - 1],
+                    self.item_advance_to_next_automatically_arrow_images[item['sequence'] - 1]
                 ]
 
                 for label in labels_to_update:
@@ -500,29 +523,24 @@ class MainUI:
                 self.item_person_labels[index],
                 self.item_producer_note_labels[index],
                 self.item_app_cue_labels[index],
-                self.item_advance_cue_labels[index]
+                self.item_advance_cue_labels[index],
+                self.item_advance_to_next_automatically_arrow_images[index]
             ]
             return labels
-
 
         is_first_item = False
         is_last_item = False
 
         if self.current_item_index == 1:
-            logger.debug('Current live item is the first plan item, id %s', current_live_item_id)
+            logger.debug('Current live item is the first plan item, id %s', self.current_live_item_id)
             is_first_item = True
 
         if self.current_item_index == len(self.plan_items):
-            logger.debug('Current live item is the last plan item, id %s', current_live_item_id)
+            logger.debug('Current live item is the last plan item, id %s', self.current_live_item_id)
             is_last_item = True
-
 
         self.previous_item_index = find_previous_item(self.current_item_index-1)
         self.next_item_index = find_next_item(self.current_item_index-1)
-
-        # logger.debug('Previous item index: %s, %s, Next item index: %s, %s',
-        #               self.previous_item_index, self.plan_items[self.previous_item_index]['title'], self.next_item_index, self.plan_items[self.next_item_index]['title'])
-
 
         if not is_first_item:
             for previous_item in define_labels_to_change(self.previous_item_index):
@@ -539,54 +557,7 @@ class MainUI:
                     pass
 
         if service_time:
-            self.__build_current_service_time()
-
-    def update_adjacent_plan(self, current, next, length):
-        logger.debug('update_adjacent_plan: Got new items: current: %s, next: %s, time: %s', current, next, length)
-        self.adjacent_plan_current_item.configure(text=current)
-        self.adjacent_plan_next_item.configure(text=next)
-
-        self.adjacent_plan_time_remaining_is_positive = True
-        self.adjacent_plan_timer_input = length
-
-    def build_adjacent_plan(self, topo, current, next, length):
-        logger.debug('build_adjacent_plan: topo: %s, current: %s, next: %s, time: %s', topo, current, next, length)
-
-        self.adjacent_plan_timer_input = length
-
-        self.adjacent_plan_frame.pack()
-
-        adjacent_plan_topo = Label(self.adjacent_plan_frame, bg=bg_color, fg=text_color, text=topo, font=(font, other_text_size-3))
-        current_label = Label(self.adjacent_plan_frame, bg=bg_color, fg=text_color, text='Current Item', font=(font, other_text_size-4))
-        next_label = Label(self.adjacent_plan_frame, bg=bg_color, fg=text_color, text='Next Item', font=(font, other_text_size-4))
-        self.adjacent_plan_current_item = Label(self.adjacent_plan_frame, bg=bg_color, fg=text_color, text=current, font=(font, other_text_size))
-        self.adjacent_plan_next_item = Label(self.adjacent_plan_frame, bg=bg_color, fg=text_color, text=next, font=(font, other_text_size))
-
-        adjacent_plan_topo.grid(row=0, column=0)
-        current_label.grid(row=1, column=0)
-        next_label.grid(row=1, column=1)
-        self.adjacent_plan_current_item.grid(row=2, column=0)
-        self.adjacent_plan_next_item.grid(row=2, column=1)
-
-        timer_label = Label(self.adjacent_plan_frame, bg=bg_color, fg=clock_text_color, font=(clock_text_font, 15))
-        timer_label.grid(row=1, column=2)
-
-        def tick():
-            if self.adjacent_plan_timer_input == 0:
-                self.adjacent_plan_time_remaining_is_positive = False
-
-            if not self.adjacent_plan_time_remaining_is_positive:
-                self.adjacent_plan_timer_input += 1
-                timer_label.configure(fg=clock_overrun_color)
-            else:
-                self.adjacent_plan_timer_input -= 1
-                timer_label.configure(fg=clock_text_color)
-
-            time_string = time.strftime('%M:%S', time.gmtime(self.adjacent_plan_timer_input))
-            timer_label.configure(text=time_string)
-
-            self.adjacent_plan_frame.after(1000, tick)
-        tick()
+            self._build_current_service_time()
 
     def update_kipro_status(self, kipro_unit, status):
         # logger.debug('Got kipro status: unit: %s, status: %s', kipro_unit, status)
@@ -606,25 +577,144 @@ class MainUI:
         except Exception as e: # plan window has been closed by user. Throws a _tkinter.Tclerror
             pass
 
+    def update_items_view(self): # pulls all item data down from pco and reloads it into app without closing it
+        logger.debug('Updating plan items view')
+
+        self.plan_items = self.convert_service_items_app_cues_to_dict_and_validate(self.pco_plan.get_plan_items())
+        self.pco_plan.include_all_items_in_live()
+
+        for frame in self.item_frames:
+            frame.destroy()
+
+        for separator in self.separators:
+            separator.destroy()
+
+        self.item_time_labels.clear()
+        self.item_spacer_labels.clear()
+        self.separators.clear()
+        self.item_title_labels.clear()
+        self.item_person_labels.clear()
+        self.item_producer_note_labels.clear()
+        self.item_app_cue_labels.clear()
+        self.item_advance_cue_labels.clear()
+        self.item_frames.clear()
+        self.item_advance_to_next_automatically_arrow_images.clear()
+
+        self._build_items_view()
+
+        self._ui_cleanup()
+
+        self.update_live()
+
+        self.update_plan_cues()
+
+        threading.Thread(target=self.check_if_current_added_cues_and_devices_valid).start()
+
+    def update_plan_cues(self):
+        """
+        :return:
+        """
+
+        if len(self.plan_cue_buttons) > 0:
+            for button in self.plan_cue_buttons:
+                button.destroy()
+        self.plan_cue_buttons.clear()
+
+        self._build_plan_cue_buttons()
+
     def reload(self):
-        # self.webserver_thread.join() #todo stop webserver thread
+        if self.startup.contains_qlxd:
+            self.qlxd.stop = True
+            for init in self.qlxd.qlxd_class_inits:
+                logger.debug('stopping async event loop for qlxd init %s', init.IP_ADDR)
+                init.loop.stop()
+
+        if self.startup.contains_qlxd:
+            self.qlxd.stop = True
         self.plan_window.destroy()
         self.kipro_ui.kill_threads()
+
         reloaded_ui = MainUI(startup=self.startup)
         reloaded_ui.build_plan_window()
 
-    def __start_webserver(self):
-        self.webserver_thread = threading.Thread(target=lambda: fs.start(startup_class=self.startup))
-        # while
-        self.webserver_thread.start()
+    def convert_service_items_app_cues_to_dict_and_validate(self, service_items: List[Dict]) -> List[Dict]:
+        """
+        If service items in the self.service_items contain app cues, convert app cues from json to python dict.
+        If there is something wrong with the data in them, do not use them & update them on PCO
+        :param service_items retrieved from the pco_plan.get_service_items method
+        :return: new service items with app cues converted from json to a python dict
+        """
 
-    def __build_time_remaining_progress_bar(self):
-        self.progress_bar = Canvas(self.plan_window)
-        if self.time_remaining_is_positive:
-            self.progress_bar.configure(height=3, bg=accent_color_1)
-        self.progress_bar.grid(row=10, column=0, sticky='w')
+        logger.debug(f'{__class__.__name__}.{self.convert_service_items_app_cues_to_dict_and_validate.__name__}')
 
-    def __build_current_service_time(self):
+        for item in service_items:
+            if 'App Cues' in item['notes']:
+
+                app_cues_from_plan: str = item['notes']['App Cues']
+                validated_cues = self.pco_plan.validate_plan_item_app_cues(app_cues_from_plan) # this will be the same string if valid, None if invalid
+
+                # if cues are invalid, remove from pco and from the python dict, else deserialize them and put them back into the dict to be returned
+                if validated_cues != app_cues_from_plan:
+                    logger.warning(f'{__class__.__name__}.{self.convert_service_items_app_cues_to_dict_and_validate.__name__}: Invalid cues found, removing them.')
+                    self.pco_plan.remove_item_app_cue(item['id'])
+                    item['notes'].pop('App Cues')
+                else:
+                    item['notes']['App Cues'] = json.loads(item['notes']['App Cues'])
+
+        return service_items
+
+    @staticmethod
+    def convert_plan_app_cues_to_dict(plan_app_cues: str) -> List[Dict]:
+        """
+        Convert the string version of app cues stored in PCO's plan note section to a python dict
+        :param plan_app_cues: the string version of app cues stored in PCO's plan note section
+        :return: python dict of app cues
+        """
+
+        return json.loads(plan_app_cues)
+
+    def check_if_current_added_cues_and_devices_valid(self) -> None:
+        """
+        Check if a device is offline, or there are any old or invalid cues on an item, for example,
+         if there's a cue to play a PVP video, but that cue no longer exists on the pvp machine.
+        If a cue is invalid, create a warning button on the plan item that opens the cue creator for that item
+        :return:
+        """
+
+        logger.debug('Checking if cues are valid and devices are online')
+
+        ip_devices: List[str] = ['resi',
+                                 'nk_scpa_ip2sl',
+                                 'ross_carbonite',
+                                 'kipro',
+                                 'ez_outlet_2',
+                                 'bem104',
+                                 'controlflex',
+                                 'aja_kumo',
+                                 'ah_dlive',
+                                 'pvp']
+
+        # this list contains a bool for each plan item.
+        # If the item contains a cue that has an error, bool is set to True below.
+        item_is_errored: List[bool] = []
+
+        for i, plan_item in enumerate(self.plan_items):
+            item_is_errored.append(False)
+            if 'App Cues' in plan_item['notes']:
+                action_cues = plan_item['notes']['App Cues']['action_cues']
+                item_is_errored.append(False)
+                is_valid = self.cue_handler.cues_are_valid(action_cues)
+                for cue in is_valid:
+                    if False in cue.keys():
+                        item_is_errored[i] = True
+
+        for item, frame, is_errored in zip(self.plan_items, self.item_frames, item_is_errored):
+            if not item['type'] == 'header' and is_errored:
+                Button(frame, image=self.cue_warning_icon, anchor='w', bg=bg_color, command=lambda item=item:
+                       CueCreator(startup=self.startup, ui=self, devices=self.startup.devices).create_plan_item_cue(input_item=item)
+                    ).pack(side=RIGHT, padx=30)
+
+    def _build_current_service_time(self):
         logger.debug('Building current service time info')
         current_service_time = self.pco_plan.get_current_live_service()
         if not current_service_time is None:
@@ -633,10 +723,7 @@ class MainUI:
             Label(self.current_service_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Current Live Service:  ').grid(row=0, column=0)
             Label(self.current_service_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text=current_service_time['local']).grid(row=0, column=1)
 
-    def __set_advance_to_next_reminder(self):
-        pass
-
-    def __build_clock(self): # also checks for advance to next cues on each tick
+    def _build_clock(self):  # also checks for advance to next cues on each tick
         time_label = Label(self.clock_frame,
                            fg=clock_text_color,
                            bg=bg_color,
@@ -644,64 +731,85 @@ class MainUI:
         self.clock_frame.grid(row=1, column=0, sticky='w')
         time_label.pack(side=LEFT)
 
+        # udpates clock and checks for advance to next cues
         def tick():
-
             time_string = time.strftime('%H:%M:%S')
             time_label.config(text=time_string)
             time_label.after(1000, tick)
 
-            current_item_notes = self.plan_items[self.current_item_index-1]['notes']
+            current_item_notes = self.plan_items[self.current_item_index-1]['notes'] # notes in the current item
 
             if 'App Cues' in current_item_notes:
-                for cue in current_item_notes['App Cues']:
-                    if cue['uuid'] == advance_on_next_uuid and len(cue['times']) > 0: # advance to next cue exists in current item
-                        current_time = dt.datetime.now().time()
-                        current_time_in_seconds = (current_time.hour * 3600) + (current_time.minute * 60) + current_time.second
+                # advance to next on time
+                if len(current_item_notes['App Cues']['advance_to_next_on_time']) > 0: # if there's an advance to next on time cue in the current item
 
-                        def cue_time_to_seconds(cue_time_list):
-                            return (int(cue_time_list[0]) * 3600) + (int(cue_time_list[1]) * 60) + (int(cue_time_list[2]))
+                    current_time = dt.datetime.now().time()
+                    current_time_in_seconds = (current_time.hour * 3600) + (current_time.minute * 60) + current_time.second
 
-                        def find_difference(cue_time):
-                            return cue_time_to_seconds(cue_time)-current_time_in_seconds
+                    def cue_time_to_seconds(cue_time_list: list) -> int: # convert the [01, 02, 03] list format to seconds value
+                        return (int(cue_time_list[0]) * 3600) + (int(cue_time_list[1]) * 60) + (int(cue_time_list[2]))
 
-                        soonest_advance_time_index = 0
-                        for iteration, cue_time in enumerate(cue['times'], start=0):
-                            difference = find_difference(cue_time)
-                            if difference < 0:
-                                pass
+                    def find_difference(cue_time): # difference in time between cue time and now
+                        return cue_time_to_seconds(cue_time)-current_time_in_seconds
+
+                    soonest_advance_time_index = 0
+                    for iteration, cue_time in enumerate(current_item_notes['App Cues']['advance_to_next_on_time'], start=0):
+                        difference = find_difference(cue_time)  # difference in time between now and advance time
+                        if difference < 0:  # pass if the cue time is in the past
+                            pass
+                        else:
+                            current_smallest_time = find_difference(current_item_notes['App Cues']['advance_to_next_on_time'][soonest_advance_time_index])
+                            if current_smallest_time < 0:
+                                soonest_advance_time_index = iteration
                             else:
-                                current_smallest_time = find_difference(cue['times'][soonest_advance_time_index])
-                                if current_smallest_time < 0:
-                                    soonest_advance_time_index = iteration
-                                else:
-                                    if difference < current_smallest_time:
-                                            soonest_advance_time_index = iteration
+                                if difference < current_smallest_time:
+                                        soonest_advance_time_index = iteration
 
-                        countdown = find_difference(cue['times'][soonest_advance_time_index])
-                        if countdown == 0 and not self.auto_advance_cancelled_by_user: #advance to next
-                            logger.info(f'Auto advancing to next because of cue: {cue}')
-                            self.next(cue_items=True)
-                        if countdown == 0:
-                            self.auto_advance_cancelled_by_user = False
-                            self.auto_advance_reminder_frame.place_forget()
-                        elif countdown in list(range(30)) and not self.auto_advance_cancelled_by_user:
-                            self.auto_advance_reminder_label.configure(text=f'Advancing to next item in {countdown} seconds')
-                            self.auto_advance_reminder_frame.place(relx=.5, rely=.45, anchor=CENTER)
+                    countdown = find_difference(current_item_notes['App Cues']['advance_to_next_on_time'][soonest_advance_time_index])
+                    if countdown == 0 and not self.auto_advance_on_time_cancelled_by_user:  # advance to next
+                        logger.debug(f'Auto advancing to next')
+                        self.next(cue_items=True)
+                    if countdown == 0:
+                        self.auto_advance_on_time_cancelled_by_user = False
+                        self.auto_advance_reminder_frame.place_forget()
+                    elif countdown in list(range(30)) and not self.auto_advance_on_time_cancelled_by_user:  # show advance to next message
+                        self.auto_advance_reminder_label.configure(text=f'Advancing to next item in {countdown} seconds')
+                        self.auto_advance_reminder_frame.place(relx=.5, rely=.45, anchor=CENTER)
+
+                # advance to next automatically after the current item finishes
+                if current_item_notes['App Cues']['advance_to_next_automatically'] is True:
+
+                    # if current item timer is greater than 0 and less than 30, time remaining is positive, and has not been cancelled
+                    if 0 < self.current_item_timer_input <= 30 and self.time_remaining_is_positive and not self.auto_advance_automatically_cancelled_by_user:
+                        self.auto_advance_reminder_label.configure(text=f'Advancing to next item in {self.current_item_timer_input} seconds')
+                        self.auto_advance_reminder_frame.place(relx=.5, rely=.3, anchor=CENTER)
+                    if self.current_item_timer_input == 0 and not self.auto_advance_on_time_cancelled_by_user:
+                        logger.debug('auto advancing to next automatically because current item timer has ended')
+                        self.next(cue_items=True)
+                        self.auto_advance_reminder_frame.place_forget()
+                    if self.current_item_timer_input == 0:
+                        self.auto_advance_automatically_cancelled_by_user = False
+                        self.auto_advance_reminder_frame.place_forget()
+            else:
+                self.auto_advance_reminder_frame.place_forget()
 
         tick()
 
-    def __build_auto_advance_reminder_ui(self):
+    def _build_auto_advance_reminder_ui(self):
         self.auto_advance_reminder_frame = Frame(self.plan_window, bg=accent_color_1)
         self.auto_advance_reminder_label = Label(self.auto_advance_reminder_frame, fg=reminder_color, bg=accent_color_1, font=(font, reminder_font_size))
         self.auto_advance_reminder_label.grid(row=0, column=0)
 
         def cancel():
-            self.auto_advance_cancelled_by_user = True
+            logger.debug('cancelling auto advance to next')
+            self.auto_advance_on_time_cancelled_by_user = True
+            self.auto_advance_automatically_cancelled_by_user = True
             self.auto_advance_reminder_frame.place_forget()
 
         Button(self.auto_advance_reminder_frame, bg=accent_color_1, fg=reminder_color, font=(font, reminder_font_size), text='CANCEL', command=cancel).grid(row=0, column=1)
 
-    def __build_item_timer(self):
+    # Countdown timer for items. Receives time from class variable self.current_item_timer_input
+    def _build_item_timer(self):
         time_label = Label(self.clock_frame,
                            fg=clock_text_color,
                            bg=bg_color,
@@ -709,15 +817,6 @@ class MainUI:
         time_label.pack(side=LEFT, padx=50)
 
         def tick():
-            current_item_length = int(self.plan_items[self.current_item_index - 1]['length'])
-            try:
-                percentage = 1 - self.current_item_timer_input/current_item_length
-            except ZeroDivisionError:
-                pass
-
-            if self.time_remaining_is_positive and self.progress_bar is not None:
-                self.progress_bar.configure(width=percentage*plan_item_frame_width)
-
             if self.current_item_timer_input == 0:
                 self.time_remaining_is_positive = False
 
@@ -734,29 +833,13 @@ class MainUI:
             self.clock_frame.after(1000, tick)
         tick()
 
-    def __build_utilities_button(self):
-        Button(self.clock_frame, bg=bg_color, image=self.gear_icon, command=lambda:
-               Utilities(main_ui_window_init=self).open_utilities_menu()).pack(side=RIGHT, padx=15)
-
-    def __build_global_cues_button(self):
+    def _build_global_cues_button(self):
+        def open_global_cues_window() -> None:
+            GlobalCues().open_global_cues_window()
         Button(self.clock_frame, bg=bg_color, fg=text_color, font=(font, other_text_size),
-               text='Global Cues', command=self.__open_global_cues_menu).pack(side=RIGHT, padx=15)
+               text='Global Cues', command=open_global_cues_window).pack(side=RIGHT, padx=15)
 
-    def __open_global_cues_menu(self):
-        if self.global_cues is not None:
-            global_cues_menu = Tk()
-            global_cues_menu.title('Global Cues')
-            global_cues_menu.configure(bg=bg_color)
-
-            def if_close():
-                if close_global_cues_menu_after_cue:
-                    global_cues_menu.destroy()
-
-            for cue in self.global_cues:
-                Button(global_cues_menu, bg=bg_color, fg=text_color, font=(font, other_text_size+2), text=cue[0], padx=30, pady=5,
-                       command=lambda cue = cue: (self.cue_handler_global.activate_cues(cues=cue[1]), if_close())).pack()
-
-    def __build_items_view(self):
+    def _build_items_view(self):
 
         # Item frames
         for item in self.plan_items:
@@ -773,11 +856,13 @@ class MainUI:
         # separators
         for frame in self.item_frames:
             separator = Frame(self.service_plan_frame, bg=separator_color, width=plan_item_frame_width, height=1)
-            separator.pack_propagate(0)
+            separator.pack_propagate(False)
             separator.pack()
 
             frame.pack_propagate(0)
             frame.pack()
+
+            self.separators.append(separator)
 
         # Item times
         for item, frame in zip(self.plan_items, self.item_frames):
@@ -838,7 +923,7 @@ class MainUI:
         for item, frame in zip(self.plan_items, self.item_frames):
             if 'App Cues' in item['notes']:
                 label_text = ''
-                for cue in self.cue_handler.verbose_decode_cues(cuelist=item['notes']['App Cues']):
+                for cue in self.cue_handler.verbose_decode_cues(cuelist=item['notes']['App Cues']['action_cues']):
                     label_text = f'{label_text}{cue}\n'
                 label = Label(frame, bg=bg_color, fg=text_color, text=label_text, justify=LEFT,
                       font=(font, app_cue_font_size))
@@ -846,34 +931,32 @@ class MainUI:
                 label.place(anchor='nw', x=1050)
 
                 # if number of cues on an item is greater than 4, increase height of item frame so nothing is cut off
-                number_of_cues = len(self.cue_handler.verbose_decode_cues(cuelist=item['notes']['App Cues']))
+                number_of_cues = len(self.cue_handler.verbose_decode_cues(cuelist=item['notes']['App Cues']['action_cues']))
                 if number_of_cues > 2:
                     over = number_of_cues - 2
                     height = 28 + (10 * over)
                     frame.configure(height=height)
-                    logger.debug(f'{item["title"]} height: {height}, {frame.winfo_height()}')
-
             else:
                 self.item_app_cue_labels.append(None)
 
         # Item auto advance labels
         for item, frame in zip(self.plan_items, self.item_frames):
-            if 'App Cues' in item['notes']:
+            if 'App Cues' in item['notes'] and len(item['notes']['App Cues']['advance_to_next_on_time']) > 0: # advance to next on time cues exist in current item
                 advance_cue_times = []
-                for cue in item['notes']['App Cues']:
-                    if cue['uuid'] == advance_on_next_uuid:
-                        for advance_time in cue['times']:
-                            advance_cue_times.append(advance_time)
+                for advance_time in item['notes']['App Cues']['advance_to_next_on_time']:
+                    advance_cue_times.append(advance_time)
 
-                        auto_advance_label = Label(frame, bg=bg_color, fg=text_color, font=(font, app_cue_font_size + 1),
-                                                   justify=LEFT)
-                        auto_advance_label.place(anchor='nw', x=900)
+                    #create label with no text
+                    auto_advance_label = Label(frame, bg=bg_color, fg=text_color, font=(font, app_cue_font_size + 1),
+                                               justify=LEFT)
+                    auto_advance_label.place(anchor='nw', x=900)
 
                 if len(advance_cue_times) == 0:
                     self.item_advance_cue_labels.append(None)
                 else:
                     self.item_advance_cue_labels.append(auto_advance_label)
 
+                # add text to label
                 advance_time_text = ''
                 for iteration, advance_time in enumerate(advance_cue_times):
                     advance_time_text += f'ADVANCE TO NEXT AT {advance_time[0]}:{advance_time[1]}:{advance_time[2]}'
@@ -883,15 +966,25 @@ class MainUI:
             else:
                 self.item_advance_cue_labels.append(None)
 
+        # Item auto advance to next arrow
+        for item, frame in zip(self.plan_items, self.item_frames):
+            if 'App Cues' in item['notes'] and item['notes']['App Cues']['advance_to_next_automatically']:
+                logger.debug('Placing advance to next arrow on item %s', item['title'])
+                advance_label = Label(frame, bg=bg_color, fg=text_color, justify=LEFT, image=self.auto_advance_arrow_image)
+                advance_label.place(anchor='nw', x=1345)
+                self.item_advance_to_next_automatically_arrow_images.append(advance_label)
+            else:
+                self.item_advance_to_next_automatically_arrow_images.append(None)
+
         # Item 'options' button
         for item, frame in zip(self.plan_items, self.item_frames):
             if not item['type'] == 'header':
                 Button(frame, image=self.gear_icon, anchor='w', font=(font, options_button_text_size),
                        bg=bg_color, fg=text_color, command=lambda item=item:
-                    CueCreator(startup=self.startup, ui=self, devices=self.startup.devices).create_cues(input_item=item)
+                    CueCreator(startup=self.startup, ui=self, devices=self.startup.devices).create_plan_item_cue(input_item=item)
                     ).pack(side=RIGHT)
 
-    def __build_kipro_status(self):
+    def _build_kipro_status(self):
         self.kipro_control_frame.grid(row=2, column=2, sticky='n')
 
         # Buttons
@@ -911,28 +1004,65 @@ class MainUI:
 
         self.kipro_ui.update_kipro_status(ui=self)
 
-    def __build_qlxd_ui(self):
-        self.qlxd = ShureQLXDUi(devices=self.startup.devices, ui=self)
+    def _build_qlxd_ui(self):
+        self.qlxd = ShureQLXDUi(devices=self.startup.devices, ui=self, inits=self.startup.qlxd_class_inits)
         self.qlxd_frame.grid(row=5, column=0, sticky='e')
         self.qlxd_frame.configure(height=60, width=plan_item_frame_width)
 
-        threading.Thread(target=self.qlxd.main_loop).start()
+        self.qlxd.main_loop()
 
-    def __build_plan_cue_buttons(self):
+    def _build_plan_cue_buttons(self):
+        """
+        Build plan cues at the bottom of the screen above previous/next. Data is acquired from the
+        plan notes section on PCO.
+
+        Will also check to see if the cues on each plan cue are valid. Colors the button accordingly if not.
+        :return:
+        """
+
+        logger.debug(f'{__class__.__name__}.{self._build_plan_cue_buttons.__name__}')
+
         if self.pco_plan.check_if_plan_app_cue_exists():
-            logger.debug('MainUI.__build_plan_cue_buttons: adding plan cue buttons')
-            self.plan_cues_frame.grid(row=3, column=0)
-            self.plan_cues = self.pco_plan.get_plan_app_cues()
-            for iteration, cue in enumerate(self.plan_cues):
-                cue_name = cue[0]
-                cue_data = cue[1]
-                logger.debug('Creating plan cues button: %s, cue_data = %s', cue_name, cue_data)
-                Button(self.plan_cues_frame, bg=bg_color, fg=text_color, font=(font, other_text_size),
-                       text=cue_name, command=lambda cue_data=cue_data: self.cue_handler.activate_cues(cue_data)).grid(row=0, column=iteration, padx=plan_cue_pad_x, pady=10)
-        else:
-            logger.debug('No plan cues were added because none were found')
+            plan_app_cues: str = self.pco_plan.get_plan_app_cues()
+            plan_app_cues_validated = self.pco_plan.validate_plan_cues(plan_app_cues)
 
-    def __build_aux_controls(self):
+            # pco_plan.validate_plan_cues can return none if invalid data is found
+            if plan_app_cues_validated is not None:
+                self.plan_cues_frame.grid(row=3, column=0)
+
+                self.plan_cues = self.convert_plan_app_cues_to_dict(plan_app_cues_validated)
+
+                for iteration, cue in enumerate(self.plan_cues):
+
+                    cue_name = cue[0]
+                    cue_data = cue[1]
+                    button = Button(self.plan_cues_frame, bg=bg_color, fg=text_color, font=(font, other_text_size),
+                           text=cue_name, command=lambda cue_data=cue_data: threading.Thread(target=self.cue_handler.activate_cues(cue_data['action_cues'])).start())
+                    button.grid(row=0, column=iteration, padx=plan_cue_pad_x, pady=10)
+                    self.plan_cue_buttons.append(button)
+
+                # Check if cues on plan cues are valid. Color accordingly if not
+                for plan_cue, button in zip(self.plan_cues, self.plan_cue_buttons):
+                    plan_cue_actions = plan_cue[1]['action_cues']
+                    is_valid = True
+                    valid_check = self.cue_handler.cues_are_valid(plan_cue_actions)
+                    for cue in valid_check:
+                        if False in cue.keys():
+                            is_valid = False
+                    if not is_valid:
+                        logger.info(f'Found invalid cues on plan cue {plan_cue[0]}')
+                        button.configure(bg='#ffc639', fg=accent_text_color)
+
+            else:
+                logger.info(f'{__class__.__name__}.{self._build_plan_cue_buttons.__name__}: Plan app cues were invalid, skipping adding buttons.')
+        else:
+            logger.debug(f'{__class__.__name__}.{self._build_plan_cue_buttons.__name__}: No plan cues being added because none were found.')
+
+    def _build_aux_control(self):
+        """
+        Builds buttons for next/previous
+        :return: None.
+        """
         self.aux_controls_frame.grid(row=4, column=0)
         self.aux_controls_frame.configure(height=60, width=plan_item_frame_width)
 
@@ -941,11 +1071,17 @@ class MainUI:
         Button(self.aux_controls_frame, bg=accent_color_1, fg=accent_text_color, text='Next', font=(accent_text_font, accent_text_size), command=lambda: self.next(cue_items=True)).grid(row=1, column=3, padx=next_previous_pad_x)
         Button(self.aux_controls_frame, bg=accent_color_1, fg=accent_text_color, text='Next (no actions)', font=(accent_text_font, 10), command=lambda: self.next(cue_items=False)).grid(row=1, column=4, padx=next_previous_pad_x)
 
-    def __on_mousewheel(self, event):
+    # mousewheel event handler
+    def _on_mousewheel(self, event):
         self.plan_items_canvas.yview_scroll(math.floor(-1*(int(event.delta))/120), 'units')
 
-    def __cleanup(self):
+    # Creates plan frame height, scrollbar, binds mousewheel & scrollbar, set current item timer to current live item
+    def _ui_cleanup(self):
         self.service_plan_frame_height = 0 if self.service_plan_frame_height is None else self.service_plan_frame_height
+
+        # used if refreshing app. Set to 0 if height is greater than 0, otherwise height will be added onto current height
+        if self.service_plan_frame_height != 0:
+            self.service_plan_frame_height = 0
 
         for frame in self.item_frames:  # find height of all item frames together, used to pass to the plan frame before creation of the scrollbar
             frame.update()
@@ -953,38 +1089,49 @@ class MainUI:
             self.service_plan_frame_height += height
         logger.debug('service_plan_frame height is %s', self.service_plan_frame_height)
 
-        self.service_plan_frame.configure(height=self.service_plan_frame_height)
+        self.service_plan_frame.configure(height=self.service_plan_frame_height+50)
         self.items_view_scrollbar = Scrollbar(self.plan_window, command=self.plan_items_canvas.yview)
         self.plan_items_canvas.configure(scrollregion=self.plan_items_canvas.bbox('all'), yscrollcommand=self.items_view_scrollbar.set)
         self.items_view_scrollbar.grid(row=2, column=1, sticky='nsw')
 
-        self.service_plan_frame.bind_all('<MouseWheel>', self.__on_mousewheel)
+        self.service_plan_frame.bind_all('<MouseWheel>', self._on_mousewheel)
 
+        # set current item timer to live item, for use when plan is first loaded
+        logger.debug('Updating current item timer upon ui startup with time %s', self.plan_items[self.current_item_index]['length'])
+        self.update_item_timer(self.plan_items[self.current_item_index - 1]['length'])
 
-    def __cue(self, next=True):
-        # Called when next or previous functions are called. it will cue actions on the next item when next=True,
-        # cues actions on previous items when next=False
-        logger.debug('__cue called, next=%s', next)
-        if next:
+    def _cue(self, is_next: bool=True):
+        """
+        Called when next or previous functions are called. it will cue actions on the next item when next=True,
+        cues actions on previous items when next=False
+
+        :param is_next: bool of whether to cue actions on the next or the previous cue
+        :return: NOon
+        """
+
+        logger.debug('__cue called, next=%s', is_next)
+        if is_next:
             if 'App Cues' in self.plan_items[self.next_item_index]['notes']:
-                logger.debug('App cues found in %s, sending to cue_handler: %s', self.plan_items[self.next_item_index]['title'], self.plan_items[self.next_item_index]['notes']['App Cues'])
-                self.cue_handler.activate_cues(cues=self.plan_items[self.next_item_index]['notes']['App Cues'])
+                threading.Thread(target=lambda: self.cue_handler.activate_cues(cuelist=self.plan_items[self.next_item_index]['notes']['App Cues']['action_cues'])).start()
 
-                for cue in self.plan_items[self.next_item_index]['notes']['App Cues']:
-                    if cue['uuid'] == 'b652b57e-c426-4f83-87f3-a7c4026ec1f0': # reminder
+                # set reminder
+                for cue in self.plan_items[self.next_item_index]['notes']['App Cues']['action_cues']:
+                    if cue['uuid'] == 'b652b57e-c426-4f83-87f3-a7c4026ec1f0':
                         time = (int(cue['minutes']) * 60) + int(cue['seconds'])
-                        self.__set_reminder(reminder_time = time, reminder_text=cue['reminder'])
-        if not next:
+                        self._set_reminder(reminder_time=time, reminder_text=cue['reminder'])
+        if not is_next:
             if 'App Cues' in self.plan_items[self.previous_item_index]['notes']:
                 logger.debug('App cues found in %s, sending to cue_handler: %s', self.plan_items[self.previous_item_index]['title'], self.plan_items[self.previous_item_index]['notes']['App Cues'])
-                self.cue_handler.activate_cues(cues=self.plan_items[self.previous_item_index]['notes']['App Cues'])
+                threading.Thread(target=lambda: self.cue_handler.activate_cues(cuelist=self.plan_items[self.previous_item_index]['notes']['App Cues']['action_cues'])).start()
 
-                for cue in self.plan_items[self.previous_item_index]['notes']['App Cues']:
-                    if cue['uuid'] == 'b652b57e-c426-4f83-87f3-a7c4026ec1f0': # reminder
+                # set reminder
+                for cue in self.plan_items[self.previous_item_index]['notes']['App Cues']['action_cues']:
+                    if cue['uuid'] == 'b652b57e-c426-4f83-87f3-a7c4026ec1f0':
                         time = (int(cue['minutes']) * 60) + int(cue['seconds'])
-                        self.__set_reminder(reminder_time = time, reminder_text=cue['reminder'])
+                        self._set_reminder(reminder_time=time, reminder_text=cue['reminder'])
 
-    def __set_reminder(self, reminder_time, reminder_text):
+    # Schedule a reminder. Reminder_time in seconds.
+    def _set_reminder(self, reminder_time: int, reminder_text: str) -> None:
         reminder_frame = Frame(self.plan_window, bg=accent_color_1)
 
         Label(reminder_frame, fg=reminder_color, bg=accent_color_1, text=reminder_text, font=(font, reminder_font_size)).grid(row=0, column=1)
@@ -998,97 +1145,13 @@ class MainUI:
         reminder_frame.after(reminder_time*1000, show_reminder)
 
 
-class AdjacentPlanView:
-    def __init__(self, ui):
-        self.adjacent_service = SelectService(send_to=self)
-        self.service_type_id = None
-        self.service_id = None
-
-        self.pco_plan = None
-        self.pco_live = None
-
-        self.adjacent_plan_details = None
-        self.adjacent_plan_items = None
-        self.adjacent_plan_type_details = None
-
-        self.current_live_id = None
-
-        self.ui = ui
-
-    def ask_adjacent_plan(self):
-        logger.debug('AdjacentPlanView.ask_adjacent_plan: asking which plan to load')
-        self.adjacent_service.ask_service_info()
-
-    def receive_plan_details(self, service_type_id, service_id):
-        logger.debug('AdjacentPlanView: Received adjacent plan: %s, %s', service_type_id, service_id)
-        self.service_type_id = service_type_id
-        self.service_id = service_id
-
-        self.__create_adjacent_plan_details()
-
-    def __create_adjacent_plan_details(self):
-        self.pco_plan = PcoPlan(service_type=self.service_type_id, plan_id=self.service_id)
-        self.pco_live = PcoLive(service_type_id=self.service_type_id, plan_id=self.service_id)
-
-        self.adjacent_plan_details = self.pco_plan.get_service_details_from_id()[1]
-        self.adjacent_plan_items = self.pco_plan.get_service_items()[1]
-        self.adjacent_plan_type_details = self.pco_plan.get_service_type_details_from_id()[1]
-
-        service_topo = self.adjacent_plan_type_details + ' > ' + self.adjacent_plan_details['date']
-        if not self.adjacent_plan_details['title'] is None:
-            service_topo += ' | ' + self.adjacent_plan_details['title']
-
-        self.current_live_id = self.pco_live.get_current_live_item()
-
-        for item in self.adjacent_plan_items:
-            if item['id'] == self.current_live_id:
-                current_live_item_title = item['title']
-                current_live_item_time = item['length']
-            else:
-                current_live_item_title = 'Not Currently Live'
-                current_live_item_time = 0
-
-        next_item = self.pco_live.find_next_live_item()
-
-        if not next_item is None:
-            next_item_title = ['title']
-        else:
-            next_item_title = ''
-
-        self.ui.build_adjacent_plan(topo=service_topo, current=current_live_item_title, next=next_item_title, length=current_live_item_time)
-
-        self.__recheck(interval=adjacent_plan_refresh_interval)
-
-    def __recheck(self, interval):
-
-        def send_new(current, next, length):
-            self.ui.update_adjacent_plan(current=current, next=next, length=length)
-
-        def check():
-            logger.debug('Checking if adjacent plan has updated')
-            recheck_live_id = self.pco_live.get_current_live_item()
-            if not recheck_live_id == self.current_live_id:
-                for item in self.adjacent_plan_items:
-                    if item['id'] == recheck_live_id:
-                        current = item['title']
-                        length = item['length']
-                        next_title = self.pco_live.find_next_live_item()['title']
-                        send_new(current=current, next=next_title, length=length)
-            threading.Thread(target=sleep_and_check).start()
-
-        def sleep_and_check():
-            time.sleep(interval)
-            check()
-        check()
-
-
 class KiProUi:
     def __init__(self):
         self.kipro = KiPro()
         self.exit_event = threading.Event()
 
     def kill_threads(self):
-        logger.debug('KiProUi.kill_threads: setting exit event')
+        logger.debug(f'{__class__.__name__}.{self.kill_threads.__name__}: Setting exit event')
         self.exit_event.set()
 
     def update_kipro_status(self, ui):
@@ -1103,9 +1166,9 @@ class KiProUi:
             ui.update_kipro_storage(kipro_unit=iteration, percent=percent)
 
         if interval_update_kipros:
-            threading.Thread(name='kipro_refresh', target=lambda: self.__refresh(interval=kipro_update_interval, ui=ui)).start()
+            threading.Thread(name='kipro_refresh', target=lambda: self._refresh(interval=kipro_update_interval, ui=ui)).start()
 
-    def __refresh(self, interval, ui):
+    def _refresh(self, interval, ui):
         # logger.debug(f'KiProUi.__refresh: exit_event.is_set(): {self.exit_event.is_set()}')
 
         time.sleep(interval)
@@ -1116,11 +1179,13 @@ class KiProUi:
 
 
 class ShureQLXDUi:
-    def __init__(self, devices, ui):
+    def __init__(self, devices, ui, inits):
         self.devices = devices
         self.main_ui = ui
 
-        self.qlxd_class_inits = []
+        self.stop = False
+
+        self.qlxd_class_inits = inits
         self.qlxd_device_names = []
 
         self.qlxd_channel_boxes = []
@@ -1132,14 +1197,9 @@ class ShureQLXDUi:
         self.qlxd_box_battery_levels = []
         self.battery_icon_canvases = []
 
-        self.battery_levels = None
-        self.metering_data = None
-
-        for device in devices:
-            if device['type'] == 'shure_qlxd':
-                self.qlxd_class_inits.append(ShureQLXD(ip=device['ip_address']))
-                for name in device['channel_names']:
-                    self.qlxd_device_names.append(name)
+        for init in self.qlxd_class_inits:
+            for name in init.channel_names:
+                self.qlxd_device_names.append(name)
 
         self.box_problem_color = live_color
 
@@ -1158,12 +1218,10 @@ class ShureQLXDUi:
                                self.battery_level_2_image, self.battery_level_3_image, self.battery_level_4_image,
                                self.battery_level_5_image]
 
-        self.__start_all_metering()
-        self.__create_channel_boxes()
+        self._create_channel_boxes()
 
-        self.loop_counter = 0
 
-    def __create_channel_boxes(self):
+    def _create_channel_boxes(self):
         for _ in self.qlxd_device_names:
             f = Frame(self.main_ui.qlxd_frame, bg=bg_color, width=100, height=50)
             f.pack_propagate(0)
@@ -1175,151 +1233,184 @@ class ShureQLXDUi:
             self.qlxd_box_names.append(name)
             name.place(x=0, y=0)
 
-        for box in self.qlxd_channel_boxes: # channel RF labels
+        # channel RF labels
+        for box in self.qlxd_channel_boxes:
             r = Label(box, bg=bg_color, fg=text_color, text='RF:', font=(font, 6))
             self.qlxd_box_rf_labels.append(r)
             r.place(x=0, y=20)
 
-        for box in self.qlxd_channel_boxes: # channel RF strength
+        # channel RF strength
+        for box in self.qlxd_channel_boxes:
             r = Label(box, bg=bg_color, fg='#ffffff', text='', font=(font, 3))
             self.qlxd_box_rf_levels.append(r)
             r.place(x=24, y=23)
 
-        for box in self.qlxd_channel_boxes: # channel audio labels
+        # channel audio labels
+        for box in self.qlxd_channel_boxes:
             r = Label(box, bg=bg_color, fg=text_color, text='AUD:', font=(font, 6))
             self.qlxd_box_audio_labels.append(r)
             r.place(x=0, y=33)
 
-        for box in self.qlxd_channel_boxes:  # channel audio strength
+        # channel audio strength
+        for box in self.qlxd_channel_boxes:
             r = Label(box, bg=bg_color, fg='#ffffff', text='', font=(font, 3))
             self.qlxd_box_audio_levels.append(r)
             r.place(x=24, y=36)
 
+        # battery level images
         for box in self.qlxd_channel_boxes:
             b = Label(box, image=self.battery_images[0], bg=bg_color)
             self.qlxd_box_battery_levels.append(b)
             b.place(x=63, y=0)
 
-    def __start_all_metering(self):
-        for init in self.qlxd_class_inits:
-            init.start_all_metering()
-
-    def __stop_all_metering(self):
+    def _stop_all_metering(self):
         for init in self.qlxd_class_inits:
             init.stop_all_metering()
 
-    def __get_battery_levels(self):
-        data = []
-        for init in self.qlxd_class_inits:
-            results = init.check_battery_levels()
-            for result in results:
-                data.append(result)
-        return data
-
-    def __get_metering_results(self):
-        data = []
-        for init in self.qlxd_class_inits:
-            results = init.get_meter_info()
-            for result in results:
-                data.append(result)
-        return data
-
-    def __update_ui_rf_and_audio(self, levels):
-        total_characters_in_progress_bar = 36
-        for channel, rf_label, aud_label in zip(levels, self.qlxd_box_rf_levels, self.qlxd_box_audio_levels):
-            try:
-                characters_in_rf = round(int(channel['rf_level']) * (total_characters_in_progress_bar/115))
-                rf_str = ''
-                for _ in range(characters_in_rf):
-                    rf_str += '#'
-                rf_label.configure(text=rf_str)
-
-                characters_in_aud = round(int(channel['audio_level']) * (total_characters_in_progress_bar / 15))
-                aud_str = ''
-                for _ in range(characters_in_aud):
-                    aud_str += '#'
-                aud_label.configure(text=aud_str)
-            except TypeError:
-                pass
-
-    def __update_battery_ui(self, levels):
+    def _update_battery_ui(self, levels):
         for level, box_image in zip(levels, self.qlxd_box_battery_levels):
             try:
-                box_image.configure(image=self.battery_images[level+1])
+                box_image.configure(image=self.battery_images[level['bat']+1])
             except IndexError:
                 box_image.configure(image=self.battery_images[0])
 
     def main_loop(self):
-        self.__stop_all_metering()
-        self.__start_all_metering()
+        # self.__stop_all_metering()
+        logger.debug('ShureQLXDUi.main_loop: Starting')
+        total_characters_in_progress_bar = 36
+        self.stop = False
 
-        while True:
-            # logger.debug(f'loop counter: {self.loop_counter}')
-            if self.loop_counter == 0:
-                # logger.debug('Checking battery levels')
-                self.battery_levels = self.__get_battery_levels()
-                self.__update_battery_ui(levels=self.battery_levels)
+        for init in self.qlxd_class_inits:  # set event loop for each qlxd unit
+            init.set_event_loop()
 
-                self.__start_all_metering()
+        def single_unit_loop(init, channel_boxes, box_names, box_rf_labels, box_rf_levels, box_audio_levels, box_audio_labels, box_battery_levels):
+            def run():
+                for device_level in init.continuous_meter():
+                    if not self.stop:
+                        for level, channel_box, box_name, box_rf_label, box_rf_level, box_audio_level, box_audio_label, box_battery_level in zip(device_level, channel_boxes, box_names, box_rf_labels, box_rf_levels, box_audio_levels, box_audio_labels, box_battery_levels):
+                            try:
+                                characters_in_rf = round(int(level['rf']) * (total_characters_in_progress_bar / 115))
+                                characters_in_aud = round(int(level['aud']) * (total_characters_in_progress_bar / 50))
 
-            self.metering_data = self.__get_metering_results()
-            self.__update_ui_rf_and_audio(levels=self.metering_data)
+                                rf_str = ''
+                                for _ in range(characters_in_rf):
+                                    rf_str += '#'
+                                box_rf_level.configure(text=rf_str)
 
-            iteration = 0
-            for level, battery in zip(self.metering_data, self.battery_levels):
-                try:
-                    if int(level['rf_level']) < 40 or battery == 255:
-                        self.qlxd_channel_boxes[iteration].configure(bg=live_color)
-                        self.qlxd_box_names[iteration].configure(bg=live_color)
-                        self.qlxd_box_rf_labels[iteration].configure(bg=live_color)
-                        self.qlxd_box_rf_levels[iteration].configure(bg=live_color)
-                        self.qlxd_box_audio_labels[iteration].configure(bg=live_color)
-                        self.qlxd_box_audio_levels[iteration].configure(bg=live_color)
-                        self.qlxd_box_battery_levels[iteration].configure(bg=live_color)
+                                aud_str = ''
+                                for _ in range(characters_in_aud):
+                                    aud_str += '#'
+                                box_audio_level.configure(text=aud_str)
 
-                    elif int(level['rf_level']) > 40 and battery <= 2:
-                        self.qlxd_channel_boxes[iteration].configure(bg='#bf7831')
-                        self.qlxd_box_names[iteration].configure(bg='#bf7831')
-                        self.qlxd_box_rf_labels[iteration].configure(bg='#bf7831')
-                        self.qlxd_box_rf_levels[iteration].configure(bg='#bf7831')
-                        self.qlxd_box_audio_labels[iteration].configure(bg='#bf7831')
-                        self.qlxd_box_audio_levels[iteration].configure(bg='#bf7831')
-                        self.qlxd_box_battery_levels[iteration].configure(bg='#bf7831')
+                            except TypeError:
+                                pass
 
+                            try:
+                                box_battery_level.configure(image=self.battery_images[int(level['bat']) + 1])
+                            except IndexError:
+                                box_battery_level.configure(image=self.battery_images[0])
+
+                            try:
+                                if int(level['rf']) < 40 or level['bat'] == 255:
+                                    channel_box.configure(bg=live_color)
+                                    box_name.configure(bg=live_color)
+                                    box_rf_label.configure(bg=live_color)
+                                    box_rf_level.configure(bg=live_color)
+                                    box_audio_level.configure(bg=live_color)
+                                    box_audio_label.configure(bg=live_color)
+                                    box_battery_level.configure(bg=live_color)
+
+                                elif int(level['rf']) > 40 and int(level['bat']) <= 2:
+                                    channel_box.configure(bg='#bf7831')
+                                    box_name.configure(bg='#bf7831')
+                                    box_rf_label.configure(bg='#bf7831')
+                                    box_rf_level.configure(bg='#bf7831')
+                                    box_audio_level.configure(bg='#bf7831')
+                                    box_audio_label.configure(bg='#bf7831')
+                                    box_battery_level.configure(bg='#bf7831')
+
+                                else:
+                                    channel_box.configure(bg=kipro_idle_color)
+                                    box_name.configure(bg=kipro_idle_color)
+                                    box_rf_label.configure(bg=kipro_idle_color)
+                                    box_rf_level.configure(bg=kipro_idle_color)
+                                    box_audio_level.configure(bg=kipro_idle_color)
+                                    box_audio_label.configure(bg=kipro_idle_color)
+                                    box_battery_level.configure(bg=kipro_idle_color)
+                            except Exception as e:
+                                logger.debug('tk error for qlxd init %s, exception: %s', init.IP_ADDR, e)
+                                pass
                     else:
-                        self.qlxd_channel_boxes[iteration].configure(bg=kipro_idle_color)
-                        self.qlxd_box_names[iteration].configure(bg=kipro_idle_color)
-                        self.qlxd_box_rf_labels[iteration].configure(bg=kipro_idle_color)
-                        self.qlxd_box_rf_levels[iteration].configure(bg=kipro_idle_color)
-                        self.qlxd_box_audio_labels[iteration].configure(bg=kipro_idle_color)
-                        self.qlxd_box_audio_levels[iteration].configure(bg=kipro_idle_color)
-                        self.qlxd_box_battery_levels[iteration].configure(bg=kipro_idle_color)
+                        logger.debug('ShureQLXDUi.main_loop.single_unit_loop for ip %s: self.stop = True', init.IP_ADDR)
+                        break
 
-                    iteration += 1
+            try:
+                run()
+            except RuntimeError:
+                logger.debug('Broke async event loop for qlxd %s', init.IP_ADDR)
+                run()
+            except _tkinter.TclError as e: # plan was reloaded
+                logger.debug('qlxdui tk error: %s', e)
+                run()
 
-                except TypeError:
-                    pass
+        for iteration, init in enumerate(self.qlxd_class_inits, start=1):
+            start_index = iteration*4-4
+            end_index = iteration*4
+            t = threading.Thread(target=lambda: single_unit_loop(
+                init=init,
+                channel_boxes=self.qlxd_channel_boxes[start_index:end_index],
+                box_names=self.qlxd_box_names[start_index:end_index],
+                box_rf_labels=self.qlxd_box_rf_labels[start_index:end_index],
+                box_rf_levels=self.qlxd_box_rf_levels[start_index:end_index],
+                box_audio_labels=self.qlxd_box_audio_labels[start_index:end_index],
+                box_audio_levels=self.qlxd_box_audio_levels[start_index:end_index],
+                box_battery_levels=self.qlxd_box_battery_levels[start_index:end_index]
+            ))
 
-                if self.loop_counter == 20:
-                    self.loop_counter = 0
-                else:
-                    self.loop_counter += 1
+            t.name = f'ShureQLXDUI_{init.IP_ADDR}'
+            t.start()
+
+            logger.debug(f'{__class__.__name__}.{self.main_loop.__name__}: Thread name for ULXD/QLXD unit ui thread under'
+                         f'ShureQLXDUi.main_loop {init.IP_ADDR} is {t.name}')
 
 
-
-class Main:  #startup
+class Main:   # startup
     def __init__(self):
         os.chdir(abs_path)
 
-        if os.path.exists('devices.json'):
-            logger.debug('devices.json exists, reading...')
-            with open('devices.json', 'r') as f:
+        if os.path.exists(os.path.join('configs', 'devices.json')):
+            with open(os.path.join('configs', 'devices.json'), 'r') as f:
                 self.devices = json.loads(f.read())
         else:
             logger.warning('Did not find devices.json file')
             DeviceEditor().build_default_file()
-            with open('devices.json', 'r') as f:
+            with open(os.path.join('configs', 'devices.json'), 'r') as f:
                 self.devices = json.loads(f.read())
+
+        if os.path.exists(os.path.join('configs', 'persistent_plan_data.json')):
+            with open(os.path.join('configs', 'persistent_plan_data.json')) as f:
+                self.persistent_plan_data = json.loads(f.read())
+
+
+
+        # qlxd initialization only happens once. Use this var to keep track of if the "main" method has been run or not.
+        self.has_started = False
+
+        self.contains_qlxd = False
+        for device in self.devices:
+            if device['type'] == 'shure_qlxd':
+                self.contains_qlxd = True
+                break
+
+        if self.contains_qlxd and not self.has_started:
+            self.qlxd_class_inits = []
+            for device in self.devices:
+                if device['type'] == 'shure_qlxd':
+                    self.qlxd_class_inits.append(ShureQLXD(ip=device['ip_address']))
+            self.has_started = True
+
+            for init in self.qlxd_class_inits:
+                init.startup()
 
         self.main_service = SelectService()
         self.main_service.ask_service_info()
@@ -1327,9 +1418,26 @@ class Main:  #startup
         self.service_type_id = self.main_service.service_type_id
         self.service_id = self.main_service.service_id
 
+        del self.main_service
+
+        # check to see if this specific plan has been opened or not. If it has been opened, delete all existing item cues so
+        # it's opened fresh.
+        self.persistent_plan_data = PersistentPlanData()
+        has_been_opened = self.persistent_plan_data.has_plan_been_loaded(service_type_id=self.service_type_id, plan_id=self.service_id)
+
+        if not has_been_opened:
+            pco = PcoPlan(service_type=self.service_type_id, plan_id=self.service_id)
+            pco.remove_all_item_app_cues()
+
+        self.persistent_plan_data.add_plan_that_has_been_loaded(service_type_id=self.service_type_id, plan_id=self.service_id)
+
+        CueHandler.check_and_update_plan_for_october_2022_cues(service_type_id=self.service_type_id,
+                                                               service_id=self.service_id)
+
         self.main_ui = MainUI(startup=self)
 
         self.main_ui.build_plan_window()
 
-start = Main()
 
+if __name__ == '__main__':
+    start = Main()
