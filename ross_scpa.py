@@ -16,9 +16,9 @@ class ScpaViaIP2SL:
     def __connect(self):
         try:
             self.socket.connect((self.ip, self.port))
-            logger.debug('socket connected')
+            logger.debug('socket connected: ip: %s, port: %s', self.ip, self.port)
         except socket.timeout:
-            logger.error('IP2SL did not respond. Do you have the right host address, or is something using port %s?', self.port)
+            logger.error('IP2SL did not respond. Do you have the right host address(%s), or is something using port %s?', self.ip, self.port)
 
     def __listen(self):
         response = []
@@ -46,7 +46,7 @@ class ScpaViaIP2SL:
         except socket.timeout:
             logger.error('IP2SL did not respond. Do you have the right host address?')
 
-    def get_status(self, output, recursive=False):
+    def get_status(self, output, recursive=False):  # Returns input that is sent to specified output
         self.__create_socket()
         self.__connect()
 
@@ -97,5 +97,5 @@ class ScpaViaIP2SL:
         self.__close()
 
 if __name__ == '__main__':
-    scp = ScpaViaIP2SL(ip='10.1.60.128')
+    scp = ScpaViaIP2SL(ip='10.1.60.84')
     print(scp.get_status(output=5))
