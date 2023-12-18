@@ -1,10 +1,7 @@
 import requests
 import json
-import pprint
-from settings import *
 from logzero import logger
 from pco_plan import PcoPlan
-import time
 from creds import Creds
 
 creds = Creds().read()
@@ -32,7 +29,7 @@ class PcoLive:
                 self.take_control()
                 self.go_to_next_item()
         except KeyError:
-            logger.info('go_to_next_item: success')
+            logger.debug('go_to_next_item: success')
 
     def go_to_previous_item(self):
         logger.debug('Going to previous item plan---- service type: %s, plan: %s', self.service_type_id, self.plan_id)
@@ -45,7 +42,7 @@ class PcoLive:
                 self.take_control()
                 self.go_to_previous_item()
         except KeyError:
-            logger.info('go_to_previous_item: success')
+            logger.debug('go_to_previous_item: success')
 
     # simply toggles control. Use in conjunction with is_controlled for more use
     def toggle_control(self):
@@ -55,9 +52,9 @@ class PcoLive:
                       auth=(APP_ID, SECRET))
 
         if json.loads(r.text)['data']['links']['controller'] == None:
-            logger.info('You have RELEASED control')
+            logger.debug('You have RELEASED control')
         else:
-            logger.info('You have TAKEN control')
+            logger.debug('You have TAKEN control')
 
     # get id of currently live item in pco live from service_type and plan.
     # Returns logger error and none if plan is not live.
@@ -72,10 +69,10 @@ class PcoLive:
             logger.debug('successfully got current live item id: %s', data['data']['relationships']['item']['data']['id'])
             return data['data']['relationships']['item']['data']['id']
         except TypeError:
-            logger.info('Failed to get current live item id for service type %s, plan %s. Is the plan live?', self.service_type_id, self.plan_id)
+            logger.debug('Failed to get current live item id for service type %s, plan %s. Is the plan live?', self.service_type_id, self.plan_id)
             return None
         except KeyError:
-            logger.info('Failed to get current live item id for service type %s, plan %s. Is the plan live?', self.service_type_id, self.plan_id)
+            logger.debug('Failed to get current live item id for service type %s, plan %s. Is the plan live?', self.service_type_id, self.plan_id)
             return None
 
     # TODO check during a live service. length and length_offset are both 0 when called when out of service time
@@ -97,10 +94,10 @@ class PcoLive:
         controller = data['data']['links']['controller']
 
         if controller == None:
-            logger.info('Current plan is NOT being live controlled')
+            logger.debug('Current plan is NOT being live controlled')
             return False
         else:
-            logger.info('Current plan IS being live controlled.')
+            logger.debug('Current plan IS being live controlled.')
             return True
 
     # looks at if a plan is being controlled, takes control if it's not. Does nothing if its already controlled
@@ -109,7 +106,7 @@ class PcoLive:
         if self.is_controlled() == False:
             self.toggle_control()
         else:
-            logger.info('take_control(): Already live controller!')
+            logger.debug('take_control(): Already live controller!')
 
     # opposite of above function
     def release_control(self):
@@ -117,7 +114,7 @@ class PcoLive:
         if self.is_controlled() == True:
             self.toggle_control()
         else:
-            logger.info('release_control(): Not live controller!')
+            logger.debug('release_control: Not live controller!')
 
     # find the next live item in service, used in pco live setting. This function is needed because headers
     # are considered items in the api, but not the live functionality. Basically this returns the next
@@ -125,7 +122,7 @@ class PcoLive:
     # Returns None if not currently live
     def find_next_live_item(self):
         pco_plan = PcoPlan(service_type=self.service_type_id, plan_id=self.plan_id)
-        items=pco_plan.get_service_items()[1]
+        items=pco_plan.get_plan_items()
         current_live_item = self.get_current_live_item()
 
         live_item_index = None
@@ -162,14 +159,14 @@ class PcoLive:
             logger.debug('Found plan live time id: %s', r['data']['relationships']['plan_time']['data']['id'])
             return r['data']['relationships']['plan_time']['data']['id']
         except KeyError:
-            logger.info('get_current_plan_live_time_id: something went wrong, response: ', r)
+            logger.error('get_current_plan_live_time_id: something went wrong, response: ', r)
 
     # Finds if there is a service after the one that's active now, then advance through all items until the current item id matches the id of the first one in the plan
     def go_to_next_service(self):
         live_service_info = self.pco_plan.get_plan_times()
         current_live_id = self.get_current_plan_live_time_id()
 
-        first_item_id = self.pco_plan.get_service_items()[1][0]['id']
+        first_item_id = self.pco_plan.get_plan_items()[0]['id']
 
         # loop through service times, find if there is one with a higher id than the one that's live now. Only advances one service.
         has_advanced = False

@@ -2,10 +2,11 @@
 /logs/
 /Gear_icon.ai
 /.idea/
-/creds.json
+/configs/creds.json
 /flowood.ods
 /devices.json
 /devices_backup/
 /2021_05_11.lbl
 /global_cues.json
 /cue_presets.json
+/configs

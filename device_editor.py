@@ -4,13 +4,12 @@ from logzero import logger
 from tkinter import *
 from tkinter import messagebox
 from tkinter import filedialog
-from tkinter import IntVar
-from settings import *
+from configs.settings import *
 import uuid
 import socket
 from datetime import datetime
 from shutil import copyfile
-import pprint
+from midi import Midi
 
 
 class DeviceEditor:
@@ -18,9 +17,9 @@ class DeviceEditor:
         self.absolute_path = os.path.dirname(__file__)
         os.chdir(self.absolute_path)
 
-        if os.path.exists('devices.json'):
+        if os.path.exists(os.path.join('configs', 'devices.json')):
             logger.debug('DeviceEditor.__init__: devices.json exists. Reading...')
-            with open('devices.json', 'r') as f:
+            with open(os.path.join('configs', 'devices.json'), 'r') as f:
                 self.devices = json.loads(f.read())
             logger.debug('DeviceEditor.__init__: devices.json contents: %s', self.devices)
         else:
@@ -61,23 +60,26 @@ class DeviceEditor:
         self.new_device_window.configure(bg=bg_color)
         self.new_device_window.title('Select a device type to add')
 
-        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add ProVideoPlayer', command=self.__add_pvp).pack()
-        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Ross Carbonite', command=self.__add_ross_carbonite).pack()
-        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Ross NK Router', command=self.__add_scpa_via_ip2sl).pack()
-        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add AJA KiPro', command=self.__add_kipro).pack()
-        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Resi Decoder', command=self.__add_resi).pack()
-        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add EZ Outlet 2', command=self.__add_ez_outlet_2).pack()
-        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add BEM104 Relay', command=self.__add_bem104).pack()
-        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Wave Controlflex', command=self.__add_controlflex).pack()
-        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add AJA Kumo Router', command=self.__add_aja_kumo).pack()
-        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Shure QLXD reciver', command=self.__add_shure_qlxd).pack()
-        # Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add AJA IPR').pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add ProVideoPlayer', command=self._add_pvp).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Ross Carbonite', command=self._add_ross_carbonite).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Ross NK Router', command=self._add_scpa_via_ip2sl).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add AJA KiPro', command=self._add_kipro).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Resi Decoder', command=self._add_resi).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add EZ Outlet 2', command=self._add_ez_outlet_2).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add BEM104 Relay', command=self._add_bem104).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Wave Controlflex', command=self._add_controlflex).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add AJA Kumo Router', command=self._add_aja_kumo).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Shure QLXD reciver', command=self._add_shure_qlxd).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Allen & Heath DLive Mixrack', command=self._add_ah_dlive).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add MIDI Device', command=self._add_midi).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Propresenter Device', command=self._add_propresenter).pack()
+
 
         self.new_device_window.withdraw()
 
     def build_ui(self):
         self.device_editor_window.configure(bg=bg_color)
-        self.__update_existing_devices()
+        self._update_existing_devices()
 
         Label(self.device_editor_window, bg=bg_color, fg=text_color, font=(font, other_text_size - 2),
               text="Use this menu to add or remove physical devices. Removing/re-adding an existing will device break it in any existing shows that you have saved!\n\n"
@@ -88,34 +90,38 @@ class DeviceEditor:
         self.devices_listbox.configure(bg=bg_color, fg=text_color, font=(font, current_cues_text_size), width=50, height=40)
         self.devices_listbox.pack(pady=20)
 
-        Button(self.device_editor_window, text='Add New Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self.__add_new_device_window).pack(side=LEFT, padx=10)
-        Button(self.device_editor_window, text='Remove Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self.__remove_device).pack(side=LEFT, padx=10)
-        Button(self.device_editor_window, text='Show details', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self.__show_details).pack(side=LEFT, padx=10)
-        Button(self.device_editor_window, text='Write changes to disk', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self.__update_devices_file).pack(side=RIGHT, padx=10)
+        Button(self.device_editor_window, text='Add New Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._add_new_device_window).pack(side=LEFT, padx=10)
+        Button(self.device_editor_window, text='Remove Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._remove_device).pack(side=LEFT, padx=10)
+        Button(self.device_editor_window, text='Show details', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._show_details).pack(side=LEFT, padx=10)
+        Button(self.device_editor_window, text='Save', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._update_devices_file).pack(side=RIGHT, padx=10)
 
         self.root.mainloop()
 
     def build_default_file(self):
-        self.__update_devices_file()
+        self._update_devices_file()
 
-    def __update_devices_file(self):
-        if not os.path.exists('devices_backup/'):
+    def _update_devices_file(self):
+        if not os.path.exists(os.path.join('configs', 'devices_backup')):
             logger.info('devices_backup directory does not exist. Creating...')
-            os.mkdir('devices_backup/')
+            os.mkdir(os.path.join('configs', 'devices_backup'))
 
-        if os.path.exists('devices.json'):
+        if os.path.exists(os.path.join('configs', 'devices.json')):
             logger.info('Devices file exists, backing it up to /devices_backup')
-            copyfile('devices.json', 'devices_backup/devices_BACKUP_' + datetime.now().strftime("%Y_%m_%d-%H_%M") + '.json')
+            source_file = os.path.join('configs', 'devices.json')
+            destination_file = os.path.join('configs', 'devices_backup', 'devices_BACKUP_'+ datetime.now().strftime("%Y_%m_%d-%H_%M") + '.json')
+
+            copyfile(source_file, destination_file)
         else:
             logger.info('Devices file does not exist, nothing to back up')
 
         logger.info('Updating devices.json file. Contents: %s', self.devices)
-        with open('devices.json', 'w') as f:
+        with open(os.path.join('configs', 'devices.json'), 'w') as f:
             f.writelines(json.dumps(self.devices))
 
         self.device_editor_window.destroy()
+        exit()
 
-    def __add_device(self, device): # Adds date added and UUID to device info, adds to main devices dict, updates listbox
+    def _add_device(self, device): # Adds date added and UUID to device info, adds to main devices dict, updates listbox
         logger.info('__add_device: received new device to add: %s', device)
 
         device.update({
@@ -126,22 +132,22 @@ class DeviceEditor:
         logger.info('Adding to devices: %s', device)
 
         self.devices.append(device)
-        self.__update_existing_devices()
+        self._update_existing_devices()
 
-    def __remove_device(self):
+    def _remove_device(self):
 
         self.devices.pop(self.devices_listbox.curselection()[0]+3)
-        self.__update_existing_devices()
+        self._update_existing_devices()
 
-    def __update_existing_devices(self):
+    def _update_existing_devices(self):
         self.devices_listbox.delete(0, 'end')
 
         for index, device in enumerate(self.devices):
-            if not device['uuid'] in ('f0d73b84-60b1-4c1d-a49f-f3b11ea65d3f', 'b652b57e-c426-4f83-87f3-a7c4026ec1f0', '07af78bf-9149-4a12-80fc-0fa61abc0a5c'):
+            if not device['uuid'] in ('f0d73b84-60b1-4c1d-a49f-f3b11ea65d3f', 'b652b57e-c426-4f83-87f3-a7c4026ec1f0', '07af78bf-9149-4a12-80fc-0fa61abc0a5c', 'a0fac1cd-3bff-4286-80e2-20b284361ba0'):
                 listbox_item_name = device['user_name'] + ' (' + device['type'] + ')'
                 self.devices_listbox.insert(index, listbox_item_name)
 
-    def __show_details(self): #opens new window containing details for all fields of selected device
+    def _show_details(self): #opens new window containing details for all fields of selected device
         details_window = Tk()
         details_window.configure(bg=bg_color)
         details_window.geometry('450x250')
@@ -151,14 +157,14 @@ class DeviceEditor:
             Label(details_window, bg=bg_color, fg=text_color,
                   text=f'{field} : {self.devices[selected_device_index][field]}', font=(font, other_text_size)).pack()
 
-    def __verify_ip(self, ip):
+    def _verify_ip(self, ip):
         try:
             socket.inet_aton(ip)
             return True
         except socket.error:
             return False
 
-    def __verify_port(self, port):  # checks if port is a number and is between 0 and 65535
+    def _verify_port(self, port):  # checks if port is a number and is between 0 and 65535
         try:
             int(port)
         except ValueError:
@@ -168,17 +174,17 @@ class DeviceEditor:
         else:
             return False
 
-    def __verify_number_of_io(self, io_number):  # verifies video router input/output entry
+    def _verify_number_of_io(self, io_number):  # verifies video router input/output entry
         try:
             int(io_number)
             return True
         except ValueError:
             return False
 
-    def __add_new_device_window(self):
+    def _add_new_device_window(self):
         self.new_device_window.deiconify()
 
-    def __add_pvp(self):
+    def _add_pvp(self):
         self.new_device_window.withdraw()
 
         add_pvp = Tk()
@@ -212,7 +218,7 @@ class DeviceEditor:
         info_entry_frame.pack(pady=20)
 
         def add():
-            if self.__verify_ip(ip_address_entry.get()) and port_entry.get() != '':
+            if self._verify_ip(ip_address_entry.get()) and port_entry.get() != '':
 
                 to_add = {
                     'type': 'pvp',
@@ -221,7 +227,7 @@ class DeviceEditor:
                     'port': port_entry.get()
                 }
 
-                self.__add_device(device=to_add)
+                self._add_device(device=to_add)
                 add_pvp.destroy()
             else:
                 messagebox.showerror(title='Invalid IP address or Port', message='An Invalid IP address or port was entered')
@@ -229,7 +235,7 @@ class DeviceEditor:
 
         Button(add_pvp, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
 
-    def __add_scpa_via_ip2sl(self):
+    def _add_scpa_via_ip2sl(self):
         self.new_device_window.withdraw()
 
         add_scp = Tk()
@@ -293,8 +299,8 @@ class DeviceEditor:
             add_scp.lift()
 
         def add():
-            if self.__verify_ip(ip_address_entry.get()) and self.__verify_port(port_entry.get()) and \
-                    self.__verify_number_of_io(io_number=input_entry.get() and self.__verify_number_of_io(io_number=output_entry.get())):
+            if self._verify_ip(ip_address_entry.get()) and self._verify_port(port_entry.get()) and \
+                    self._verify_number_of_io(io_number=input_entry.get() and self._verify_number_of_io(io_number=output_entry.get())):
 
                 to_add = {
                     'type': 'nk_scpa_ip2sl',
@@ -308,7 +314,7 @@ class DeviceEditor:
                 if nk_labels is not None:
                     to_add['nk_labels'] = nk_labels
 
-                self.__add_device(device=to_add)
+                self._add_device(device=to_add)
                 add_scp.destroy()
 
             else:
@@ -320,7 +326,7 @@ class DeviceEditor:
         Button(add_scp, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add custom NK Labels', command=add_nk_labels).pack(side=LEFT)
         Button(add_scp, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack(side=RIGHT)
 
-    def __add_ross_carbonite(self):
+    def _add_ross_carbonite(self):
         self.new_device_window.withdraw()
 
         add_carbonite = Tk()
@@ -370,7 +376,7 @@ class DeviceEditor:
         info_entry_frame.pack(pady=20)
 
         def add():
-            if self.__verify_ip(ip_address_entry.get()) and port_entry.get() != '':
+            if self._verify_ip(ip_address_entry.get()) and port_entry.get() != '':
 
                 to_add = {
                     'type': 'ross_carbonite',
@@ -382,7 +388,7 @@ class DeviceEditor:
                 if cc_labels is not None:
                     to_add['cc_labels'] = cc_labels
 
-                self.__add_device(device=to_add)
+                self._add_device(device=to_add)
                 add_carbonite.destroy()
             else:
                 messagebox.showerror(title='Invalid IP address or Port', message='An Invalid IP address or port was entered')
@@ -391,7 +397,7 @@ class DeviceEditor:
         Button(add_carbonite, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack(side=LEFT)
         Button(add_carbonite, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Custom Control Labels', command=add_cc_labels).pack(side=LEFT)
 
-    def __add_kipro(self):
+    def _add_kipro(self):
         self.new_device_window.withdraw()
 
         add_kipro = Tk()
@@ -433,7 +439,7 @@ class DeviceEditor:
 
             for name, ip in zip(name_entries, ip_entries):
                 logger.debug('Attempting to add name %s, ip %s', name.get(), ip.get())
-                if name.get() == '' and self.__verify_ip(ip=ip.get()):
+                if name.get() == '' and self._verify_ip(ip=ip.get()):
                     checks.append(False)
                     messagebox.showerror(title='Enter name', message='Please enter a name for KiPro')
                     add_kipro.lift()
@@ -443,7 +449,7 @@ class DeviceEditor:
                     ips.append(ip.get())
 
             for ip in ips:
-                if self.__verify_ip(ip=ip):
+                if self._verify_ip(ip=ip):
                     checks.append(True)
                 else:
                     logger.error('ip %s not valid', ip)
@@ -460,14 +466,14 @@ class DeviceEditor:
                         'user_name': name,
                         'ip_address': ip
                     }
-                    self.__add_device(device=to_add)
+                    self._add_device(device=to_add)
 
                 add_kipro.destroy()
 
         Button(add_kipro, bg=bg_color, fg=text_color, font=(font, other_text_size), text='add new line', command=add_line).pack(side=LEFT)
         Button(add_kipro, bg=bg_color, fg=text_color, font=(font, other_text_size), text='add all', command=check_and_add).pack(side=LEFT)
 
-    def __add_resi(self):
+    def _add_resi(self):
         self.new_device_window.withdraw()
 
         add_resi = Tk()
@@ -548,7 +554,7 @@ class DeviceEditor:
         info_entry_frame.pack(pady=20)
 
         def add():
-            if self.__verify_ip(ip_address_entry.get()) and port_entry.get() != '':
+            if self._verify_ip(ip_address_entry.get()) and port_entry.get() != '':
 
                 to_add = {
                     'type': 'resi',
@@ -559,7 +565,7 @@ class DeviceEditor:
                 }
 
                 if obtain_automatically_status.get():
-                    if self.__verify_ip(exos_mgmt_ip_entry.get()):
+                    if self._verify_ip(exos_mgmt_ip_entry.get()):
                         to_add.update({
                             'exos_mgmt_ip': exos_mgmt_ip_entry.get(),
                             'exos_mgmt_user': exos_mgmt_user_entry.get(),
@@ -572,7 +578,7 @@ class DeviceEditor:
                     logger.error('__add_pvp: IP address or port not valid: %s, %s', ip_address_entry.get(), port_entry.get())
                     add_resi.lift()
 
-                self.__add_device(device=to_add)
+                self._add_device(device=to_add)
                 add_resi.destroy()
 
             else:
@@ -582,7 +588,7 @@ class DeviceEditor:
 
         Button(add_resi, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
 
-    def __add_ez_outlet_2(self):
+    def _add_ez_outlet_2(self):
         self.new_device_window.withdraw()
 
         add_ez = Tk()
@@ -625,7 +631,7 @@ class DeviceEditor:
         info_entry_frame.pack(pady=20)
 
         def add():
-            if self.__verify_ip(ip_address_entry.get()):
+            if self._verify_ip(ip_address_entry.get()):
 
                 to_add = {
                     'type': 'ez_outlet_2',
@@ -635,7 +641,7 @@ class DeviceEditor:
                     'password': password_entry.get()
                 }
 
-                self.__add_device(device=to_add)
+                self._add_device(device=to_add)
                 add_ez.destroy()
             else:
                 messagebox.showerror(title='Invalid IP address', message='An Invalid IP address was entered')
@@ -644,7 +650,7 @@ class DeviceEditor:
 
         Button(add_ez, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
 
-    def __add_bem104(self):
+    def _add_bem104(self):
         self.new_device_window.withdraw()
 
         add_ez = Tk()
@@ -682,7 +688,7 @@ class DeviceEditor:
         info_entry_frame.pack(pady=20)
 
         def add():
-            if self.__verify_ip(ip_address_entry.get()):
+            if self._verify_ip(ip_address_entry.get()):
 
                 to_add = {
                     'type': 'bem104',
@@ -690,7 +696,7 @@ class DeviceEditor:
                     'ip_address': ip_address_entry.get()
                 }
 
-                self.__add_device(device=to_add)
+                self._add_device(device=to_add)
                 add_ez.destroy()
             else:
                 messagebox.showerror(title='Invalid IP address', message='An Invalid IP address was entered')
@@ -699,7 +705,7 @@ class DeviceEditor:
 
         Button(add_ez, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
 
-    def __add_controlflex(self):
+    def _add_controlflex(self):
         self.new_device_window.withdraw()
 
         add_controlflex = Tk()
@@ -952,7 +958,7 @@ class DeviceEditor:
             zone_okay.grid(row=0, column=2, padx=10)
 
         def finished():
-            self.__add_device(device={
+            self._add_device(device={
                 'type': 'controlflex',
                 'user_name': name_entry.get(),
                 'ip_address': ip_address_entry.get(),
@@ -963,7 +969,7 @@ class DeviceEditor:
         Button(add_controlflex, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add new Zone', command=add_zone).grid()  # add new controlflex zone, parent is main window
         Button(add_controlflex, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Finished: add controlflex device and all zones', command=finished).grid()  # Add controlflex device. Pressed when finished, parent is main window
 
-    def __add_aja_kumo(self):
+    def _add_aja_kumo(self):
         self.new_device_window.withdraw()
 
         add_kumo = Tk()
@@ -996,7 +1002,7 @@ class DeviceEditor:
         info_entry_frame.pack(pady=10)
 
         def add():
-            if self.__verify_ip(ip_address_entry.get()):
+            if self._verify_ip(ip_address_entry.get()):
 
                 to_add = {
                     'type': 'aja_kumo',
@@ -1004,7 +1010,7 @@ class DeviceEditor:
                     'ip_address': ip_address_entry.get()
                 }
 
-                self.__add_device(device=to_add)
+                self._add_device(device=to_add)
                 add_kumo.destroy()
             else:
                 messagebox.showerror(title='Invalid IP address', message='An Invalid IP address was entered')
@@ -1013,7 +1019,7 @@ class DeviceEditor:
 
         Button(add_kumo, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
 
-    def __add_shure_qlxd(self):
+    def _add_shure_qlxd(self):
         self.new_device_window.withdraw()
 
         add_qlxd = Tk()
@@ -1037,19 +1043,6 @@ class DeviceEditor:
         channel_description_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Channel Names (leave empty for none)')
         channel_description_label.grid(row=1, column=0)
 
-        channel_1_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
-        channel_2_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
-        channel_3_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
-        channel_4_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
-
-        all_channel_entries = [channel_1_entry, channel_2_entry, channel_3_entry, channel_4_entry]
-
-        channel_1_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Channel 1 Name')
-        channel_2_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Channel 2 Name')
-        channel_3_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Channel 3 Name')
-        channel_4_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Channel 4 Name')
-
-        all_channel_labels = [channel_1_label, channel_2_label, channel_3_label, channel_4_label]
 
         device_description.pack()
 
@@ -1059,38 +1052,18 @@ class DeviceEditor:
         ip_label.grid(row=0, column=0, padx=10, pady=15)
         ip_address_entry.grid(row=0, column=1, padx=10, pady=15)
 
-        iteration = 1
-        for entry, label in zip(all_channel_entries, all_channel_labels):
-            entry.grid(row=iteration+2, column=1, padx=10, pady=5)
-            label.grid(row=iteration+2, column=0, padx=10, pady=5)
-            iteration += 1
-
         name_entry_frame.pack(pady=5)
         info_entry_frame.pack(pady=5)
 
         def add():
-            if self.__verify_ip(ip_address_entry.get()):
-
-                channel_names = []
-                for channel in all_channel_entries:
-                    channel_names.append(channel.get())
-
-                channels_to_add = []
-
-                for channel in channel_names:
-                    if channel == '':
-                        channels_to_add.append(None)
-                    else:
-                        channels_to_add.append(channel)
-
+            if self._verify_ip(ip_address_entry.get()):
                 to_add = {
                     'type': 'shure_qlxd',
                     'user_name': name_entry.get(),
                     'ip_address': ip_address_entry.get(),
-                    'channel_names': channels_to_add,
                 }
 
-                self.__add_device(device=to_add)
+                self._add_device(device=to_add)
                 add_qlxd.destroy()
             else:
                 messagebox.showerror(title='Invalid IP address', message='An Invalid IP address was entered')
@@ -1098,6 +1071,175 @@ class DeviceEditor:
                 add_qlxd.lift()
 
         Button(add_qlxd, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
+
+    def _add_ah_dlive(self):
+        self.new_device_window.withdraw()
+
+        add_ah_dlive = Tk()
+        add_ah_dlive.title('Add Allen Heath DLive MixRack')
+        add_ah_dlive.configure(bg=bg_color)
+        add_ah_dlive.geometry('550x200')
+
+        name_entry_frame = Frame(add_ah_dlive)
+        name_entry_frame.configure(bg=bg_color)
+
+        info_entry_frame = Frame(add_ah_dlive)
+        info_entry_frame.configure(bg=bg_color)
+
+        name_entry = Entry(name_entry_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        ip_address_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+
+        device_description = Label(add_ah_dlive, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Add a Allen & Heath DLive MixRack')
+        name_label = Label(name_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Name:')
+        ip_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Target IP Address:')
+
+        def add():
+            if self._verify_ip(ip_address_entry.get()):
+
+                to_add = {
+                    'type': 'ah_dlive',
+                    'user_name': name_entry.get(),
+                    'ip_address': ip_address_entry.get()
+                }
+
+                self._add_device(device=to_add)
+                add_ah_dlive.destroy()
+            else:
+                messagebox.showerror(title='Invalid IP address', message='An Invalid IP address was entered')
+                logger.error('__add_shure_qlxd: IP address not valid: %s', ip_address_entry.get())
+                add_ah_dlive.lift()
+
+        device_description.pack()
+
+        name_label.grid(row=0, column=0, padx=10, pady=10)
+        name_entry.grid(row=0, column=1, padx=10, pady=10)
+
+        ip_label.grid(row=0, column=0, padx=10, pady=15)
+        ip_address_entry.grid(row=0, column=1, padx=10, pady=15)
+
+        name_entry_frame.pack(pady=5)
+        info_entry_frame.pack(pady=5)
+
+        Button(add_ah_dlive, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
+
+    def _add_midi(self):
+        self.new_device_window.withdraw()
+
+        add_midi = Tk()
+        add_midi.title('Add Midi Device')
+        add_midi.configure(bg=bg_color)
+        add_midi.geometry('550x200')
+
+        name_entry_frame = Frame(add_midi)
+        name_entry_frame.configure(bg=bg_color)
+
+        info_entry_frame = Frame(add_midi)
+        info_entry_frame.configure(bg=bg_color)
+
+        device_description = Label(add_midi, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Add a MIDI device')
+        name_label = Label(name_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Name:')
+
+        name_entry = Entry(name_entry_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+
+        midi_types = [
+            'ProPresenter',
+            'Other/Custom'
+        ]
+
+        midi_type_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Type of MIDI device:')
+        midi_type_label.grid(row=0, column=0)
+
+        midi_type_selected = StringVar(info_entry_frame)
+        midi_type_selected.set(midi_types[0])
+
+        midi_types_dropdown = OptionMenu(info_entry_frame, midi_type_selected, *midi_types)
+        midi_types_dropdown.grid(row=0, column=1)
+
+        midi_interface = Midi()
+        midi_interfaces = midi_interface.get_midi_out()
+
+        midi_interface_selected = StringVar(info_entry_frame)
+        midi_interface_selected.set(midi_interfaces[0])
+
+        midi_interface_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='MIDI Interface:')
+        midi_interface_label.grid(row=1, column=0)
+
+        midi_interfaces_dropdown = OptionMenu(info_entry_frame, midi_interface_selected, *midi_interfaces)
+        midi_interfaces_dropdown.grid(row=1, column=1)
+
+        def add():
+            to_add = {
+                'type': 'midi',
+                'midi_type': midi_type_selected.get(),
+                'user_name': name_entry.get(),
+                'midi_device': midi_interface_selected.get()
+            }
+
+            self._add_device(device=to_add)
+            add_midi.destroy()
+
+        device_description.pack()
+
+        name_label.grid(row=0, column=0, padx=10, pady=10)
+        name_entry.grid(row=0, column=1, padx=10, pady=10)
+
+        name_entry_frame.pack(pady=5)
+        info_entry_frame.pack(pady=5)
+
+        Button(add_midi, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
+
+    def _add_propresenter(self):
+        self.new_device_window.withdraw()
+
+        add_propresenter = Tk()
+        add_propresenter.title('Add ProVideoPlayer Device')
+        add_propresenter.configure(bg=bg_color)
+        add_propresenter.geometry('400x180')
+
+        name_entry_frame = Frame(add_propresenter)
+        name_entry_frame.configure(bg=bg_color)
+
+        info_entry_frame = Frame(add_propresenter)
+        info_entry_frame.configure(bg=bg_color)
+
+        name_entry = Entry(name_entry_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        ip_address_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        port_entry = Entry(info_entry_frame, width=5, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+
+        name_label = Label(name_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Name:')
+        ip_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Target IP Address:')
+        port_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Target Port:')
+
+        name_label.pack()
+        name_entry.pack()
+
+        ip_label.pack(side=LEFT)
+        ip_address_entry.pack(side=LEFT)
+        port_entry.pack(side=RIGHT)
+        port_label.pack(side=RIGHT)
+
+        name_entry_frame.pack(pady=20)
+        info_entry_frame.pack(pady=20)
+
+        def add():
+            if self._verify_ip(ip_address_entry.get()) and port_entry.get() != '':
+
+                to_add = {
+                    'type': 'propresenter',
+                    'user_name': name_entry.get(),
+                    'ip_address': ip_address_entry.get(),
+                    'port': port_entry.get()
+                }
+
+                self._add_device(device=to_add)
+                add_propresenter.destroy()
+            else:
+                messagebox.showerror(title='Invalid IP address or Port', message='An Invalid IP address or port was entered')
+                logger.error('__add_pvp: IP address or port not valid: %s, %s', ip_address_entry.get(), port_entry.get())
+
+        Button(add_propresenter, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
+
+
 
 
 if __name__ == '__main__':

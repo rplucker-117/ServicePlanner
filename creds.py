@@ -2,9 +2,10 @@ import json
 from logzero import logger
 import os
 
+
 class Creds:
     def __init__(self):
-        self.creds_file = os.path.join(os.path.dirname(__file__), 'creds.json')
+        self.creds_file = os.path.join(os.path.dirname(__file__), 'configs', 'creds.json')
         self.check_status()
 
     def create(self):
@@ -36,7 +37,6 @@ class Creds:
             logger.error('Creds.read: File not found. Exception %s', e)
             self.create()
             self.read()
-
 
     def check_status(self):
         if not os.path.exists(self.creds_file):

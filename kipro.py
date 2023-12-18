@@ -1,16 +1,14 @@
 import urllib.request
 import urllib.parse
-from settings import *
+from configs.settings import *
 import json
 import time
 import requests
 from logzero import logger
-import logzero
 from datetime import datetime
 import demjson
 import os
 from tkinter import filedialog
-from tkinter import *
 import wget
 from device_editor import DeviceEditor
 

@@ -1,5 +1,4 @@
 import requests
-import json
 import urllib.parse
 from logzero import logger
 
@@ -10,18 +9,18 @@ class EZOutlet2:
         self.password = password
 
     def turn_off(self):
-        self.__make_request(control=0)
+        self._make_request(control=0)
 
     def turn_on(self):
-        self.__make_request(control=1)
+        self._make_request(control=1)
 
     def toggle_state(self):
-        self.__make_request(control=2)
+        self._make_request(control=2)
 
     def reset(self):
-        self.__make_request(control=3)
+        self._make_request(control=3)
 
-    def __make_request(self, control):  # control parameters: 0: off, 1: on, 2: toggle state, 3: reset
+    def _make_request(self, control):  # control parameters: 0: off, 1: on, 2: toggle state, 3: reset
         logger.debug('EZOutlet2: make request with control param %s, ip: %s', control, self.ip)
 
         request_content = {
@@ -33,6 +32,8 @@ class EZOutlet2:
 
         request_content_encoded = urllib.parse.urlencode(request_content)
         r = requests.get(f'http://{self.ip}/cgi-bin/control2.cgi?{request_content_encoded}')
+        print(r.request.url)
+
 
         if r.status_code == 200:
             logger.debug('EZOutlet2: request made successfully. control param: %s, ip: %s', control, self.ip)
