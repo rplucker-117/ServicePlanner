@@ -63,6 +63,9 @@ class UtilitiesMenu:
 
         self.contains_kipro = False
 
+        # is the main ui in rehersal mode?
+        self.sound_check_mode: bool = main_ui_window_init.sound_check_mode
+
         for device in self.startup.devices:
             if device['type'] == 'kipro':
                 self.contains_kipro = True
@@ -87,7 +90,17 @@ class UtilitiesMenu:
 
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Open PCO plan in browser', font=(font, other_text_size), command=self._open_pco_plan_in_browser).pack()
 
+        # sound check mode
+        sound_check_mode_frame = Frame(self.utilities_menu, bg=bg_color)
+        sound_check_mode_frame.pack()
+        sound_check_mode_checkbutton = Checkbutton(sound_check_mode_frame, bg=bg_color)
+        sound_check_mode_checkbutton.grid(row=0, column=0)
+        Label(sound_check_mode_frame, text='Sound Check Mode', bg=bg_color, fg=text_color, font=(font, other_text_size)).grid(row=0, column=1)
+        Button(sound_check_mode_frame, text='options', bg=bg_color, fg=text_color).grid(row=0, column=2, padx=5)
+
         self.utilities_menu.mainloop()
+
+
 
     def _open_device_editor(self):
         self.utilities_menu.destroy()
@@ -380,6 +393,8 @@ class MainUI:
         self.plan_cue_buttons: List[Button] = []
 
         self._build_global_cues_button()
+
+        self.sound_check_mode: bool = False
 
     def build_plan_window(self):
         self.plan_window.title('Service Control')
