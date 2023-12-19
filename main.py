@@ -100,7 +100,6 @@ class UtilitiesMenu:
 
         self.utilities_menu.mainloop()
 
-    #
 
 
 
