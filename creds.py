@@ -22,11 +22,10 @@ class Creds:
         with open(self.creds_file, 'w') as f:
             f.writelines(json.dumps(creds))
             f.close()
-        logger.debug('Created creds.json')
+        logger.info('Created creds.json')
 
     def read(self):
         try:
-            logger.debug('attempting to read creds.json')
             with open(self.creds_file, 'r') as f:
                 creds = json.loads(f.read())
                 logger.debug('Read creds.json')
@@ -40,7 +39,5 @@ class Creds:
 
     def check_status(self):
         if not os.path.exists(self.creds_file):
-            logger.debug('creds.json doesnt exist. Creating...')
+            logger.info('creds.json doesnt exist. Creating...')
             self.create()
-        else:
-            logger.debug('creds.json exists! proceeding')
