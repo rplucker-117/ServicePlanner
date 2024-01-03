@@ -472,6 +472,9 @@ class CueHandler:
                         if cue['command_type'] == 'trigger_macro':
                             pp.cue_macro(cue['macro_uuid'])
 
+                    elif device['uuid'] == reminder_uuid:
+                        pass
+
                     else:
                         logger.warning('Received cue not in activate_cues list: %s', cue)
                         pass
