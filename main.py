@@ -406,38 +406,38 @@ class MainUI:
 
         self._build_global_cues_button()
 
-
         # this value should only be written by the below methods
         self.sound_check_mode: bool = False
 
         self.sound_check_mode_frame = Frame(self.plan_window)
         self.sound_check_mode_frame.configure(bg=accent_color_1)
-        Label(self.sound_check_mode_frame, bg=accent_color_1, text='Sound check mode active!', font=(font, 10)).grid(row=0, column=0)
-        Button(self.sound_check_mode_frame, text='Disable', font=(font, 10), command=self.turn_sound_check_mode_off).grid(row=0, column=1)
+        Label(self.sound_check_mode_frame, bg=accent_color_1, text='Sound check mode active!', font=(font, 11)).grid(row=0, column=0)
+        Button(self.sound_check_mode_frame, text='Disable', bg=accent_color_1, font=(font, 11), command=self.turn_sound_check_mode_off).grid(row=0, column=1)
 
         #Use this to keep track of when the utilities menu unit. Close the existing one when user tries to open a new one.
-        #TODO
+
         self.existing_utilities_init: UtilitiesMenu = None
 
-    def turn_sound_check_mode_on(self):
+    def turn_sound_check_mode_on(self) -> None:
         """
         Turn sound check mode on
-        :return:
+        :return: None
         """
         self.sound_check_mode = True
         self.sound_check_mode_frame.grid(row=2, column=0, sticky='ew')
 
-
-    def turn_sound_check_mode_off(self):
+    def turn_sound_check_mode_off(self) -> None:
+        """
+        Turn sound check mode off
+        :return: None
+        """
         self.sound_check_mode = False
         self.sound_check_mode_frame.grid_remove()
 
         try:
             self.existing_utilities_init.sound_check_mode_checkbutton.deselect()
-        except Exception:
-            pass # User closed utilities menu
-
-        # self.existing_utilities_init.sound_check_mode_checkbutton.deselect()
+        except _tkinter.TclError:  # User closed utilities menu
+            pass
 
     def build_plan_window(self):
         self.plan_window.title('Service Control')
@@ -452,22 +452,20 @@ class MainUI:
         self._build_items_view()
         self._build_aux_control()
 
-
         Button(self.clock_frame, bg=bg_color, image=self.update_items_view_icon, command=self.update_items_view).pack(side=RIGHT, padx=10)
 
-        # If a utilities menu is already open, kill it and reopen a new one.
+        # If a utilities menu is already open, kill it and reopen a new one, so only 1 instance is open at a time.
         def open_utilities_menu() -> None:
             try:
                 self.existing_utilities_init.utilities_menu.destroy()
             except Exception as e:
-                print(e)
+                pass
 
             self.existing_utilities_init = UtilitiesMenu(main_ui_window_init=self, startup=self.startup)
             self.existing_utilities_init.open_utilities_menu()
 
             # if self.sound_check_mode:
             #     self.existing_utilities_init.
-
 
 
         # utilities menu button
@@ -1182,10 +1180,31 @@ class MainUI:
         :return: NOon
         """
 
-        logger.debug('__cue called, next=%s', is_next)
+        logger.debug(f'{__class__.__name__}.{self._cue.__name__}: Cueing cues on plan item.')
+        def activate(cuelist: list) -> None:
+            """
+            Activates cuelist in a new thread. If Sound Check Mode is active, ignore cues on specified device(s).
+            :param cuelist: list of cues to activate.
+            :return: None.
+            """
+            ignored_devices = SoundCheckModeOptions.read_sound_check_mode_devices()
+
+            cuelist_minus_ignored = []
+
+            for cue in cuelist:
+                if cue['uuid'] not in ignored_devices:
+                    cuelist_minus_ignored.append(cue)
+
+            if self.sound_check_mode:
+                logger.info(f'{__class__.__name__}.{self._cue.__name__}: Sound check mode is active. Ignoring cues from {len(ignored_devices)} devices.')
+                threading.Thread(target=lambda: self.cue_handler.activate_cues(cuelist=cuelist_minus_ignored)).start()
+            else:
+                threading.Thread(target=lambda: self.cue_handler.activate_cues(cuelist=cuelist)).start()
+
+
         if is_next:
             if 'App Cues' in self.plan_items[self.next_item_index]['notes']:
-                threading.Thread(target=lambda: self.cue_handler.activate_cues(cuelist=self.plan_items[self.next_item_index]['notes']['App Cues']['action_cues'])).start()
+                activate(self.plan_items[self.next_item_index]['notes']['App Cues']['action_cues'])
 
                 # set reminder
                 for cue in self.plan_items[self.next_item_index]['notes']['App Cues']['action_cues']:
@@ -1194,8 +1213,8 @@ class MainUI:
                         self._set_reminder(reminder_time=time, reminder_text=cue['reminder'])
         if not is_next:
             if 'App Cues' in self.plan_items[self.previous_item_index]['notes']:
-                logger.debug('App cues found in %s, sending to cue_handler: %s', self.plan_items[self.previous_item_index]['title'], self.plan_items[self.previous_item_index]['notes']['App Cues'])
-                threading.Thread(target=lambda: self.cue_handler.activate_cues(cuelist=self.plan_items[self.previous_item_index]['notes']['App Cues']['action_cues'])).start()
+
+                activate(self.plan_items[self.previous_item_index]['notes']['App Cues']['action_cues'])
 
                 # set reminder
                 for cue in self.plan_items[self.previous_item_index]['notes']['App Cues']['action_cues']:
