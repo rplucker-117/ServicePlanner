@@ -36,6 +36,7 @@ from global_cues import GlobalCues
 from typing import List, Dict
 import webbrowser
 from persistent_plan_data import PersistentPlanData
+from sound_check_mode_options import SoundCheckModeOptions
 
 abs_path = os.path.dirname(__file__)
 
@@ -63,14 +64,17 @@ class UtilitiesMenu:
 
         self.contains_kipro = False
 
-        # is the main ui in rehersal mode?
-        self.sound_check_mode: bool = main_ui_window_init.sound_check_mode
-
         for device in self.startup.devices:
-            if device['type'] == 'kipro':
+            if device['type'] == 'kipro' and device['uuid'] != all_kipros_uuid:
                 self.contains_kipro = True
 
         self.kipro = KiPro()
+
+
+        self.sound_check_mode_frame = Frame(self.utilities_menu, bg=bg_color)
+        self.sound_check_checkbutton_value = IntVar(self.sound_check_mode_frame)
+        self.sound_check_mode_checkbutton = Checkbutton(self.sound_check_mode_frame, bg=bg_color, variable=self.sound_check_checkbutton_value,command=lambda: self._sound_check_mode_checked(bool(self.sound_check_checkbutton_value.get())))
+
 
     def open_utilities_menu(self):
         # self.utilities_menu.geometry('400x450')
@@ -90,17 +94,24 @@ class UtilitiesMenu:
 
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Open PCO plan in browser', font=(font, other_text_size), command=self._open_pco_plan_in_browser).pack()
 
-        # sound check mode
-        sound_check_mode_frame = Frame(self.utilities_menu, bg=bg_color)
-        sound_check_mode_frame.pack()
-        sound_check_mode_checkbutton = Checkbutton(sound_check_mode_frame, bg=bg_color)
-        sound_check_mode_checkbutton.grid(row=0, column=0)
-        Label(sound_check_mode_frame, text='Sound Check Mode', bg=bg_color, fg=text_color, font=(font, other_text_size)).grid(row=0, column=1)
-        Button(sound_check_mode_frame, text='options', bg=bg_color, fg=text_color).grid(row=0, column=2, padx=5)
+        self.sound_check_mode_frame.pack()
+        self.sound_check_mode_checkbutton.grid(row=0, column=0)
+        Label(self.sound_check_mode_frame, text='Sound Check Mode', bg=bg_color, fg=text_color,font=(font, other_text_size)).grid(row=0, column=1)
+        Button(self.sound_check_mode_frame, text='options', bg=bg_color, fg=text_color, command=lambda: SoundCheckModeOptions().open_sound_check_mode_options_menu()).grid(row=0, column=2, padx=5)
 
         self.utilities_menu.mainloop()
 
+    def _sound_check_mode_checked(self, status: bool) -> None:
+        """
+        Called when the sound check mode checkbutton is clicked by the user.
+        :param status: status of the button
+        :return: None
+        """
 
+        if status:
+            self.main_ui_window.turn_sound_check_mode_on()
+        else:
+            self.main_ui_window.turn_sound_check_mode_off()
 
 
     def _open_device_editor(self):
@@ -368,7 +379,7 @@ class MainUI:
 
         self.plan_items_canvas.create_window(0, 0, anchor='nw', window=self.service_plan_frame)
 
-        self.plan_items_canvas.grid(row=2, column=0)
+        self.plan_items_canvas.grid(row=3, column=0)
 
         # height of all plan item frames added together
         self.service_plan_frame_height = None
@@ -395,7 +406,38 @@ class MainUI:
 
         self._build_global_cues_button()
 
+
+        # this value should only be written by the below methods
         self.sound_check_mode: bool = False
+
+        self.sound_check_mode_frame = Frame(self.plan_window)
+        self.sound_check_mode_frame.configure(bg=accent_color_1)
+        Label(self.sound_check_mode_frame, bg=accent_color_1, text='Sound check mode active!', font=(font, 10)).grid(row=0, column=0)
+        Button(self.sound_check_mode_frame, text='Disable', font=(font, 10), command=self.turn_sound_check_mode_off).grid(row=0, column=1)
+
+        #Use this to keep track of when the utilities menu unit. Close the existing one when user tries to open a new one.
+        #TODO
+        self.existing_utilities_init: UtilitiesMenu = None
+
+    def turn_sound_check_mode_on(self):
+        """
+        Turn sound check mode on
+        :return:
+        """
+        self.sound_check_mode = True
+        self.sound_check_mode_frame.grid(row=2, column=0, sticky='ew')
+
+
+    def turn_sound_check_mode_off(self):
+        self.sound_check_mode = False
+        self.sound_check_mode_frame.grid_remove()
+
+        try:
+            self.existing_utilities_init.sound_check_mode_checkbutton.deselect()
+        except Exception:
+            pass # User closed utilities menu
+
+        # self.existing_utilities_init.sound_check_mode_checkbutton.deselect()
 
     def build_plan_window(self):
         self.plan_window.title('Service Control')
@@ -413,8 +455,23 @@ class MainUI:
 
         Button(self.clock_frame, bg=bg_color, image=self.update_items_view_icon, command=self.update_items_view).pack(side=RIGHT, padx=10)
 
-        Button(self.clock_frame, bg=bg_color, image=self.gear_icon, command=lambda:
-            UtilitiesMenu(main_ui_window_init=self, startup=self.startup).open_utilities_menu()).pack(side=RIGHT, padx=10)
+        # If a utilities menu is already open, kill it and reopen a new one.
+        def open_utilities_menu() -> None:
+            try:
+                self.existing_utilities_init.utilities_menu.destroy()
+            except Exception as e:
+                print(e)
+
+            self.existing_utilities_init = UtilitiesMenu(main_ui_window_init=self, startup=self.startup)
+            self.existing_utilities_init.open_utilities_menu()
+
+            # if self.sound_check_mode:
+            #     self.existing_utilities_init.
+
+
+
+        # utilities menu button
+        Button(self.clock_frame, bg=bg_color, image=self.gear_icon, command=open_utilities_menu).pack(side=RIGHT, padx=10)
 
         if display_kipros:
             self._build_kipro_status()
@@ -1001,7 +1058,7 @@ class MainUI:
                     ).pack(side=RIGHT)
 
     def _build_kipro_status(self):
-        self.kipro_control_frame.grid(row=2, column=2, sticky='n')
+        self.kipro_control_frame.grid(row=3, column=2, sticky='n')
 
         # Buttons
         for kipro_unit in self.all_kipros:
@@ -1108,7 +1165,7 @@ class MainUI:
         self.service_plan_frame.configure(height=self.service_plan_frame_height+50)
         self.items_view_scrollbar = Scrollbar(self.plan_window, command=self.plan_items_canvas.yview)
         self.plan_items_canvas.configure(scrollregion=self.plan_items_canvas.bbox('all'), yscrollcommand=self.items_view_scrollbar.set)
-        self.items_view_scrollbar.grid(row=2, column=1, sticky='nsw')
+        self.items_view_scrollbar.grid(row=3, column=1, sticky='nsw')
 
         self.service_plan_frame.bind_all('<MouseWheel>', self._on_mousewheel)
 
