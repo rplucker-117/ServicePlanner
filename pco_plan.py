@@ -656,7 +656,7 @@ class PcoPlan:
         else:
             return self._create_plan_app_cue(app_cue)
 
-    def remove_item_app_cue(self, item_id) -> None:
+    def remove_item_app_cue(self, item_id: int) -> None:
         """
         Remove app cues on an item. Deletes the entire note.
         :param item_id: id of the item to remove the note with the name "App Cues" from.
@@ -688,6 +688,20 @@ class PcoPlan:
         for item in plan_items:
             if 'App Cues' in item['notes']:
                 self.remove_item_app_cue(item_id=item['id'])
+
+    def update_plan_item_length(self, item_id: int, length: int) -> None:
+        """
+        Update the length of a plan item
+        :param item_id: item id derived from PCO
+        :param length: New length in seconds
+        :return: None
+        """
+
+        logger.debug(f'{__class__.__name__}.{self.update_plan_item_length.__name__}: Changing item {item_id} to length {length}')
+
+        payload = {'data': {'attributes': {'length': length}}}
+
+        self.make_patch_request_to_endpoint(f'/services/v2/service_types/{self.service_type}/plans/{self.plan_id}/items/{item_id}', payload=payload)
 
     def include_all_items_in_live(self) -> None:
         """
@@ -854,5 +868,6 @@ class PcoPlan:
 
 
 if __name__ == '__main__':
-    plan = PcoPlan(service_type=824571, plan_id=67844080)
-    pprint(plan.make_get_request_to_endpoint(endpoint='/services/v2/service_types/?&per_page=100'))
+    plan = PcoPlan(service_type=824571, plan_id=69588807)
+    # pprint(plan.make_get_request_to_endpoint(endpoint='/services/v2/service_types/?&per_page=100'))
+    plan.update_plan_item_length(item_id=938504077, length=1500)
