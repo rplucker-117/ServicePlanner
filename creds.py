@@ -28,7 +28,6 @@ class Creds:
         try:
             with open(self.creds_file, 'r') as f:
                 creds = json.loads(f.read())
-                logger.debug('Read creds.json')
                 f.close()
                 return creds
 
