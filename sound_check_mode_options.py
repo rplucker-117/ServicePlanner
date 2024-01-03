@@ -29,6 +29,7 @@ class SoundCheckModeOptions:
 
         with open(path.join(path.dirname(__file__), 'configs', 'sound_check_mode_devices.json'), 'w') as f:
             f.write(json.dumps(self.ignored_devices))
+            logger.info(f'{__class__.__name__}.{self._write_changes_to_disk.__name__}: Wrote new sound check mode devices to disk.')
 
     def _okay(self, callback: Union[None, Callable]) -> None:
         """
