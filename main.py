@@ -99,6 +99,9 @@ class UtilitiesMenu:
         Label(self.sound_check_mode_frame, text='Sound Check Mode', bg=bg_color, fg=text_color,font=(font, other_text_size)).grid(row=0, column=1)
         Button(self.sound_check_mode_frame, text='options', bg=bg_color, fg=text_color, command=lambda: SoundCheckModeOptions().open_sound_check_mode_options_menu()).grid(row=0, column=2, padx=5)
 
+        if self.main_ui_window.sound_check_mode:
+            self.sound_check_mode_checkbutton.select()
+
         self.utilities_menu.mainloop()
 
     def _sound_check_mode_checked(self, status: bool) -> None:
