@@ -20,6 +20,7 @@ from aja_kumo import AJAKumo
 from pco_plan import PcoPlan
 from propresenter import ProPresenter
 from general_networking import is_host_online
+import tkinter.messagebox
 
 
 class CueCreator:
@@ -41,7 +42,7 @@ class CueCreator:
 
         self.cue_handler = CueHandler(devices=devices)
         self.main_ui = ui
-        self.pco_plan = ui.pco_plan
+        self.pco_plan: PcoPlan = ui.pco_plan
 
         # this is set by create_plan_item_cue when editing an item cue
         self.input_item: dict
@@ -369,6 +370,22 @@ class CueCreator:
 
             if self.current_cues['advance_to_next_automatically']:
                 self.auto_advance_to_next_checkbutton.select()
+
+            # Change item length buttons
+            self.update_item_length_frame = Frame(self.current_cues_frame, bg=bg_color)
+            self.update_item_length_frame.grid(row=3, column=1, sticky='w')
+
+            self.update_item_length = IntVar(self.update_item_length_frame)
+            self.update_item_length_checkbutton = Checkbutton(self.update_item_length_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), variable=self.update_item_length, selectcolor=bg_color, text='Update Item Length:')
+            self.update_item_length_checkbutton.grid(row=0, column=0)
+
+            self.update_minutes = Entry(self.update_item_length_frame, bg=bg_color, font=(font, 11), fg=text_color, width=3)
+            self.update_minutes.grid(row=0, column=1)
+
+            self.update_seconds = Entry(self.update_item_length_frame, bg=bg_color, font=(font, 11), fg=text_color, width=3)
+            self.update_seconds.grid(row=0, column=3)
+
+            Label(self.update_item_length_frame, bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', justify='left', text=':').grid(row=0, column=2)
 
         # move selected cue up/down
         Button(self.move_up_down_frame, bg=bg_color, fg=text_color, font=(font, options_button_text_size),
@@ -1928,6 +1945,11 @@ class CueCreator:
         logger.debug('add cues button pressed')
 
         if self.type_of_cues_being_edited == 'item':
+            if bool(self.update_item_length):
+
+                seconds = int(self.update_minutes.get())*60 + int(self.update_seconds.get())
+                self.pco_plan.update_plan_item_length(item_id=self.input_item['id'], length=seconds)
+
             # update auto advance to next cue in main current_cues dict
             self.current_cues['advance_to_next_automatically'] = self.auto_advance_to_next.get()
 
