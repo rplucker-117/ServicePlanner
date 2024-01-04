@@ -1079,7 +1079,7 @@ class MainUI:
 
     def _build_qlxd_ui(self):
         self.qlxd = ShureQLXDUi(devices=self.startup.devices, ui=self, inits=self.startup.qlxd_class_inits)
-        self.qlxd_frame.grid(row=5, column=0, sticky='e')
+        self.qlxd_frame.grid(row=6, column=0, sticky='e')
         self.qlxd_frame.configure(height=60, width=plan_item_frame_width)
 
         self.qlxd.main_loop()
@@ -1101,7 +1101,7 @@ class MainUI:
 
             # pco_plan.validate_plan_cues can return none if invalid data is found
             if plan_app_cues_validated is not None:
-                self.plan_cues_frame.grid(row=3, column=0)
+                self.plan_cues_frame.grid(row=4, column=0)
 
                 self.plan_cues = self.convert_plan_app_cues_to_dict(plan_app_cues_validated)
 
@@ -1136,7 +1136,7 @@ class MainUI:
         Builds buttons for next/previous
         :return: None.
         """
-        self.aux_controls_frame.grid(row=4, column=0)
+        self.aux_controls_frame.grid(row=5, column=0)
         self.aux_controls_frame.configure(height=60, width=plan_item_frame_width)
 
         Button(self.aux_controls_frame, bg=accent_color_1, fg=accent_text_color, text='Previous (no actions)', font=(accent_text_font, 10), command=lambda: self.previous(cue_items=False)).grid(row=1, column=1, padx=next_previous_pad_x)
