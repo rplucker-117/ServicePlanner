@@ -1945,7 +1945,7 @@ class CueCreator:
         logger.debug('add cues button pressed')
 
         if self.type_of_cues_being_edited == 'item':
-            if bool(self.update_item_length):
+            if bool(self.update_item_length.get()):
 
                 seconds = int(self.update_minutes.get())*60 + int(self.update_seconds.get())
                 self.pco_plan.update_plan_item_length(item_id=self.input_item['id'], length=seconds)
