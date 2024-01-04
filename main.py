@@ -77,7 +77,6 @@ class UtilitiesMenu:
 
 
     def open_utilities_menu(self):
-        # self.utilities_menu.geometry('400x450')
         self.utilities_menu.configure(bg=bg_color)
 
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Advance to Next Service', font=(font, other_text_size), command=self._advance_to_next_service).pack()
