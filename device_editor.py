@@ -120,6 +120,10 @@ class DeviceEditor:
             f.writelines(json.dumps(self.devices))
 
         self.device_editor_window.destroy()
+
+        tkinter.messagebox.showinfo('Saved',
+                                     message=f'Changes Saved. You muse restart the main application for changes to take effect.')
+
         exit()
 
     def _add_device(self, device): # Adds date added and UUID to device info, adds to main devices dict, updates listbox
@@ -229,8 +233,6 @@ class DeviceEditor:
             edit_device_window.destroy()
 
         Button(edit_device_window, bg=bg_color, fg=text_color, font=(font, 13), text='Okay', command=okay).pack()
-
-
 
     def _verify_ip(self, ip):
         try:
