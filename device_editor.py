@@ -10,6 +10,7 @@ import socket
 from datetime import datetime
 from shutil import copyfile
 from midi import Midi
+import tkinter.messagebox
 
 
 class DeviceEditor:
@@ -21,7 +22,6 @@ class DeviceEditor:
             logger.debug('DeviceEditor.__init__: devices.json exists. Reading...')
             with open(os.path.join('configs', 'devices.json'), 'r') as f:
                 self.devices = json.loads(f.read())
-            logger.debug('DeviceEditor.__init__: devices.json contents: %s', self.devices)
         else:
             logger.info('DeviceEditor.__init__: devices.json does not exist. Setting to empty list, with reminder and pause.')
             self.devices = []
@@ -93,6 +93,7 @@ class DeviceEditor:
         Button(self.device_editor_window, text='Add New Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._add_new_device_window).pack(side=LEFT, padx=10)
         Button(self.device_editor_window, text='Remove Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._remove_device).pack(side=LEFT, padx=10)
         Button(self.device_editor_window, text='Show details', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._show_details).pack(side=LEFT, padx=10)
+        Button(self.device_editor_window, text='Edit Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._edit_device).pack(side=LEFT, padx=10)
         Button(self.device_editor_window, text='Save', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._update_devices_file).pack(side=RIGHT, padx=10)
 
         self.root.mainloop()
@@ -156,6 +157,80 @@ class DeviceEditor:
         for field in self.devices[selected_device_index].keys():
             Label(details_window, bg=bg_color, fg=text_color,
                   text=f'{field} : {self.devices[selected_device_index][field]}', font=(font, other_text_size)).pack()
+
+    def _edit_device(self):
+        """
+        Edit the details of an existing device
+        :return: None
+        """
+        edit_device_window = Tk()
+        edit_device_window.configure(bg=bg_color)
+
+
+        selected_device_index = self.devices_listbox.curselection()[0] + 3
+        selected_device = self.devices[selected_device_index]
+
+        edit_device_window.title(f'Edit {selected_device["user_name"]}')
+
+        # We only want the user to be able to edit these aspects of the data
+        editable_characteristics = {'user_name', 'ip_address', 'port', 'username', 'password', 'rosstalk_port'}
+
+        included_characteristics: set[str] = set()
+
+        for key in selected_device.keys():
+            if key in editable_characteristics:
+                included_characteristics.add(key)
+
+        user_facing_characteristic_names = {
+            'ip_address': 'IP Address',
+            'user_name': 'Name',
+            'port': 'Port',
+            'username': 'Username',
+            'password': 'Password',
+            'rosstalk_port': 'Rosstalk Port',
+        }
+
+        user_entry_vars = []
+
+        for characteristic in included_characteristics:
+            Label(edit_device_window, bg=bg_color, fg=text_color, font=(font, 12), text=f'{user_facing_characteristic_names[characteristic]}:').pack(anchor='w')
+
+            user_entry = Entry(edit_device_window, bg=bg_color, font=(font, 12), fg=text_color)
+            user_entry_vars.append(user_entry)
+            user_entry.insert(0, selected_device[characteristic])
+            user_entry.pack(anchor='w')
+
+        def show_error(message: str) -> None:
+            tkinter.messagebox.showerror('Error', message=message)
+
+        def okay():
+            is_errored = False
+
+            for i, characteristic in enumerate(included_characteristics):
+                if characteristic == 'ip_address':
+                    if not self._verify_ip(user_entry_vars[i].get()):
+                        is_errored = True
+                        show_error('IP address not valid')
+                if characteristic == 'port':
+                    if not self._verify_port(user_entry_vars[i].get()):
+                        is_errored = True
+                        show_error('Port not valid')
+                if characteristic == 'rosstalk_port':
+                    if not self._verify_port(user_entry_vars[i].get()):
+                        is_errored = True
+                        show_error('Rosstalk port not valid')
+
+            # change class data using Tk Entries dynamically created before
+            if not is_errored:
+                for i, characteristic in enumerate(included_characteristics):
+                    self.devices[selected_device_index][characteristic] = user_entry_vars[i].get()
+
+            self._update_existing_devices()
+            edit_device_window.destroy()
+
+        Button(edit_device_window, bg=bg_color, fg=text_color, font=(font, 13), text='Okay', command=okay).pack()
+
+
 
     def _verify_ip(self, ip):
         try:
