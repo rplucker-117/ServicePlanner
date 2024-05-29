@@ -1019,9 +1019,9 @@ class MainUI:
             if not self.time_remaining_is_positive:
                 self.current_item_timer_input += 1
                 time_label.configure(fg=clock_overrun_color)
-            else:
+            else: # color green
                 self.current_item_timer_input -= 1
-                time_label.configure(fg=clock_text_color)
+                time_label.configure(fg='#317c42')
 
             time_string = time.strftime('%M:%S', time.gmtime(self.current_item_timer_input))
             time_label.configure(text=time_string)
