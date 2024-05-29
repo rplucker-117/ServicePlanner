@@ -75,6 +75,8 @@ class UtilitiesMenu:
         self.sound_check_checkbutton_value = IntVar(self.sound_check_mode_frame)
         self.sound_check_mode_checkbutton = Checkbutton(self.sound_check_mode_frame, bg=bg_color, variable=self.sound_check_checkbutton_value,command=lambda: self._sound_check_mode_checked(bool(self.sound_check_checkbutton_value.get())))
 
+        self.delay_advance_to_next_schedule_frame = Frame(self.utilities_menu, bg=bg_color)
+
 
     def open_utilities_menu(self):
         self.utilities_menu.configure(bg=bg_color)
@@ -98,6 +100,54 @@ class UtilitiesMenu:
         Label(self.sound_check_mode_frame, text='Sound Check Mode', bg=bg_color, fg=text_color,font=(font, other_text_size)).grid(row=0, column=1)
         Button(self.sound_check_mode_frame, text='options', bg=bg_color, fg=text_color, command=lambda: SoundCheckModeOptions().open_sound_check_mode_options_menu()).grid(row=0, column=2, padx=5)
 
+        self.delay_advance_to_next_schedule_frame.pack()
+        Label(self.delay_advance_to_next_schedule_frame, text='Delay Advance To Next Schedule By:', bg=bg_color, fg=text_color,font=(font, other_text_size)).grid(row=0, column=1)
+
+        delay_minutes_entry = Entry(self.delay_advance_to_next_schedule_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), width=3)
+        delay_minutes_entry.grid(row=0, column=2)
+        delay_minutes_entry.insert(0, '00')
+
+        Label(self.delay_advance_to_next_schedule_frame, text=':', bg=bg_color, fg=text_color, font=(font, other_text_size)).grid(row=0, column=3)
+
+        delay_seconds_entry = Entry(self.delay_advance_to_next_schedule_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), width=3, )
+        delay_seconds_entry.grid(row=0, column=4)
+        delay_seconds_entry.insert(0, '00')
+
+        def delay_okay_pressed() -> int:
+            """
+            Called when user presses "set" on "delay advance to next" settings. Validates user input.
+            :return: int of minutes + seconds
+            """
+
+            minutes_entered = delay_minutes_entry.get()
+            seconds_entered = delay_seconds_entry.get()
+
+            if minutes_entered == '':
+                minutes_entered = 0
+            if seconds_entered == '':
+                seconds_entered = 0
+
+            try:
+                minutes = int(minutes_entered)
+                seconds = int(seconds_entered)
+
+                return minutes*60 + seconds
+            except ValueError:  # User entered some garbage
+                messagebox.showerror(title='Invalid Entry', message='You entered an invalid value')
+
+                # clear entries and reset them back to their default values
+                delay_minutes_entry.delete(0, len(minutes_entered))
+                delay_seconds_entry.delete(0, len(seconds_entered))
+
+                delay_minutes_entry.insert(0, '00')
+                delay_seconds_entry.insert(0, '00')
+
+                # Bring utilities menu back to front
+                self.utilities_menu.lift()
+
+
+        Button(self.delay_advance_to_next_schedule_frame, text='Set', bg=bg_color, fg=text_color, command=lambda: self._delay_advance_to_next_schedule(delay_okay_pressed())).grid(row=0, column=5)
+
         if self.main_ui_window.sound_check_mode:
             self.sound_check_mode_checkbutton.select()
 
@@ -114,6 +164,19 @@ class UtilitiesMenu:
             self.main_ui_window.turn_sound_check_mode_on()
         else:
             self.main_ui_window.turn_sound_check_mode_off()
+
+    def _delay_advance_to_next_schedule(self, seconds: int) -> None:
+        """
+        Called when the status of delay advance to next schedule checkbutton is clicked by the user.
+        :param seconds: amount of seconds to delay
+        :return: None
+        """
+
+        if seconds <= 0:
+            pass
+        else:
+            self.main_ui_window.delay_advance_to_next_schedule(seconds)
+            self.utilities_menu.destroy()
 
 
     def _open_device_editor(self):
@@ -381,7 +444,7 @@ class MainUI:
 
         self.plan_items_canvas.create_window(0, 0, anchor='nw', window=self.service_plan_frame)
 
-        self.plan_items_canvas.grid(row=3, column=0)
+        self.plan_items_canvas.grid(row=4, column=0)
 
         # height of all plan item frames added together
         self.service_plan_frame_height = None
@@ -417,8 +480,16 @@ class MainUI:
         Button(self.sound_check_mode_frame, text='Disable', bg=accent_color_1, font=(font, 11), command=self.turn_sound_check_mode_off).grid(row=0, column=1)
 
         #Use this to keep track of when the utilities menu unit. Close the existing one when user tries to open a new one.
-
         self.existing_utilities_init: UtilitiesMenu = None
+
+        self.advance_to_next_schedule_has_been_delayed: bool = False
+        self.advance_to_next_delay: int = 0
+
+        self.advance_delay_frame = Frame(self.plan_window)
+        self.advance_delay_frame.configure(bg=accent_color_1)
+        self.advance_delay_label = Label(self.advance_delay_frame, bg=accent_color_1, font=(font, 11))
+        self.advance_delay_label.grid(row=0, column=0)
+        Button(self.advance_delay_frame, text='Disable', bg=accent_color_1, font=(font, 11), command=self._turn_off_delay_advance_to_next_schedule).grid(row=0, column=1)
 
     def turn_sound_check_mode_on(self) -> None:
         """
@@ -440,6 +511,30 @@ class MainUI:
             self.existing_utilities_init.sound_check_mode_checkbutton.deselect()
         except _tkinter.TclError:  # User closed utilities menu
             pass
+
+    def delay_advance_to_next_schedule(self, seconds: int) -> None:
+        """
+        Delays all advance to next on time schedules by x seconds.
+        :param seconds: Amount of seconds to delay
+        :return: None
+        """
+        logger.info(f'{__class__.__name__}.{self.delay_advance_to_next_schedule.__name__}: Enabling delay advance to next schedule with {seconds} seconds.')
+
+        self.advance_to_next_schedule_has_been_delayed = True
+        self.advance_to_next_delay = seconds
+
+
+        self.advance_delay_label.configure(text=f'Advance To Next Schedule Delayed by {time.strftime("%M:%S", time.gmtime(seconds))}')
+        self.advance_delay_frame.grid(row=3, column=0, sticky='ew')
+
+    def _turn_off_delay_advance_to_next_schedule(self) -> None:
+        """
+        Turn off the delay advance to next schedule
+        :return: None
+        """
+        self.advance_to_next_schedule_has_been_delayed = False
+        self.advance_to_next_delay = 0
+        self.advance_delay_frame.grid_remove()
 
     def build_plan_window(self):
         self.plan_window.title('Service Control')
@@ -796,7 +891,12 @@ class MainUI:
             Label(self.current_service_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Current Live Service:  ').grid(row=0, column=0)
             Label(self.current_service_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text=current_service_time['local']).grid(row=0, column=1)
 
-    def _build_clock(self):  # also checks for advance to next cues on each tick
+    def _build_clock(self):
+        """
+        Builds main clock at the top of the window.
+        Also checks for advance to next cues.
+        :return:
+        """
         time_label = Label(self.clock_frame,
                            fg=clock_text_color,
                            bg=bg_color,
@@ -839,8 +939,13 @@ class MainUI:
                                         soonest_advance_time_index = iteration
 
                     countdown = find_difference(current_item_notes['App Cues']['advance_to_next_on_time'][soonest_advance_time_index])
+
+                    # auto advance delay
+                    if self.advance_to_next_schedule_has_been_delayed:
+                        countdown += self.advance_to_next_delay
+
                     if countdown == 0 and not self.auto_advance_on_time_cancelled_by_user:  # advance to next
-                        logger.debug(f'Auto advancing to next')
+                        logger.info(f'Auto advancing to next on time')
                         self.next(cue_items=True)
                     if countdown == 0:
                         self.auto_advance_on_time_cancelled_by_user = False
@@ -1058,7 +1163,7 @@ class MainUI:
                     ).pack(side=RIGHT)
 
     def _build_kipro_status(self):
-        self.kipro_control_frame.grid(row=3, column=2, sticky='n')
+        self.kipro_control_frame.grid(row=4, column=2, sticky='n')
 
         # Buttons
         for kipro_unit in self.all_kipros:
@@ -1079,7 +1184,7 @@ class MainUI:
 
     def _build_qlxd_ui(self):
         self.qlxd = ShureQLXDUi(devices=self.startup.devices, ui=self, inits=self.startup.qlxd_class_inits)
-        self.qlxd_frame.grid(row=6, column=0, sticky='e')
+        self.qlxd_frame.grid(row=7, column=0, sticky='e')
         self.qlxd_frame.configure(height=60, width=plan_item_frame_width)
 
         self.qlxd.main_loop()
@@ -1101,7 +1206,7 @@ class MainUI:
 
             # pco_plan.validate_plan_cues can return none if invalid data is found
             if plan_app_cues_validated is not None:
-                self.plan_cues_frame.grid(row=4, column=0)
+                self.plan_cues_frame.grid(row=5, column=0)
 
                 self.plan_cues = self.convert_plan_app_cues_to_dict(plan_app_cues_validated)
 
@@ -1136,7 +1241,7 @@ class MainUI:
         Builds buttons for next/previous
         :return: None.
         """
-        self.aux_controls_frame.grid(row=5, column=0)
+        self.aux_controls_frame.grid(row=6, column=0)
         self.aux_controls_frame.configure(height=60, width=plan_item_frame_width)
 
         Button(self.aux_controls_frame, bg=accent_color_1, fg=accent_text_color, text='Previous (no actions)', font=(accent_text_font, 10), command=lambda: self.previous(cue_items=False)).grid(row=1, column=1, padx=next_previous_pad_x)
@@ -1165,7 +1270,7 @@ class MainUI:
         self.service_plan_frame.configure(height=self.service_plan_frame_height+50)
         self.items_view_scrollbar = Scrollbar(self.plan_window, command=self.plan_items_canvas.yview)
         self.plan_items_canvas.configure(scrollregion=self.plan_items_canvas.bbox('all'), yscrollcommand=self.items_view_scrollbar.set)
-        self.items_view_scrollbar.grid(row=3, column=1, sticky='nsw')
+        self.items_view_scrollbar.grid(row=4, column=1, sticky='nsw')
 
         self.service_plan_frame.bind_all('<MouseWheel>', self._on_mousewheel)
 
