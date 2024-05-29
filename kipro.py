@@ -100,11 +100,7 @@ class KiPro:
 
             returned_data = r.text[:-2]
 
-            #returned_data looks like """[
-                # { clipname: "REC1_2024_05_26-09_56_1.mov", timestamp: "05/26/24 08:38:47", fourcc: "apcs", width: "1920", height: "1080", framecount: "150568", framerate: "29.97", interlace: "1" }
-                # , { clipname: "REC1_2024_05_26-11_26_1.mov", timestamp: "05/26/24 10:10:36", fourcc: "apcs", width: "1920", height: "1080", framecount: "153863", framerate: "29.97", interlace: "1" }
-                # ]"""
-
+            # Data returned from kipro is not in correct json format, we have to correct it and put quotes around the keys
             for old_word, new_word in zip(
                     ('clipname', 'timestamp', 'fourcc', 'width', 'height', 'framecount', 'framerate', 'interlace'),
                     (r'"clipname"', '"timestamp"', '"fourcc"', '"width"', '"height"', '"framecount"', '"framerate"', '"interlace"')):
