@@ -549,7 +549,7 @@ class MainUI:
         self._build_items_view()
         self._build_aux_control()
 
-        Button(self.clock_frame, bg=bg_color, image=self.update_items_view_icon, command=self.update_items_view).pack(side=RIGHT, padx=10)
+
 
         # If a utilities menu is already open, kill it and reopen a new one, so only 1 instance is open at a time.
         def open_utilities_menu() -> None:
@@ -566,7 +566,10 @@ class MainUI:
 
 
         # utilities menu button
-        Button(self.clock_frame, bg=bg_color, image=self.gear_icon, command=open_utilities_menu).pack(side=RIGHT, padx=10)
+        Button(self.clock_frame, bg=bg_color, image=self.gear_icon, command=open_utilities_menu).grid(row=0, column=2, padx=10)
+
+        #refresh button
+        Button(self.clock_frame, bg=bg_color, image=self.update_items_view_icon, command=self.update_items_view).grid(row=0, column=3, padx=10)
 
         if display_kipros:
             self._build_kipro_status()
@@ -609,6 +612,8 @@ class MainUI:
 
         self.pco_live.go_to_next_item()
         self.update_live()
+
+
 
     def previous(self, cue_items, from_web=False):
         logger.debug('Previous button pressed. Previous item index: %s', self.previous_item_index)
@@ -902,7 +907,11 @@ class MainUI:
                            bg=bg_color,
                            font=(clock_text_font, clock_text_size))
         self.clock_frame.grid(row=1, column=0, sticky='w')
-        time_label.pack(side=LEFT)
+        time_label.grid(row=0, column=0, padx=10)
+
+        auto_advance_time_remaining_label = Label(self.clock_frame, fg=accent_color_1, bg=bg_color, font=(clock_text_font, 10), text='')
+        auto_advance_time_remaining_label.grid(row=1, column=0, sticky='W', padx=10)
+
 
         # udpates clock and checks for advance to next cues
         def tick():
@@ -944,6 +953,9 @@ class MainUI:
                     if self.advance_to_next_schedule_has_been_delayed:
                         countdown += self.advance_to_next_delay
 
+                    auto_advance_time_remaining_label.configure(text=f'Advancing to next item in {time.strftime("%H:%M:%S", time.gmtime(countdown))}')
+
+
                     if countdown == 0 and not self.auto_advance_on_time_cancelled_by_user:  # advance to next
                         logger.info(f'Auto advancing to next on time')
                         self.next(cue_items=True)
@@ -956,6 +968,10 @@ class MainUI:
 
                 # advance to next automatically after the current item finishes
                 if current_item_notes['App Cues']['advance_to_next_automatically'] is True:
+
+                    # small auto advance label if it hasn't been cancelled
+                    if not self.auto_advance_on_time_cancelled_by_user and self.current_item_timer_input >= 0:
+                        auto_advance_time_remaining_label.configure(text=f'Advancing to next item in {time.strftime("%H:%M:%S", time.gmtime(self.current_item_timer_input))}')
 
                     # if current item timer is greater than 0 and less than 30, time remaining is positive, and has not been cancelled
                     if 0 < self.current_item_timer_input <= 30 and self.time_remaining_is_positive and not self.auto_advance_automatically_cancelled_by_user:
@@ -970,6 +986,8 @@ class MainUI:
                         self.auto_advance_reminder_frame.place_forget()
             else:
                 self.auto_advance_reminder_frame.place_forget()
+                auto_advance_time_remaining_label.configure(text='')
+
 
         tick()
 
@@ -992,7 +1010,7 @@ class MainUI:
                            fg=clock_text_color,
                            bg=bg_color,
                            font=(clock_text_font, clock_text_size))
-        time_label.pack(side=LEFT, padx=50)
+        time_label.grid(row=0, column=1, padx=10)
 
         def tick():
             if self.current_item_timer_input == 0:
@@ -1015,7 +1033,7 @@ class MainUI:
         def open_global_cues_window() -> None:
             GlobalCues().open_global_cues_window()
         Button(self.clock_frame, bg=bg_color, fg=text_color, font=(font, other_text_size),
-               text='Global Cues', command=open_global_cues_window).pack(side=RIGHT, padx=15)
+               text='Global Cues', command=open_global_cues_window).grid(row=0, column=4, padx=10)
 
     def _build_items_view(self):
 
