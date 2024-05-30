@@ -272,9 +272,25 @@ class PVP:
 
         return None
 
+    def get_layer_name_from_uuid(self, layer_uuid: str) -> str | None:
+        """
+        Get the human readable name of a layer given the layer uuid. If layer does not exist, None is returned.
+        :param layer_uuid: uuid of layer
+        :return: string of the name
+        """
+        logger.debug(f'{__class__.__name__}.{self.get_layer_name_from_uuid.__name__}: Getting layer name from uuid {layer_uuid} on machine {self.ip}:{self.port}')
+
+        layer = self._make_get_request(f'/data/layer/{layer_uuid}')
+
+        if layer == 400:
+            return None
+
+        return layer['layer']['name']
+
+
 if __name__ == '__main__':
     pvp = PVP(ip='10.1.60.91', port=49343)
-    print(pvp.cue_name_from_uuids(playlist_uuid='FDE14BF5-22BB-4499-8EFB-373C0743B15E', cue_uuid='3A173EFA-50FD-4705-9ABB-E9CDC9F96CC5'))
-
+    # print(pvp.cue_name_from_uuids(playlist_uuid='FDE14BF5-22BB-4499-8EFB-373C0743B15E', cue_uuid='3A173EFA-50FD-4705-9ABB-E9CDC9F96CC5'))
+    pvp.get_layer_name_from_uuid(0)
 #Transition video: playlist: FDE14BF5-22BB-4499-8EFB-373C0743B15E, cue: 3A173EFA-50FD-4705-9ABB-E9CDC9F96CC5
 
