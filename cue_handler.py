@@ -27,6 +27,8 @@ from pco_plan import PcoPlan
 from general_networking import is_host_online
 from propresenter import ProPresenter
 
+import pprint
+
 
 class CueHandler:
     def __init__(self, devices: List[dict]):
@@ -63,7 +65,15 @@ class CueHandler:
                     logger.critical('devices file mismatch')
 
                 if device['type'] == 'pvp':
-                    cue_verbose = f"{device['user_name']}:   Cue {cue['cue_name']}"
+                    cue_verbose = f"{device['user_name']}: "
+                    if cue['cue_type'] == 'cue_cue':
+                        cue_name = PVP(device['ip_address'], port=device['port']).cue_name_from_uuids(playlist_uuid=cue['playlist_uuid'], cue_uuid=cue['cue_uuid'])
+                        if type(cue_name) is None:
+                            cue_verbose += '[cue removed]'
+                        else:
+                            cue_verbose += cue_name
+
+
                     cues_verbose_list.append(cue_verbose)
 
                 if device['type'] == 'pause':
