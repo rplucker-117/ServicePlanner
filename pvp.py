@@ -45,7 +45,7 @@ class PVP:
 
         request_url = f'{self.API_BASE_URL}{endpoint}'
 
-        logger.debug(f'{__class__.__name__}.{self._make_post_request.__name__}: Making get request to endpoint {request_url}.')
+        logger.debug(f'{__class__.__name__}.{self._make_post_request.__name__}: Making post request to endpoint {request_url}.')
 
         try:
             requests.post(request_url)
@@ -187,7 +187,7 @@ class PVP:
         logger.debug(f'{__class__.__name__}.{self.hide_workspace.__name__}: Hiding workspace on pvp machine {self.ip}:{self.port}')
         self._make_post_request(f'/hide/workspace')
 
-    def unhide_workspace(self):
+    def unhide_workspace(self) -> None:
         """
         Unhide the entire workspace
         :return: None
@@ -196,7 +196,7 @@ class PVP:
         logger.debug(f'{__class__.__name__}.{self.unhide_workspace.__name__}: Unhiding workspace on pvp machine {self.ip}:{self.port}')
         self._make_post_request(f'/unhide/workspace')
 
-    def hide_layer(self, layer_id):
+    def hide_layer(self, layer_id) -> None:
         """
         Hide a specific layer
         :param layer_id: Can be uuid, name, or index (integer) of the layer that we want to hide. Number only parameters are always interpreted as an index and never name.
@@ -205,7 +205,7 @@ class PVP:
         logger.debug(f'{__class__.__name__}.{self.hide_layer.__name__}: Hiding layer {layer_id} on pvp machine {self.ip}:{self.port}')
         self._make_post_request(f'/hide/layer/{layer_id}')
 
-    def unhide_layer(self, layer_id):
+    def unhide_layer(self, layer_id) -> None:
         """
         Unhide a specific layer
         :param layer_id: Can be uuid, name, or index (integer) of the layer that we want to unhide. Number only parameters are always interpreted as an index and never name.
@@ -215,11 +215,40 @@ class PVP:
         logger.debug(f'{__class__.__name__}.{self.hide_layer.__name__}: Unhiding layer {layer_id} on pvp machine {self.ip}:{self.port}')
         self._make_post_request(f'/unhide/layer/{layer_id}')
 
+    def pause_workspace(self) -> None:
+        """
+        Pause the entire workspace
+        :return: None
+        """
 
+        logger.debug(f'{__class__.__name__}.{self.pause_workspace.__name__}: Pausing workspace on pvp machine {self.ip}:{self.port}')
+        self._make_post_request(f'/pause/workspace')
 
-if __name__ == '__main__':
-    pvp = PVP(ip='10.1.60.91', port=49343)
-    # pprint.pprint(pvp.get_pvp_playlists())
-    pprint.pprint(pvp.does_cue_exist(playlist_uuid='1CE3983C-6CB5-41A3-82C0-C3E2933F64D7', cue_uuid='E462ABB7-A534-4538-B056-9F55503E14B0'))
-    # pprint.pprint(pvp.does_cue_exist(playlist_uuid='4BF4ABCA-15E9-4EE3-BA36-5EF722877482', cue_uuid='BD458E1A-01C8-4AFB-A8D1-F8078763BF5C'))
-    # pvp.unmute_workspace()
+    def unpause_workspace(self) -> None:
+        """
+        Unpause the entire workspace
+        :return: None
+        """
+
+        logger.debug(f'{__class__.__name__}.{self.unpause_workspace.__name__}: Unpausing workspace on pvp machine {self.ip}:{self.port}')
+        self._make_post_request(f'/play/workspace')
+
+    def pause_layer(self, layer_id) -> None:
+        """
+        Pause a specific layer
+        :param layer_id: Can be uuid, name, or index (integer) of the layer that we want to unhide. Number only parameters are always interpreted as an index and never name.
+        :return: None
+        """
+
+        logger.debug(f'{__class__.__name__}.{self.pause_layer.__name__}: Pausing layer {layer_id} on pvp machine {self.ip}:{self.port}')
+        self._make_post_request(f'/pause/layer/{layer_id}')
+
+    def unpause_layer(self, layer_id) -> None:
+        """
+        Unpause a specific layer
+        :param layer_id: Can be uuid, name, or index (integer) of the layer that we want to unhide. Number only parameters are always interpreted as an index and never name.
+        :return: None
+        """
+
+        logger.debug(f'{__class__.__name__}.{self.unpause_layer.__name__}: Unpausing layer {layer_id} on pvp machine {self.ip}:{self.port}')
+        self._make_post_request(f'/play/layer/{layer_id}')
