@@ -65,14 +65,22 @@ class CueHandler:
                     logger.critical('devices file mismatch')
 
                 if device['type'] == 'pvp':
+                    pvp = PVP(device['ip_address'], port=device['port'])
                     cue_verbose = f"{device['user_name']}: "
                     if cue['cue_type'] == 'cue_cue':
-                        cue_name = PVP(device['ip_address'], port=device['port']).cue_name_from_uuids(playlist_uuid=cue['playlist_uuid'], cue_uuid=cue['cue_uuid'])
-                        if type(cue_name) is None:
+                        cue_name = pvp.cue_name_from_uuids(playlist_uuid=cue['playlist_uuid'], cue_uuid=cue['cue_uuid'])
+                        if cue_name is None:
                             cue_verbose += '[cue removed]'
                         else:
                             cue_verbose += cue_name
-
+                    if cue['cue_type'] == 'clear_all':
+                        cue_verbose += 'Clear All'
+                    if cue['cue_type'] == 'clear_layer':
+                        layer_name = pvp.get_layer_name_from_uuid(cue['layer_uuid'])
+                        if layer_name is None:
+                            cue_verbose += '[layer removed]'
+                        else:
+                            cue_verbose += f'clear layer {layer_name}'
 
                     cues_verbose_list.append(cue_verbose)
 
@@ -288,9 +296,13 @@ class CueHandler:
                     if device['type'] == 'pvp':
                         logger.debug(f'{__class__.__name__}.{self.activate_cues.__name__} : pvp : {device["ip_address"]}:{device["port"]}')
 
-                        PVP(device['ip_address'],
-                            device['port']).cue_clip(playlist=cue['playlist_uuid'],
-                                                     cue=cue['cue_uuid'])
+                        pvp =  PVP(ip=device['ip_address'], port=device['port'])
+                        if cue['cue_type'] == 'cue_cue':
+                            pvp.cue_clip(playlist=cue['playlist_uuid'], cue=cue['cue_uuid'])
+                        if cue['cue_type'] == 'clear_all':
+                            pvp.clear_workspace()
+                        if cue['cue_type'] == 'clear_layer':
+                            pvp.clear_layer(cue['layer_uuid'])
 
                     elif device['type'] == 'ross_carbonite':
                         if cue['type'] == 'CC':
@@ -613,10 +625,15 @@ class CueHandler:
             # uuid check on pvp cue
             if cue_device['type'] == 'pvp':
                 pvp_init = PVP(ip=cue_device['ip_address'], port=cue_device['port'])
-                if not pvp_init.does_cue_exist(playlist_uuid=cue['playlist_uuid'], cue_uuid=cue['cue_uuid']):
-                    logger.warning(f'{__class__.__name__}.{self.cues_are_valid.__name__}: PVP cue invalid')
-                    output[i] = {False: 'PVP cue does not exist on the target machine. Delete & Re-add it.'}
-                    continue
+                if 'cue_name' in cue.keys():
+                    # ***the below section is to fix pvp cues that were created before the new format that was implemented before May 30, 2024***
+                    cue['cue_type'] = 'cue_cue'
+
+                if cue['cue_type'] == 'cue_cue':
+                    if not pvp_init.does_cue_exist(playlist_uuid=cue['playlist_uuid'], cue_uuid=cue['cue_uuid']):
+                        logger.warning(f'{__class__.__name__}.{self.cues_are_valid.__name__}: PVP cue invalid')
+                        output[i] = {False: 'PVP cue does not exist on the target machine. Delete & Re-add it.'}
+                        continue
 
             # see if obs script is running
             if cue_device['type'] == 'obs':
