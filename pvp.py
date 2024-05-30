@@ -6,7 +6,7 @@ import urllib3.exceptions
 from typing import Union, List, Dict
 
 class PVP:
-    def __init__(self, ip, port):
+    def __init__(self, ip: str, port: int):
         self.ip = ip
         self.port = port
         self.API_BASE_URL = f'http://{self.ip}:{self.port}/api/0'
@@ -252,3 +252,29 @@ class PVP:
 
         logger.debug(f'{__class__.__name__}.{self.unpause_layer.__name__}: Unpausing layer {layer_id} on pvp machine {self.ip}:{self.port}')
         self._make_post_request(f'/play/layer/{layer_id}')
+
+    def cue_name_from_uuids(self, playlist_uuid: str, cue_uuid: str) -> str | None:
+        """
+        Get the human readable name of a cue given the playlist and cue uuid
+        :param playlist_uuid: can be a uuid, name, or index (integer) of the playlist. The 'Video Input' playlist can be accessed by the -1 index or by UUID.
+        :param cue_uuid: can be a uuid, name, or index (integer) of the cue or videoInputAction.
+        :return: string of the name of the cue
+        """
+
+        logger.debug(f'{__class__.__name__}.{self.cue_name_from_uuids.__name__}: Getting clip name from playlist id {playlist_uuid}, cue uuid {cue_uuid} on machine {self.ip}:{self.port}')
+        playlists = self.get_pvp_playlists()
+
+        for playlist in playlists['playlist']['children']:
+            if playlist['uuid'] == playlist_uuid:
+                for item in playlist['items']:
+                    if item['uuid'] == cue_uuid:
+                        return item['name']
+
+        return None
+
+if __name__ == '__main__':
+    pvp = PVP(ip='10.1.60.91', port=49343)
+    print(pvp.cue_name_from_uuids(playlist_uuid='FDE14BF5-22BB-4499-8EFB-373C0743B15E', cue_uuid='3A173EFA-50FD-4705-9ABB-E9CDC9F96CC5'))
+
+#Transition video: playlist: FDE14BF5-22BB-4499-8EFB-373C0743B15E, cue: 3A173EFA-50FD-4705-9ABB-E9CDC9F96CC5
+
