@@ -757,6 +757,8 @@ class PcoPlan:
         :return: If cues are valid, return them in the same state they are fed to this function, if not, return None.
         """
 
+        logger.debug(f'{__class__.__name__}.{self.validate_plan_item_app_cues.__name__}: Validating plan item app cues')
+
         # First, see if it's serializable. If not, return None.
         try:
             data: Dict[str, List[str, int], bool, List[List[str]]] = json.loads(app_cues)
@@ -809,7 +811,7 @@ class PcoPlan:
         :return: JSONified string of app cues, either in their original form or corrected. None if uncorrectable.
         """
 
-        logger.debug(f'{__class__.__name__}.{self.validate_plan_cues.__name__}')
+        logger.debug(f'{__class__.__name__}.{self.validate_plan_cues.__name__}: Validating plan cues')
 
         has_been_corrected: bool = False
 
