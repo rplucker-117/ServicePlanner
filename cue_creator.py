@@ -717,6 +717,7 @@ class CueCreator:
         pvp_init = PVP(ip=device['ip_address'], port=device['port'])
 
         pvp_data = pvp_init.get_pvp_playlists()
+        pvp_layers = pvp_init.get_pvp_layers()['data']
 
         add_trigger_cue_frame = Frame(add_pvp_cue_window, bg=secondary_bg_color)
         add_action_cue_frame = Frame(add_pvp_cue_window, bg=secondary_bg_color)
@@ -726,18 +727,13 @@ class CueCreator:
 
         Label(add_trigger_cue_frame, bg=secondary_bg_color, fg=text_color, font=(font, 12), text='Trigger Media').pack(
             pady=10)
-        # Label(add_action_cue_frame, bg=secondary_bg_color, fg=text_color, font=(font, 12),
-        #       text='Layer/Workspace Actions').pack(pady=10)
+        Label(add_action_cue_frame, bg=secondary_bg_color, fg=text_color, font=(font, 12),
+              text='Layer/Workspace Actions').pack(pady=10)
 
-        # Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Clear...').pack()
-        # Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Mute...').pack()
-        # Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Unmute...').pack()
-        # Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Hide...').pack()
-        # Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Unhide...').pack()
 
         playlist_names = []
         for playlist in pvp_data['playlist']['children']:
-            playlist_names.append(playlist['name'])
+            playlist_names.append(playlist['name'] + '...')
 
         playlist_buttons = []
         for iteration, playlist in enumerate(playlist_names):
@@ -753,8 +749,8 @@ class CueCreator:
             button.pack()
 
         def playlist_button_clicked(playlist_index):
-            add_cg3_cue_buttons_window = Tk()
-            add_cg3_cue_buttons_window.config(bg=bg_color)
+            add_cue_button_window = Tk()
+            add_cue_button_window.config(bg=bg_color)
 
             playlist_uuid = pvp_data['playlist']['children'][playlist_index]['uuid']
 
@@ -768,28 +764,75 @@ class CueCreator:
 
             cue_buttons = []
             for name, uuid in zip(cue_names, cue_uuids):
-                cue_buttons.append(Button(add_cg3_cue_buttons_window,
+                cue_buttons.append(Button(add_cue_button_window,
                                           text=name,
                                           font=(font, 11),
                                           bg=bg_color,
                                           fg=text_color,
-                                          command=lambda name=name, uuid=uuid:
+                                          command=lambda uuid=uuid:
                                           (
-                                              cue_button_clicked(cue_name=name, cue_uuid=uuid,
+                                              cue_button_clicked(cue_uuid=uuid,
                                                                  playlist_uuid=playlist_uuid),
-                                              add_cg3_cue_buttons_window.destroy())))
+                                              add_cue_button_window.destroy())))
 
             for button in cue_buttons:
                 button.pack()
 
-        def cue_button_clicked(cue_name, cue_uuid, playlist_uuid):
-            self.current_cues['action_cues'].append({
-                'uuid': device['uuid'],
-                'playlist_uuid': playlist_uuid,
-                'cue_uuid': cue_uuid,
-                'cue_name': cue_name
-            })
-            self._update_cues_display()
+            def cue_button_clicked(cue_uuid, playlist_uuid):
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'playlist_uuid': playlist_uuid,
+                    'cue_uuid': cue_uuid,
+                    'cue_type': 'cue_cue'
+                })
+                self._update_cues_display()
+
+        def clear_button_clicked() -> None:
+            add_pvp_cue_window.destroy()
+
+            add_clear_button_window = Tk()
+            add_clear_button_window.config(bg=bg_color)
+
+            def clear_all_clicked() -> None:
+                add_clear_button_window.destroy()
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'cue_type': 'clear_all'
+                })
+                self._update_cues_display()
+
+            def clear_layer_clicked(layer_uuid) -> None:
+                add_clear_button_window.destroy()
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'cue_type': 'clear_layer',
+                    'layer_uuid': layer_uuid
+                })
+                self._update_cues_display()
+
+
+            Button(add_clear_button_window, text='Clear All', font=(font, 11), bg=bg_color, fg=text_color, command=clear_all_clicked).pack()
+            Label(add_clear_button_window, text='Layers:', font=(font, 11), bg=bg_color, fg=text_color).pack()
+
+            for layer in pvp_layers:
+                Button(add_clear_button_window, text=layer['layer']['name'],
+                       font=(font, 11),
+                       bg=bg_color,
+                       fg=text_color,
+                       command=lambda layer=layer: clear_layer_clicked(layer_uuid=layer['layer']['uuid'])).pack()
+
+
+        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Clear...', command=clear_button_clicked).pack()
+        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Mute...').pack()
+        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Unmute...').pack()
+        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Hide...').pack()
+        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Unhide...').pack()
+        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Pause...').pack()
+        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Unpause...').pack()
+
+
 
     def _add_resi_cue(self, device):
         add_resi_cue_window = Tk()
