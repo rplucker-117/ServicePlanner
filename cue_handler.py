@@ -625,10 +625,6 @@ class CueHandler:
             # uuid check on pvp cue
             if cue_device['type'] == 'pvp':
                 pvp_init = PVP(ip=cue_device['ip_address'], port=cue_device['port'])
-                if 'cue_name' in cue.keys():
-                    # ***the below section is to fix pvp cues that were created before the new format that was implemented before May 30, 2024***
-                    cue['cue_type'] = 'cue_cue'
-
                 if cue['cue_type'] == 'cue_cue':
                     if not pvp_init.does_cue_exist(playlist_uuid=cue['playlist_uuid'], cue_uuid=cue['cue_uuid']):
                         logger.warning(f'{__class__.__name__}.{self.cues_are_valid.__name__}: PVP cue invalid')
