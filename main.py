@@ -1233,13 +1233,31 @@ class MainUI:
                 self.plan_cues = self.convert_plan_app_cues_to_dict(plan_app_cues_validated)
 
                 for iteration, cue in enumerate(self.plan_cues):
-
                     cue_name = cue[0]
                     cue_data = cue[1]
                     button = Button(self.plan_cues_frame, bg=bg_color, fg=text_color, font=(font, other_text_size),
                            text=cue_name, command=lambda cue_data=cue_data: threading.Thread(target=self.cue_handler.activate_cues(cue_data['action_cues'])).start())
                     button.grid(row=0, column=iteration, padx=plan_cue_pad_x, pady=10)
                     self.plan_cue_buttons.append(button)
+
+                #fix old pvp cues as of may 30, 2024. This must be done outside of the below loop
+                to_upload_new_plan_cues: list = [False]
+                for i, plan_cue in enumerate(self.plan_cues):
+                    has_been_modified: list = [False]
+                    plan_cue_actions = plan_cue[1]['action_cues']
+                    for cue in plan_cue_actions:
+                        device = self.cue_handler.get_device_from_uuid(cue['uuid'])
+                        if device['type'] == 'pvp':
+                            if 'cue_name' in cue.keys():
+                                to_upload_new_plan_cues[0] = True
+                                has_been_modified[0] = True
+                                cue.pop('cue_name')
+                                cue['cue_type'] = 'cue_cue'
+                                logger.info(f'{__class__.__name__}.{self._build_plan_cue_buttons.__name__}: Plan cue with old PVP cue found. Fixing...')
+                        if has_been_modified[0]:
+                            self.plan_cues[i][1]['action_cues'] = plan_cue_actions
+                if to_upload_new_plan_cues[0]:
+                    self.pco_plan.create_and_update_plan_app_cues(json.dumps(self.plan_cues))
 
                 # Check if cues on plan cues are valid. Color accordingly if not
                 for plan_cue, button in zip(self.plan_cues, self.plan_cue_buttons):
