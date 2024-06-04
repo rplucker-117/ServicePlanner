@@ -549,8 +549,6 @@ class MainUI:
         self._build_items_view()
         self._build_aux_control()
 
-
-
         # If a utilities menu is already open, kill it and reopen a new one, so only 1 instance is open at a time.
         def open_utilities_menu() -> None:
             try:
@@ -576,7 +574,7 @@ class MainUI:
 
         self._build_plan_cue_buttons()
 
-        self.check_if_current_added_cues_and_devices_valid()
+        self.check_if_current_added_cues_and_devices_valid_and_online()
 
         self.update_live()
 
@@ -586,8 +584,6 @@ class MainUI:
             self._build_qlxd_ui()
 
         self._ui_cleanup()
-
-
 
         logger.debug('All running threads: %s', threading.enumerate())
 
@@ -612,8 +608,6 @@ class MainUI:
 
         self.pco_live.go_to_next_item()
         self.update_live()
-
-
 
     def previous(self, cue_items, from_web=False):
         logger.debug('Previous button pressed. Previous item index: %s', self.previous_item_index)
@@ -754,6 +748,7 @@ class MainUI:
         logger.debug('Updating plan items view')
 
         self.plan_items = self.convert_service_items_app_cues_to_dict_and_validate(self.pco_plan.get_plan_items())
+
         self.pco_plan.include_all_items_in_live()
 
         for frame in self.item_frames:
@@ -781,7 +776,7 @@ class MainUI:
 
         self.update_plan_cues()
 
-        threading.Thread(target=self.check_if_current_added_cues_and_devices_valid).start()
+        threading.Thread(target=self.check_if_current_added_cues_and_devices_valid_and_online).start()
 
     def update_plan_cues(self):
         """
@@ -826,8 +821,27 @@ class MainUI:
                 app_cues_from_plan: str = item['notes']['App Cues']
                 validated_cues = self.pco_plan.validate_plan_item_app_cues(app_cues_from_plan) # this will be the same string if valid, None if invalid
 
+                # Check for PVP cues created before May 30, 2024 and fix them:
+                has_been_modified: bool = False
+                if validated_cues is not None:
+                    validated_cues = json.loads(validated_cues)
+                    for cue in validated_cues['action_cues']:
+                        device = self.cue_handler.get_device_from_uuid(cue['uuid'])
+                        if device['type'] == 'pvp':
+                            if 'cue_name' in cue.keys():
+                                has_been_modified = True
+                                cue.pop('cue_name')
+                                cue['cue_type'] = 'cue_cue'
+                                logger.info(f'{__class__.__name__}.{self.convert_service_items_app_cues_to_dict_and_validate.__name__}: Found PVP cues of old format, updating...')
+
+                    validated_cues = json.dumps(validated_cues)
+                    item['notes']['App Cues'] = validated_cues
+
+                    if has_been_modified:
+                        self.pco_plan.create_and_update_item_app_cue(item_id=item['id'], app_cue=validated_cues)
+
                 # if cues are invalid, remove from pco and from the python dict, else deserialize them and put them back into the dict to be returned
-                if validated_cues != app_cues_from_plan:
+                if validated_cues is None:
                     logger.warning(f'{__class__.__name__}.{self.convert_service_items_app_cues_to_dict_and_validate.__name__}: Invalid cues found, removing them.')
                     self.pco_plan.remove_item_app_cue(item['id'])
                     item['notes'].pop('App Cues')
@@ -846,7 +860,7 @@ class MainUI:
 
         return json.loads(plan_app_cues)
 
-    def check_if_current_added_cues_and_devices_valid(self) -> None:
+    def check_if_current_added_cues_and_devices_valid_and_online(self) -> None:
         """
         Check if a device is offline, or there are any old or invalid cues on an item, for example,
          if there's a cue to play a PVP video, but that cue no longer exists on the pvp machine.
@@ -855,17 +869,6 @@ class MainUI:
         """
 
         logger.debug('Checking if cues are valid and devices are online')
-
-        ip_devices: List[str] = ['resi',
-                                 'nk_scpa_ip2sl',
-                                 'ross_carbonite',
-                                 'kipro',
-                                 'ez_outlet_2',
-                                 'bem104',
-                                 'controlflex',
-                                 'aja_kumo',
-                                 'ah_dlive',
-                                 'pvp']
 
         # this list contains a bool for each plan item.
         # If the item contains a cue that has an error, bool is set to True below.
@@ -886,6 +889,7 @@ class MainUI:
                 Button(frame, image=self.cue_warning_icon, anchor='w', bg=bg_color, command=lambda item=item:
                        CueCreator(startup=self.startup, ui=self, devices=self.startup.devices).create_plan_item_cue(input_item=item)
                     ).pack(side=RIGHT, padx=30)
+
 
     def _build_current_service_time(self):
         logger.debug('Building current service time info')
