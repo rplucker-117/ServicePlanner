@@ -70,17 +70,72 @@ class CueHandler:
                     if cue['cue_type'] == 'cue_cue':
                         cue_name = pvp.cue_name_from_uuids(playlist_uuid=cue['playlist_uuid'], cue_uuid=cue['cue_uuid'])
                         if cue_name is None:
-                            cue_verbose += '[cue removed]'
+                            cue_verbose += 'cue [cue removed]'
                         else:
-                            cue_verbose += cue_name
+                            cue_verbose += f'Trigger cue {cue_name}'
+
                     if cue['cue_type'] == 'clear_all':
                         cue_verbose += 'Clear All'
                     if cue['cue_type'] == 'clear_layer':
                         layer_name = pvp.get_layer_name_from_uuid(cue['layer_uuid'])
                         if layer_name is None:
-                            cue_verbose += '[layer removed]'
+                            cue_verbose += 'Clear layer [layer removed]'
                         else:
                             cue_verbose += f'clear layer {layer_name}'
+
+                    if cue['cue_type'] == 'mute_all':
+                        cue_verbose += 'Mute All'
+                    if cue['cue_type'] == 'mute_layer':
+                        layer_name = pvp.get_layer_name_from_uuid(cue['layer_uuid'])
+                        if layer_name is None:
+                            cue_verbose += 'Mute layer [layer removed]'
+                        else:
+                            cue_verbose += f'mute layer {layer_name}'
+
+                    if cue['cue_type'] == 'unmute_all':
+                        cue_verbose += 'Unmute All'
+                    if cue['cue_type'] == 'unmute_layer':
+                        layer_name = pvp.get_layer_name_from_uuid(cue['layer_uuid'])
+                        if layer_name is None:
+                            cue_verbose += 'Unmute layer [layer removed]'
+                        else:
+                            cue_verbose += f'unmute layer {layer_name}'
+
+                    if cue['cue_type'] == 'hide_all':
+                        cue_verbose += 'Hide All'
+                    if cue['cue_type'] == 'hide_layer':
+                        layer_name = pvp.get_layer_name_from_uuid(cue['layer_uuid'])
+                        if layer_name is None:
+                            cue_verbose += f'Hide layer [layer removed]'
+                        else:
+                            cue_verbose += f'Hide layer {layer_name}'
+
+                    if cue['cue_type'] == 'unhide_all':
+                        cue_verbose += 'Unhide All'
+                    if cue['cue_type'] == 'unhide_layer':
+                        layer_name = pvp.get_layer_name_from_uuid(cue['layer_uuid'])
+                        if layer_name is None:
+                            cue_verbose += f'Unhide layer [layer removed]'
+                        else:
+                            cue_verbose += f'Unhide layer {layer_name}'
+
+                    if cue['cue_type'] == 'pause_all':
+                        cue_verbose += 'Pause All'
+                    if cue['cue_type'] == 'pause_layer':
+                        layer_name = pvp.get_layer_name_from_uuid(cue['layer_uuid'])
+                        if layer_name is None:
+                            cue_verbose += f'Pause layer [layer removed]'
+                        else:
+                            cue_verbose += f'Pause layer {layer_name}'
+
+                    if cue['cue_type'] == 'unpause_all':
+                        cue_verbose += 'Unpause All'
+                    if cue['cue_type'] == 'unpause_layer':
+                        layer_name = pvp.get_layer_name_from_uuid(cue['layer_uuid'])
+                        if layer_name is None:
+                            cue_verbose += f'Unpause layer [layer removed]'
+                        else:
+                            cue_verbose += f'Unpause layer {layer_name}'
 
                     cues_verbose_list.append(cue_verbose)
 
