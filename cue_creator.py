@@ -823,14 +823,225 @@ class CueCreator:
                        fg=text_color,
                        command=lambda layer=layer: clear_layer_clicked(layer_uuid=layer['layer']['uuid'])).pack()
 
+        def mute_button_clicked() -> None:
+            add_pvp_cue_window.destroy()
+
+            add_mute_button_window = Tk()
+            add_mute_button_window.config(bg=bg_color)
+
+            def mute_all_clicked() -> None:
+                add_mute_button_window.destroy()
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'cue_type': 'mute_all'
+                })
+                self._update_cues_display()
+
+            def mute_layer_clicked(layer_uuid) -> None:
+                add_mute_button_window.destroy()
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'cue_type': 'mute_layer',
+                    'layer_uuid': layer_uuid
+                })
+                self._update_cues_display()
+
+            Button(add_mute_button_window, text='Mute All', font=(font, 11), bg=bg_color, fg=text_color,command=mute_all_clicked).pack()
+            Label(add_mute_button_window, text='Layers:', font=(font, 11), bg=bg_color, fg=text_color).pack()
+
+            for layer in pvp_layers:
+                Button(add_mute_button_window, text=layer['layer']['name'],
+                       font=(font, 11),
+                       bg=bg_color,
+                       fg=text_color,
+                       command=lambda layer=layer: mute_layer_clicked(layer_uuid=layer['layer']['uuid'])).pack()
+
+
+        def unmute_button_clicked() -> None:
+            add_pvp_cue_window.destroy()
+
+            add_unmute_button_window = Tk()
+            add_unmute_button_window.config(bg=bg_color)
+
+            def unmute_all_clicked() -> None:
+                add_unmute_button_window.destroy()
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'cue_type': 'unmute_all'
+                })
+                self._update_cues_display()
+
+            def unmute_layer_clicked(layer_uuid) -> None:
+                add_unmute_button_window.destroy()
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'cue_type': 'unmute_layer',
+                    'layer_uuid': layer_uuid
+                })
+                self._update_cues_display()
+
+            Button(add_unmute_button_window, text='Mute All', font=(font, 11), bg=bg_color, fg=text_color,command=unmute_all_clicked).pack()
+            Label(add_unmute_button_window, text='Layers:', font=(font, 11), bg=bg_color, fg=text_color).pack()
+
+            for layer in pvp_layers:
+                Button(add_unmute_button_window, text=layer['layer']['name'],
+                       font=(font, 11),
+                       bg=bg_color,
+                       fg=text_color,
+                       command=lambda layer=layer: unmute_layer_clicked(layer_uuid=layer['layer']['uuid'])).pack()
+
+        def hide_button_clicked() -> None:
+            add_pvp_cue_window.destroy()
+
+            add_hide_button_window = Tk()
+            add_hide_button_window.config(bg=bg_color)
+
+            def hide_all_clicked() -> None:
+                add_hide_button_window.destroy()
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'cue_type': 'hide_all'
+                })
+                self._update_cues_display()
+
+            def hide_layer_clicked(layer_uuid) -> None:
+                add_hide_button_window.destroy()
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'cue_type': 'hide_layer',
+                    'layer_uuid': layer_uuid
+                })
+                self._update_cues_display()
+
+            Button(add_hide_button_window, text='Hide All', font=(font, 11), bg=bg_color, fg=text_color,command=hide_all_clicked).pack()
+            Label(add_hide_button_window, text='Layers:', font=(font, 11), bg=bg_color, fg=text_color).pack()
+
+            for layer in pvp_layers:
+                Button(add_hide_button_window, text=layer['layer']['name'],
+                       font=(font, 11),
+                       bg=bg_color,
+                       fg=text_color,
+                       command=lambda layer=layer: hide_layer_clicked(layer_uuid=layer['layer']['uuid'])).pack()
+
+        def unhide_button_clicked() -> None:
+            add_pvp_cue_window.destroy()
+
+            add_unhide_button_window = Tk()
+            add_unhide_button_window.config(bg=bg_color)
+
+            def unhide_all_clicked() -> None:
+                add_unhide_button_window.destroy()
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'cue_type': 'unhide_all'
+                })
+                self._update_cues_display()
+
+            def unhide_layer_clicked(layer_uuid) -> None:
+                add_unhide_button_window.destroy()
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'cue_type': 'unhide_layer',
+                    'layer_uuid': layer_uuid
+                })
+                self._update_cues_display()
+
+            Button(add_unhide_button_window, text='Unhide All', font=(font, 11), bg=bg_color, fg=text_color,command=unhide_all_clicked).pack()
+            Label(add_unhide_button_window, text='Layers:', font=(font, 11), bg=bg_color, fg=text_color).pack()
+
+            for layer in pvp_layers:
+                Button(add_unhide_button_window, text=layer['layer']['name'],
+                       font=(font, 11),
+                       bg=bg_color,
+                       fg=text_color,
+                       command=lambda layer=layer: unhide_layer_clicked(layer_uuid=layer['layer']['uuid'])).pack()
+
+        def pause_button_clicked() -> None:
+            add_pvp_cue_window.destroy()
+
+            add_pause_button_window = Tk()
+            add_pause_button_window.config(bg=bg_color)
+
+            def pause_all_clicked() -> None:
+                add_pause_button_window.destroy()
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'cue_type': 'pause_all'
+                })
+                self._update_cues_display()
+
+            def pause_layer_clicked(layer_uuid) -> None:
+                add_pause_button_window.destroy()
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'cue_type': 'pause_layer',
+                    'layer_uuid': layer_uuid
+                })
+                self._update_cues_display()
+
+            Button(add_pause_button_window, text='Pause All', font=(font, 11), bg=bg_color, fg=text_color,command=pause_all_clicked).pack()
+            Label(add_pause_button_window, text='Layers:', font=(font, 11), bg=bg_color, fg=text_color).pack()
+
+            for layer in pvp_layers:
+                Button(add_pause_button_window, text=layer['layer']['name'],
+                       font=(font, 11),
+                       bg=bg_color,
+                       fg=text_color,
+                       command=lambda layer=layer: pause_layer_clicked(layer_uuid=layer['layer']['uuid'])).pack()
+
+        def unpause_button_clicked() -> None:
+            add_pvp_cue_window.destroy()
+
+            add_unpause_button_window = Tk()
+            add_unpause_button_window.config(bg=bg_color)
+
+            def unpause_all_clicked() -> None:
+                add_unpause_button_window.destroy()
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'cue_type': 'unpause_all'
+                })
+                self._update_cues_display()
+
+            def pause_layer_clicked(layer_uuid) -> None:
+                add_unpause_button_window.destroy()
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'cue_type': 'unpause_layer',
+                    'layer_uuid': layer_uuid
+                })
+                self._update_cues_display()
+
+            Button(add_unpause_button_window, text='Unpause All', font=(font, 11), bg=bg_color, fg=text_color,command=unpause_all_clicked).pack()
+            Label(add_unpause_button_window, text='Layers:', font=(font, 11), bg=bg_color, fg=text_color).pack()
+
+            for layer in pvp_layers:
+                Button(add_unpause_button_window, text=layer['layer']['name'],
+                       font=(font, 11),
+                       bg=bg_color,
+                       fg=text_color,
+                       command=lambda layer=layer: pause_layer_clicked(layer_uuid=layer['layer']['uuid'])).pack()
+
 
         Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Clear...', command=clear_button_clicked).pack()
-        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Mute...').pack()
-        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Unmute...').pack()
-        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Hide...').pack()
-        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Unhide...').pack()
-        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Pause...').pack()
-        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Unpause...').pack()
+        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Mute...', command=mute_button_clicked).pack()
+        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Unmute...', command=unmute_button_clicked).pack()
+        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Hide...', command=hide_button_clicked).pack()
+        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Unhide...', command=unhide_button_clicked).pack()
+        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Pause...', command=pause_button_clicked).pack()
+        Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Unpause...', command=unpause_button_clicked).pack()
 
 
 
