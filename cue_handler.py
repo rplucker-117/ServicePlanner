@@ -74,8 +74,8 @@ class CueHandler:
                         else:
                             cue_verbose += f'Trigger cue {cue_name}'
 
-                    if cue['cue_type'] == 'clear_all':
-                        cue_verbose += 'Clear All'
+                    if cue['cue_type'] == 'clear_master':
+                        cue_verbose += 'Clear Master'
                     if cue['cue_type'] == 'clear_layer':
                         layer_name = pvp.get_layer_name_from_uuid(cue['layer_uuid'])
                         if layer_name is None:
@@ -83,8 +83,8 @@ class CueHandler:
                         else:
                             cue_verbose += f'clear layer {layer_name}'
 
-                    if cue['cue_type'] == 'mute_all':
-                        cue_verbose += 'Mute All'
+                    if cue['cue_type'] == 'mute_master':
+                        cue_verbose += 'Mute Master'
                     if cue['cue_type'] == 'mute_layer':
                         layer_name = pvp.get_layer_name_from_uuid(cue['layer_uuid'])
                         if layer_name is None:
@@ -92,8 +92,8 @@ class CueHandler:
                         else:
                             cue_verbose += f'mute layer {layer_name}'
 
-                    if cue['cue_type'] == 'unmute_all':
-                        cue_verbose += 'Unmute All'
+                    if cue['cue_type'] == 'unmute_master':
+                        cue_verbose += 'Unmute Master'
                     if cue['cue_type'] == 'unmute_layer':
                         layer_name = pvp.get_layer_name_from_uuid(cue['layer_uuid'])
                         if layer_name is None:
@@ -101,8 +101,8 @@ class CueHandler:
                         else:
                             cue_verbose += f'unmute layer {layer_name}'
 
-                    if cue['cue_type'] == 'hide_all':
-                        cue_verbose += 'Hide All'
+                    if cue['cue_type'] == 'hide_master':
+                        cue_verbose += 'Hide Master'
                     if cue['cue_type'] == 'hide_layer':
                         layer_name = pvp.get_layer_name_from_uuid(cue['layer_uuid'])
                         if layer_name is None:
@@ -110,7 +110,7 @@ class CueHandler:
                         else:
                             cue_verbose += f'Hide layer {layer_name}'
 
-                    if cue['cue_type'] == 'unhide_all':
+                    if cue['cue_type'] == 'unhide_master':
                         cue_verbose += 'Unhide All'
                     if cue['cue_type'] == 'unhide_layer':
                         layer_name = pvp.get_layer_name_from_uuid(cue['layer_uuid'])
@@ -119,8 +119,8 @@ class CueHandler:
                         else:
                             cue_verbose += f'Unhide layer {layer_name}'
 
-                    if cue['cue_type'] == 'pause_all':
-                        cue_verbose += 'Pause All'
+                    if cue['cue_type'] == 'pause_master':
+                        cue_verbose += 'Pause Master'
                     if cue['cue_type'] == 'pause_layer':
                         layer_name = pvp.get_layer_name_from_uuid(cue['layer_uuid'])
                         if layer_name is None:
@@ -128,8 +128,8 @@ class CueHandler:
                         else:
                             cue_verbose += f'Pause layer {layer_name}'
 
-                    if cue['cue_type'] == 'unpause_all':
-                        cue_verbose += 'Unpause All'
+                    if cue['cue_type'] == 'unpause_master':
+                        cue_verbose += 'Unpause Master'
                     if cue['cue_type'] == 'unpause_layer':
                         layer_name = pvp.get_layer_name_from_uuid(cue['layer_uuid'])
                         if layer_name is None:
@@ -349,15 +349,38 @@ class CueHandler:
             for device in self.devices:
                 if cue['uuid'] == device['uuid']:
                     if device['type'] == 'pvp':
-                        logger.debug(f'{__class__.__name__}.{self.activate_cues.__name__} : pvp : {device["ip_address"]}:{device["port"]}')
-
+                        logger.debug(f'{__class__.__name__}.{self.activate_cues.__name__} : pvp : {device["ip_address"]}:{device["port"]} : {cue["cue_type"]}')
                         pvp =  PVP(ip=device['ip_address'], port=device['port'])
                         if cue['cue_type'] == 'cue_cue':
                             pvp.cue_clip(playlist=cue['playlist_uuid'], cue=cue['cue_uuid'])
-                        if cue['cue_type'] == 'clear_all':
+                        if cue['cue_type'] == 'clear_master':
                             pvp.clear_workspace()
                         if cue['cue_type'] == 'clear_layer':
                             pvp.clear_layer(cue['layer_uuid'])
+                        if cue['cue_type'] == 'mute_master':
+                            pvp.mute_workspace()
+                        if cue['cue_type'] == 'mute_layer':
+                            pvp.mute_layer(cue['layer_uuid'])
+                        if cue['cue_type'] == 'unmute_master':
+                            pvp.unmute_workspace()
+                        if cue['cue_type'] == 'unmute_layer':
+                            pvp.unmute_layer(cue['layer_uuid'])
+                        if cue['cue_type'] == 'hide_master':
+                            pvp.hide_workspace()
+                        if cue['cue_type'] == 'hide_layer':
+                            pvp.hide_layer(cue['layer_uuid'])
+                        if cue['cue_type'] == 'unhide_,aster':
+                            pvp.unhide_workspace()
+                        if cue['cue_type'] == 'unhide_layer':
+                            pvp.unhide_layer(cue['layer_uuid'])
+                        if cue['cue_type'] == 'pause_master':
+                            pvp.pause_workspace()
+                        if cue['cue_type'] == 'pause_layer':
+                            pvp.pause_layer(cue['layer_uuid'])
+                        if cue['cue_type'] == 'unpause_master':
+                            pvp.unpause_workspace()
+                        if cue['cue_type'] == 'unpause_layer':
+                            pvp.unpause_layer(cue['layer_uuid'])
 
                     elif device['type'] == 'ross_carbonite':
                         if cue['type'] == 'CC':
