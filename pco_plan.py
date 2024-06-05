@@ -767,6 +767,11 @@ class PcoPlan:
             logger.warning(f'{__class__.__name__}.{self.validate_plan_item_app_cues.__name__}: Invalid json found.')
             return None
 
+        if type(data) is list:
+            # This is the old cue format, clear it
+            logger.info(f'{__class__.__name__}.{self.validate_plan_item_app_cues.__name__}: Old cue format found')
+            return None
+
         # is 'action_cues' , 'advance_to_next_on_time', and 'advance_to_next_automatically' in the top level keys list?
         for key in data.keys():
             if key not in ('action_cues', 'advance_to_next_on_time', 'advance_to_next_automatically'):
@@ -800,7 +805,6 @@ class PcoPlan:
             return None
 
         return app_cues
-
 
     def validate_plan_cues(self, app_cues: str, push_corrected_data: bool = True) -> Union[str, None]:
         """
@@ -858,6 +862,7 @@ class PcoPlan:
                         data.remove(plan_cue)
                         has_been_corrected = True
                         pass
+
 
             self.create_and_update_plan_app_cues(json.dumps(data)) if has_been_corrected and push_corrected_data else None
 
