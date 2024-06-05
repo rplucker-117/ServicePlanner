@@ -32,7 +32,13 @@ class GlobalCues:
         if not path.exists(path.join(self.folder_path, 'configs', 'global_cues.json')):
             self._create_empty_global_cues_file()
 
+        with open(os.path.join(self.folder_path, 'configs', 'devices.json'), 'r') as f:
+            self.devices: List[dict] = json.loads(f.read())
+
+        self.cue_handler = CueHandler(devices=self.devices)
+
         self.global_cues: List[List[dict]] = self.read_global_cues()
+        self._correct_old_pvp_cues()
 
         self.root: Tk = Tk()
 
@@ -46,11 +52,6 @@ class GlobalCues:
 
         self.edit_mode: bool = False
 
-        with open(os.path.join(self.folder_path, 'configs', 'devices.json'), 'r') as f:
-            self.devices: List[dict] = json.loads(f.read())
-
-        self.cue_handler = CueHandler(devices=self.devices)
-
         self._start_self_contained_webserver()
 
 
@@ -61,6 +62,23 @@ class GlobalCues:
         """
         with open(path.join(self.folder_path, 'configs', 'global_cues.json')) as f:
             return json.loads(f.read())
+
+    def _correct_old_pvp_cues(self):
+        has_been_changed: list = [False]
+        for bank in self.global_cues:
+            for global_cue in bank:
+                for cue in global_cue['cues']:
+                    device = self.cue_handler.get_device_from_uuid(cue['uuid'])
+                    if device['type'] == 'pvp':
+                        if 'cue_name' in cue.keys():
+                            logger.info('Found old PVP cue in global cue, fixing...')
+                            has_been_changed[0] = True
+                            cue.pop('cue_name')
+                            cue['cue_type'] = 'cue_cue'
+
+        if has_been_changed[0]:
+            with open(path.join(self.folder_path, 'configs', 'global_cues.json'), 'w') as f:
+                f.write(json.dumps(self.global_cues))
 
     def open_global_cues_window(self) -> None:
         """
