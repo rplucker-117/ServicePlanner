@@ -144,13 +144,8 @@ class CueCreator:
             'advance_to_next_on_time': [],
             'advance_to_next_automatically': False}:
 
-            yes_no = messagebox.askyesno('Overwrite Existing Cues?', message=
-            "There's existing cues on this item. Do you want to overwrite them?")
-            if yes_no:
-                self._open_cue_creator()
-            else:
-                import_cues()
-                self._open_cue_creator()
+            import_cues()
+            self._open_cue_creator()
         else:
             self._open_cue_creator()
 
