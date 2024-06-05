@@ -3,6 +3,7 @@ import _tkinter
 from tkinter import *
 from tkinter import messagebox
 
+import logzero
 import urllib3.exceptions
 
 import flask_server
@@ -29,9 +30,6 @@ import math
 from shure_qlxd_async import ShureQLXD
 import multiprocessing as mp
 import logging
-from timeit import default_timer as timer
-from pvp import PVP
-from general_networking import is_host_online
 from global_cues import GlobalCues
 from typing import List, Dict
 import webbrowser
@@ -976,6 +974,9 @@ class MainUI:
                     # small auto advance label if it hasn't been cancelled
                     if not self.auto_advance_on_time_cancelled_by_user and self.current_item_timer_input >= 0:
                         auto_advance_time_remaining_label.configure(text=f'Advancing to next item in {time.strftime("%H:%M:%S", time.gmtime(self.current_item_timer_input))}')
+                    else:
+                        # user clicked cancel, "remove" the label
+                        auto_advance_time_remaining_label.configure(text='')
 
                     # if current item timer is greater than 0 and less than 30, time remaining is positive, and has not been cancelled
                     if 0 < self.current_item_timer_input <= 30 and self.time_remaining_is_positive and not self.auto_advance_automatically_cancelled_by_user:
