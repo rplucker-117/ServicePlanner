@@ -798,7 +798,7 @@ class CueCreator:
 
                 self.current_cues['action_cues'].append({
                     'uuid': device['uuid'],
-                    'cue_type': 'clear_all'
+                    'cue_type': 'clear_master'
                 })
                 self._update_cues_display()
 
@@ -813,7 +813,7 @@ class CueCreator:
                 self._update_cues_display()
 
 
-            Button(add_clear_button_window, text='Clear All', font=(font, 11), bg=bg_color, fg=text_color, command=clear_all_clicked).pack()
+            Button(add_clear_button_window, text='Clear Master', font=(font, 11), bg=bg_color, fg=text_color, command=clear_all_clicked).pack()
             Label(add_clear_button_window, text='Layers:', font=(font, 11), bg=bg_color, fg=text_color).pack()
 
             for layer in pvp_layers:
@@ -834,7 +834,7 @@ class CueCreator:
 
                 self.current_cues['action_cues'].append({
                     'uuid': device['uuid'],
-                    'cue_type': 'mute_all'
+                    'cue_type': 'mute_master'
                 })
                 self._update_cues_display()
 
@@ -848,7 +848,7 @@ class CueCreator:
                 })
                 self._update_cues_display()
 
-            Button(add_mute_button_window, text='Mute All', font=(font, 11), bg=bg_color, fg=text_color,command=mute_all_clicked).pack()
+            Button(add_mute_button_window, text='Mute Master', font=(font, 11), bg=bg_color, fg=text_color,command=mute_all_clicked).pack()
             Label(add_mute_button_window, text='Layers:', font=(font, 11), bg=bg_color, fg=text_color).pack()
 
             for layer in pvp_layers:
@@ -870,7 +870,7 @@ class CueCreator:
 
                 self.current_cues['action_cues'].append({
                     'uuid': device['uuid'],
-                    'cue_type': 'unmute_all'
+                    'cue_type': 'unmute_master'
                 })
                 self._update_cues_display()
 
@@ -884,7 +884,7 @@ class CueCreator:
                 })
                 self._update_cues_display()
 
-            Button(add_unmute_button_window, text='Mute All', font=(font, 11), bg=bg_color, fg=text_color,command=unmute_all_clicked).pack()
+            Button(add_unmute_button_window, text='Unmute Master', font=(font, 11), bg=bg_color, fg=text_color,command=unmute_all_clicked).pack()
             Label(add_unmute_button_window, text='Layers:', font=(font, 11), bg=bg_color, fg=text_color).pack()
 
             for layer in pvp_layers:
@@ -905,7 +905,7 @@ class CueCreator:
 
                 self.current_cues['action_cues'].append({
                     'uuid': device['uuid'],
-                    'cue_type': 'hide_all'
+                    'cue_type': 'hide_master'
                 })
                 self._update_cues_display()
 
@@ -919,7 +919,7 @@ class CueCreator:
                 })
                 self._update_cues_display()
 
-            Button(add_hide_button_window, text='Hide All', font=(font, 11), bg=bg_color, fg=text_color,command=hide_all_clicked).pack()
+            Button(add_hide_button_window, text='Hide Master', font=(font, 11), bg=bg_color, fg=text_color,command=hide_all_clicked).pack()
             Label(add_hide_button_window, text='Layers:', font=(font, 11), bg=bg_color, fg=text_color).pack()
 
             for layer in pvp_layers:
@@ -940,7 +940,7 @@ class CueCreator:
 
                 self.current_cues['action_cues'].append({
                     'uuid': device['uuid'],
-                    'cue_type': 'unhide_all'
+                    'cue_type': 'unhide_master'
                 })
                 self._update_cues_display()
 
@@ -954,7 +954,7 @@ class CueCreator:
                 })
                 self._update_cues_display()
 
-            Button(add_unhide_button_window, text='Unhide All', font=(font, 11), bg=bg_color, fg=text_color,command=unhide_all_clicked).pack()
+            Button(add_unhide_button_window, text='Unhide Master', font=(font, 11), bg=bg_color, fg=text_color,command=unhide_all_clicked).pack()
             Label(add_unhide_button_window, text='Layers:', font=(font, 11), bg=bg_color, fg=text_color).pack()
 
             for layer in pvp_layers:
@@ -975,7 +975,7 @@ class CueCreator:
 
                 self.current_cues['action_cues'].append({
                     'uuid': device['uuid'],
-                    'cue_type': 'pause_all'
+                    'cue_type': 'pause_master'
                 })
                 self._update_cues_display()
 
@@ -1010,7 +1010,7 @@ class CueCreator:
 
                 self.current_cues['action_cues'].append({
                     'uuid': device['uuid'],
-                    'cue_type': 'unpause_all'
+                    'cue_type': 'unpause_master'
                 })
                 self._update_cues_display()
 
@@ -1024,7 +1024,7 @@ class CueCreator:
                 })
                 self._update_cues_display()
 
-            Button(add_unpause_button_window, text='Unpause All', font=(font, 11), bg=bg_color, fg=text_color,command=unpause_all_clicked).pack()
+            Button(add_unpause_button_window, text='Unpause Master', font=(font, 11), bg=bg_color, fg=text_color,command=unpause_all_clicked).pack()
             Label(add_unpause_button_window, text='Layers:', font=(font, 11), bg=bg_color, fg=text_color).pack()
 
             for layer in pvp_layers:
