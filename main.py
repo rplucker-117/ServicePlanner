@@ -803,7 +803,7 @@ class MainUI:
         reloaded_ui = MainUI(startup=self.startup)
         reloaded_ui.build_plan_window()
 
-    def convert_service_items_app_cues_to_dict_and_validate(self, service_items: List[Dict]) -> List[Dict]:
+    def convert_service_items_app_cues_to_dict_and_validate(self, service_items: List[Dict], push_updates_to_pco=True) -> List[Dict]:
         """
         If service items in the self.service_items contain app cues, convert app cues from json to python dict.
         If there is something wrong with the data in them, do not use them & update them on PCO
@@ -830,12 +830,13 @@ class MainUI:
                                 has_been_modified = True
                                 cue.pop('cue_name')
                                 cue['cue_type'] = 'cue_cue'
-                                logger.info(f'{__class__.__name__}.{self.convert_service_items_app_cues_to_dict_and_validate.__name__}: Found PVP cues of old format, updating...')
+                                logger.debug(f'{__class__.__name__}.{self.convert_service_items_app_cues_to_dict_and_validate.__name__}: Found PVP cues of old format')
 
                     validated_cues = json.dumps(validated_cues)
                     item['notes']['App Cues'] = validated_cues
 
-                    if has_been_modified:
+                    if has_been_modified and push_updates_to_pco:
+                        logger.info(f'{__class__.__name__}.{self.convert_service_items_app_cues_to_dict_and_validate.__name__}: Found PVP cues of old format, updating cue in pco')
                         self.pco_plan.create_and_update_item_app_cue(item_id=item['id'], app_cue=validated_cues)
 
                 # if cues are invalid, remove from pco and from the python dict, else deserialize them and put them back into the dict to be returned
