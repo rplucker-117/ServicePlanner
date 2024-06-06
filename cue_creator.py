@@ -227,7 +227,7 @@ class CueCreator:
         from_pco_plan = PcoPlan(service_type=service_type_id, plan_id=service_id)
         CueHandler.check_and_update_plan_for_october_2022_cues(service_type_id=service_type_id, service_id=service_id)
 
-        from_pco_plan_items = self.main_ui.convert_service_items_app_cues_to_dict_and_validate(from_pco_plan.get_plan_items())
+        from_pco_plan_items = self.main_ui.convert_service_items_app_cues_to_dict_and_validate(from_pco_plan.get_plan_items(), push_updates_to_pco=False) #do not push updates as the underlying pco object uses incorrect plan ids
 
         copy_from_plan_item_window = Tk()
         copy_from_plan_item_window.configure(bg=bg_color)
@@ -1037,8 +1037,6 @@ class CueCreator:
         Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Unhide...', command=unhide_button_clicked).pack()
         Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Pause...', command=pause_button_clicked).pack()
         Button(add_action_cue_frame, bg=bg_color, fg=text_color, font=(font, 11), text='Unpause...', command=unpause_button_clicked).pack()
-
-
 
     def _add_resi_cue(self, device):
         add_resi_cue_window = Tk()
