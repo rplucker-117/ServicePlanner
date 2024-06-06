@@ -196,7 +196,7 @@ class PcoPlan:
         :param endpoint: Endpoint to make the DELETE request to
         :param expect_404: If the response code can be 404, for example, checking current item time
         but the item isn't live, pass True and the function won't return an error
-        :return: Response of PATCH request
+        :return: Response of DELETE request
         """
 
         logger.debug(f'{__class__.__name__}.{self.make_delete_request_to_endpoint.__name__}: endpoint {endpoint}')
@@ -672,9 +672,6 @@ class PcoPlan:
             if note_id_key == 'App Cues':
                 self.make_delete_request_to_endpoint(
                     endpoint=f'/services/v2/service_types/{self.service_type}/plans/{self.plan_id}/items/{item_id}/item_notes/{note_ids[note_id_key]}')
-
-        logger.info(f'{__class__.__name__}.{self.include_all_items_in_live.__name__}: Could not delete app cues for item {item_id}'
-                    f'as the note does not exist.')
 
     def remove_all_item_app_cues(self):
         """
