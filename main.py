@@ -956,8 +956,8 @@ class MainUI:
                     if self.advance_to_next_schedule_has_been_delayed:
                         countdown += self.advance_to_next_delay
 
+                    # small auto advance label
                     auto_advance_time_remaining_label.configure(text=f'Advancing to next item in {time.strftime("%H:%M:%S", time.gmtime(countdown))}')
-
 
                     if countdown == 0 and not self.auto_advance_on_time_cancelled_by_user:  # advance to next
                         logger.info(f'Auto advancing to next on time')
@@ -987,13 +987,20 @@ class MainUI:
                         logger.debug('auto advancing to next automatically because current item timer has ended')
                         self.next(cue_items=True)
                         self.auto_advance_reminder_frame.place_forget()
+                        auto_advance_time_remaining_label.configure(text='')
                     if self.current_item_timer_input == 0:
                         self.auto_advance_automatically_cancelled_by_user = False
                         self.auto_advance_reminder_frame.place_forget()
+                        auto_advance_time_remaining_label.configure(text='')
             else:
                 self.auto_advance_reminder_frame.place_forget()
-                auto_advance_time_remaining_label.configure(text='')
 
+            # remove small auto advance label
+            try:
+                if not current_item_notes['App Cues']['advance_to_next_automatically'] is True and not len(current_item_notes['App Cues']['advance_to_next_on_time']) > 0:
+                    auto_advance_time_remaining_label.configure(text='')
+            except KeyError: # there may not be "app cues" in current item notes, ignore it
+                pass
 
         tick()
 
