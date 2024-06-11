@@ -119,6 +119,7 @@ class GlobalCues:
                                 height=5,
                                 foreground=text_color,
                                 font=(font, 17),
+                                wraplength=180,
                                 command=lambda i=i: self._cue_button_clicked(index=i))
 
             # Starting a new column
@@ -203,7 +204,7 @@ class GlobalCues:
 
         if self.edit_mode:
             for button in self.cue_buttons:
-                button.configure(bg='#4a4a4a')
+                button.configure(bg='#53804e')
         else:
             self._color_cue_buttons()
 
