@@ -26,6 +26,7 @@ from rosstalk import rosstalk as rt
 from pco_plan import PcoPlan
 from general_networking import is_host_online
 from propresenter import ProPresenter
+import tkinter.messagebox
 
 import pprint
 
@@ -655,8 +656,12 @@ class CueHandler:
             if device['uuid'] == uuid:
                 return device
 
-        logger.info('did not find device from uuid %s', uuid)
-        return {}
+        logger.warning(f'did not find device from uuid {uuid}')
+
+        tkinter.messagebox.showerror('Device not found',
+                                     message=f'Device with uuid {uuid} not found. You either have a mismatched devices.json file or are loading a plan/globals/presets that contains a device from an old show. Recommend manually deleting cue data from the PCO plan you are trying to load from.')
+
+        return {'type': None}
 
     def cues_are_valid(self, cuelist: List[dict]) -> List[Dict[bool, Union[str, None]]]:
         """
