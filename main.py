@@ -912,8 +912,8 @@ class MainUI:
         self.clock_frame.grid(row=1, column=0, sticky='w')
         time_label.grid(row=0, column=0, padx=10)
 
-        auto_advance_time_remaining_label = Label(self.clock_frame, fg=accent_color_1, bg=bg_color, font=(clock_text_font, 10), text='')
-        auto_advance_time_remaining_label.grid(row=1, column=0, sticky='W', padx=10)
+        small_auto_advance_time_remaining_label = Label(self.clock_frame, fg=accent_color_1, bg=bg_color, font=(clock_text_font, 10), text='')
+        small_auto_advance_time_remaining_label.grid(row=1, column=0, sticky='W', padx=10)
 
 
         # udpates clock and checks for advance to next cues
@@ -934,30 +934,35 @@ class MainUI:
                     def cue_time_to_seconds(cue_time_list: list) -> int: # convert the [01, 02, 03] list format to seconds value
                         return (int(cue_time_list[0]) * 3600) + (int(cue_time_list[1]) * 60) + (int(cue_time_list[2]))
 
-                    def find_difference(cue_time): # difference in time between cue time and now
-                        return cue_time_to_seconds(cue_time)-current_time_in_seconds
+                    def find_difference(cue_time, offset=0): # difference in time between cue time and now. Offset is for advance on time delays
+                        return cue_time_to_seconds(cue_time)-current_time_in_seconds + offset
 
                     next_advance_time_index = 0
                     for iteration, cue_time in enumerate(current_item_notes['App Cues']['advance_to_next_on_time'], start=0):
-                        difference = find_difference(cue_time)  # difference in time between now and advance time
+                        if self.advance_to_next_schedule_has_been_delayed:
+                            offset = self.advance_to_next_delay
+                        else:
+                            offset = 0
+
+                        difference = find_difference(cue_time, offset=offset)  # difference in time between now and advance time
                         if difference < 0:  # pass if the cue time is in the past
                             pass
                         else:
-                            current_smallest_time = find_difference(current_item_notes['App Cues']['advance_to_next_on_time'][next_advance_time_index])
+                            current_smallest_time = find_difference(current_item_notes['App Cues']['advance_to_next_on_time'][next_advance_time_index], offset=offset)
                             if current_smallest_time < 0:
                                 next_advance_time_index = iteration
                             else:
                                 if difference < current_smallest_time:
                                         next_advance_time_index = iteration
 
-                    countdown = find_difference(current_item_notes['App Cues']['advance_to_next_on_time'][next_advance_time_index])
+                    countdown = find_difference(current_item_notes['App Cues']['advance_to_next_on_time'][next_advance_time_index], offset=offset)
 
-                    # auto advance delay
-                    if self.advance_to_next_schedule_has_been_delayed:
-                        countdown += self.advance_to_next_delay
+                    # # auto advance delay
+                    # if self.advance_to_next_schedule_has_been_delayed:
+                    #     countdown += self.advance_to_next_delay
 
                     # small auto advance label
-                    auto_advance_time_remaining_label.configure(text=f'Advancing to next item in {time.strftime("%H:%M:%S", time.gmtime(countdown))}')
+                    small_auto_advance_time_remaining_label.configure(text=f'Advancing to next item in {time.strftime("%H:%M:%S", time.gmtime(countdown))}')
 
                     if countdown == 0 and not self.auto_advance_on_time_cancelled_by_user:  # advance to next
                         logger.info(f'Auto advancing to next on time')
@@ -974,10 +979,10 @@ class MainUI:
 
                     # small auto advance label if it hasn't been cancelled
                     if not self.auto_advance_on_time_cancelled_by_user and self.current_item_timer_input >= 0:
-                        auto_advance_time_remaining_label.configure(text=f'Advancing to next item in {time.strftime("%H:%M:%S", time.gmtime(self.current_item_timer_input))}')
+                        small_auto_advance_time_remaining_label.configure(text=f'Advancing to next item in {time.strftime("%H:%M:%S", time.gmtime(self.current_item_timer_input))}')
                     else:
                         # user clicked cancel, "remove" the label
-                        auto_advance_time_remaining_label.configure(text='')
+                        small_auto_advance_time_remaining_label.configure(text='')
 
                     # if current item timer is greater than 0 and less than 30, time remaining is positive, and has not been cancelled
                     if 0 < self.current_item_timer_input <= 30 and self.time_remaining_is_positive and not self.auto_advance_automatically_cancelled_by_user:
@@ -987,20 +992,20 @@ class MainUI:
                         logger.debug('auto advancing to next automatically because current item timer has ended')
                         self.next(cue_items=True)
                         self.auto_advance_reminder_frame.place_forget()
-                        auto_advance_time_remaining_label.configure(text='')
+                        small_auto_advance_time_remaining_label.configure(text='')
                     if self.current_item_timer_input == 0:
                         self.auto_advance_automatically_cancelled_by_user = False
                         self.auto_advance_reminder_frame.place_forget()
-                        auto_advance_time_remaining_label.configure(text='')
+                        small_auto_advance_time_remaining_label.configure(text='')
             else:
                 self.auto_advance_reminder_frame.place_forget()
 
             # remove small auto advance label
             try:
                 if current_item_notes['App Cues']['advance_to_next_automatically'] is False and not len(current_item_notes['App Cues']['advance_to_next_on_time']) > 0:
-                    auto_advance_time_remaining_label.configure(text='')
+                    small_auto_advance_time_remaining_label.configure(text='')
             except KeyError: # there may not be "app cues" in current item notes. If there's not, we need to remove the label anyway
-                auto_advance_time_remaining_label.configure(text='')
+                small_auto_advance_time_remaining_label.configure(text='')
 
         tick()
 
