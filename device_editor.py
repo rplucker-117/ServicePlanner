@@ -73,6 +73,7 @@ class DeviceEditor:
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Allen & Heath DLive Mixrack', command=self._add_ah_dlive).pack()
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add MIDI Device', command=self._add_midi).pack()
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Propresenter Device', command=self._add_propresenter).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add WebOS TV Device', command=self._add_webos_tv).pack()
 
 
         self.new_device_window.withdraw()
@@ -1316,6 +1317,49 @@ class DeviceEditor:
 
         Button(add_propresenter, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
 
+    def _add_webos_tv(self):
+        self.new_device_window.withdraw()
+
+        add_webos_tv = Tk()
+        add_webos_tv.title = ('Add LG Smart TV')
+        add_webos_tv.configure(bg=bg_color)
+        add_webos_tv.geometry('400x180')
+
+        name_entry_frame = Frame(add_webos_tv)
+        name_entry_frame.configure(bg=bg_color)
+
+        info_entry_frame = Frame(add_webos_tv)
+        info_entry_frame.configure(bg=bg_color)
+
+        name_entry = Entry(name_entry_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        ip_address_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+
+        name_label = Label(name_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Name:')
+        ip_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='IP Address:')
+
+        name_label.pack()
+        name_entry.pack()
+
+        ip_label.pack(side=LEFT)
+        ip_address_entry.pack(side=LEFT)
+
+        name_entry_frame.pack(pady=20)
+        info_entry_frame.pack(pady=20)
+
+        def add():
+            if self._verify_ip(ip_address_entry.get()):
+                to_add = {
+                    'type': 'webostv',
+                    'user_name': name_entry.get(),
+                    'ip': ip_address_entry.get()
+                }
+
+                self._add_device(device=to_add)
+                add_webos_tv.destroy()
+            else:
+                messagebox.showerror(title='Invalid IP address', message='An invalid IP Address was entered')
+
+        Button(add_webos_tv, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
 
 
 
