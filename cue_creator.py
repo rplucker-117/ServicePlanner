@@ -19,6 +19,7 @@ from sheet_reader import ReadSheet
 from aja_kumo import AJAKumo
 from pco_plan import PcoPlan
 from propresenter import ProPresenter
+from webos_tv import WebOSTV
 from general_networking import is_host_online
 import tkinter.messagebox
 
@@ -432,13 +433,15 @@ class CueCreator:
                 self._add_obs(device)
             elif device['type'] == 'propresenter':
                 self._add_propresenter(device)
+            elif device['type'] == 'webostv':
+                self._add_webos_tv(device)
 
         # if the device is not pause, reminder, or kipro, create a button for it. Also looks to see if a kipro exists
         # will not create a button for each kipro, but will instead create a button to control ALL kipros, or 1, if
         # necessary.
         if self.devices is not None:
             for device in self.devices:
-                if not device['type'] in ('pause', 'reminder', 'kipro'):
+                if not device['type'] in ('pause', 'reminder', 'kipro', 'shure_qlxd'):
                     button_name = 'Add ' + device['user_name'] + '(' + device['type'] + ')' + ' cue'
                     Button(self.devices_buttons_frame, text=button_name, font=(font, options_button_text_size),
                            bg=bg_color, fg=text_color, command=lambda device=device: add_cue_clicked(device)).pack(
@@ -1999,6 +2002,151 @@ class CueCreator:
 
         add_macro_button.pack()
 
+    def _add_webos_tv(self, device):
+        tv = WebOSTV(device['ip_address'])
+
+        add_webos_tv = Tk()
+        add_webos_tv.configure(bg=bg_color)
+
+        if not tv.is_online():
+            add_webos_tv.destroy()
+            messagebox.showerror("Offline!", message=f"TV at {device['ip_address']} is offline.")
+            add_webos_tv.destroy()
+
+        inputs = tv.get_inputs()
+
+        # inputs
+        def switch_input(input: dict) -> None:
+            self.current_cues['action_cues'].append({
+                'uuid': device['uuid'],
+                'command_type': 'change_to_input',
+                'input_id': input['id'],
+                'input_label': input['label']
+            })
+            self._update_cues_display()
+            add_webos_tv.destroy()
+
+        input_frame = Frame(add_webos_tv, bg=bg_color)
+
+        Label(input_frame, bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w',
+              text='Switch to input:').grid(row=0, column=0)
+
+        for i, input in enumerate(inputs):
+            Button(input_frame, bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w',
+                   text=input['label'], command=lambda i=i: switch_input(inputs[i])).grid(row=0, column=i+1, sticky='w')
+
+        input_frame.grid(row=0, column=0, sticky='w', pady=5)
+
+        # volume
+        volume_frame = Frame(add_webos_tv, bg=bg_color)
+
+        def set_volume():
+            def set():
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'command_type': 'set_volume',
+                    'volume': int(volume_input.get())
+                })
+                self._update_cues_display()
+                add_webos_tv.destroy()
+
+            try:
+                volume_input_result = int(volume_input.get()) # this may result in ValueError if user entered something other than an int
+                if volume_input_result > 100 or volume_input_result < 0:
+                    messagebox.showerror("Invalid!", message=f"Please enter a number between 0 - 100.")
+                else:
+                    set()
+            except ValueError:
+                messagebox.showerror("Invalid!", message=f"Volume value entered is invalid.")
+                add_webos_tv.lift()
+
+        Label(volume_frame, text='Set volume to: ', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w').grid(row=0, column=0)
+
+        volume_input = Entry(volume_frame, bg=bg_color, fg=text_color, font=(font, current_cues_text_size), width=3)
+        volume_input.grid(row=0, column=1)
+
+        set_volume_button = Button(volume_frame, bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w',
+                            text='Set', command=set_volume)
+        set_volume_button.grid(row=0, column=2)
+
+        volume_frame.grid(row=1, column=0, sticky='w', pady=5)
+
+        # mute
+        mute_frame = Frame(add_webos_tv, bg=bg_color)
+
+        def mute_state(state: bool) -> None:
+            self.current_cues['action_cues'].append({
+                'uuid': device['uuid'],
+                'command_type': 'mute',
+                'state': state
+            })
+            self._update_cues_display()
+            add_webos_tv.destroy()
+
+        Label(mute_frame, text='Set mute state to:', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w').grid(row=0, column=0)
+        Button(mute_frame, bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', text='Mute', command=lambda: mute_state(True)).grid(row=0, column=1, sticky='w')
+        Button(mute_frame, bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', text='Unmute', command=lambda: mute_state(False)).grid(row=0, column=2, sticky='w')
+
+        mute_frame.grid(row=2, column=0, sticky='w', pady=5)
+
+        # Power
+        power_frame = Frame(add_webos_tv, bg=bg_color)
+
+        def power_off() -> None:
+            self.current_cues['action_cues'].append({
+                'uuid': device['uuid'],
+                'command_type': 'power_off'
+            })
+            self._update_cues_display()
+            add_webos_tv.destroy()
+
+        Button(power_frame, text='Power Off', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=power_off).grid(row=0, column=0, sticky='w')
+        Label(power_frame, text='Power on is issued through Wake On Lan', bg=bg_color, fg=text_color, font=(font, current_cues_text_size - 2), anchor='w').grid(row=1, column=0, columnspan=1)
+
+        power_frame.grid(row=3, column=0, sticky='w', pady=5)
+
+        # press button
+        press_button_frame = Frame(add_webos_tv, bg=bg_color)
+
+        def button_press(button_id: str, button_name: str) -> None:
+            self.current_cues['action_cues'].append({
+                'uuid': device['uuid'],
+                'command_type': 'press_button',
+                'button_id': button_id,
+                'button_name': button_name
+            })
+            self._update_cues_display()
+            add_webos_tv.destroy()
+
+        Button(press_button_frame, text='Press "UP" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('UP', 'UP')).grid(row=0, column=0)
+        Button(press_button_frame, text='Press "DOWN" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('DOWN', 'DOWN')).grid(row=1, column=0)
+        Button(press_button_frame, text='Press "LEFT" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('LEFT', 'LEFT')).grid(row=2, column=0)
+        Button(press_button_frame, text='Press "RIGHT" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('RIGHT', 'RIGHT')).grid(row=3, column=0)
+        Button(press_button_frame, text='Press "RED" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('RED', 'RED')).grid(row=4, column=0)
+        Button(press_button_frame, text='Press "GREEN" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('GREEN', 'GREEN')).grid(row=5, column=0)
+        Button(press_button_frame, text='Press "YELLOW" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('YELLOW', 'YELLOW')).grid(row=6, column=0)
+        Button(press_button_frame, text='Press "BLUE" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('BLUE', 'BLUE')).grid(row=7, column=0)
+        Button(press_button_frame, text='Press "CHANNEL UP" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('CHANNELUP', 'CHANNEL UP')).grid(row=8, column=0)
+        Button(press_button_frame, text='Press "CHANNEL DOWN" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('CHANNELDOWN', "CHANNEL DOWN")).grid(row=9, column=0)
+        Button(press_button_frame, text='Press "VOLUME UP" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('VOLUMEUP', "VOLUME UP")).grid(row=10, column=0)
+        Button(press_button_frame, text='Press "VOLUME DOWN" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('VOLUMEDOWN', 'VOLUME DOWN')).grid(row=11, column=0)
+        Button(press_button_frame, text='Press "PLAY" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('PLAY', 'PLAY')).grid(row=12, column=0)
+        Button(press_button_frame, text='Press "PAUSE" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('PAUSE', "PAUSE")).grid(row=13, column=0)
+        Button(press_button_frame, text='Press "STOP" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('STOP', "STOP")).grid(row=14, column=0)
+        Button(press_button_frame, text='Press "REWIND" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('REWIND', 'REWIND')).grid(row=15, column=0)
+        Button(press_button_frame, text='Press "FAST FORWARD" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('FASTFORWARD', "FAST FORWARD")).grid(row=16, column=0)
+        Button(press_button_frame, text='Press "BACK" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('BACK', 'BACK')).grid(row=17, column=0)
+        Button(press_button_frame, text='Press "EXIT" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('EXIT', "EXIT")).grid(row=18, column=0)
+        Button(press_button_frame, text='Press "ENTER" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('ENTER', 'ENTER')).grid(row=19, column=0)
+        Button(press_button_frame, text='Press "ADVANCE SETTING" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('ADVANCE_SETTING', 'ADVANCE SETTING')).grid(row=20, column=0)
+        Button(press_button_frame, text='Press "CLOSED CAPTIONS" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('CC', 'CLOSED CAPTIONS')).grid(row=21, column=0)
+        Button(press_button_frame, text='Press "HOME" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('HOME', 'HOME')).grid(row=22, column=0)
+        Button(press_button_frame, text='Press "INFO" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('INFO', 'INFO')).grid(row=23, column=0)
+        Button(press_button_frame, text='Press "MENU" button', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', command=lambda: button_press('MENU', "MENU")).grid(row=24, column=0)
+
+        press_button_frame.grid(row=4, column=0, sticky='w', pady=6)
+
+
     def _add_reminder_cue_clicked(self):
         # creates a new window for adding a reminder with minutes, seconds, reminder text, and okay.
         logger.debug('add reminder button clicked')
@@ -2015,7 +2163,7 @@ class CueCreator:
                 seconds = 0
 
             self.current_cues['action_cues'].append({
-                'uuid': 'b652b57e-c426-4f83-87f3-a7c4026ec1f0',
+                'uuid': reminder_uuid,
                 'device': 'reminder',
                 'minutes': int(minutes),
                 'seconds': int(seconds),
