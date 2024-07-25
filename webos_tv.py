@@ -1,32 +1,35 @@
 import asyncio
 from bscpylgtv import WebOsClient
 from pprint import pprint
+from logzero import logger
 
 class WebOSTV:
     def __init__(self, ip: str):
         self.ip: str = ip
 
-    async def _get_inputs_async(self) -> dict:
+    async def _get_inputs_async(self) -> list[dict]:
+        logger.debug(f'{__class__.__name__}.{self._get_inputs_async.__name__}: Getting inputs for tv at {self.ip}.')
         client = await WebOsClient.create(self.ip)
         await client.connect()
         result = await client.get_inputs()
         await client.disconnect()
         return result
 
-    def get_inputs(self) -> dict:
+    def get_inputs(self) -> list[dict]:
         return asyncio.run(self._get_inputs_async())
 
     async def _switch_to_input_async(self, input_id: str) -> None:
+        logger.debug(f'{__class__.__name__}.{self._switch_to_input_async.__name__}: Switching to input {input_id} at {self.ip}.')
         client = await WebOsClient.create(self.ip)
         await client.connect()
         await client.set_input(input_id)
         await client.disconnect()
-        client.button()
 
     def switch_to_input(self, input_id: str) -> None:
         return asyncio.run(self._switch_to_input_async(input_id))
 
     async def _set_volume_async(self, volume: int) -> None:
+        logger.debug(f'{__class__.__name__}.{self._set_volume_async.__name__}: Setting volume to {volume} at {self.ip}')
         client = await WebOsClient.create(self.ip)
         await client.connect()
         await client.set_volume(volume)
@@ -36,6 +39,7 @@ class WebOSTV:
         return asyncio.run(self._set_volume_async(volume))
 
     async def _set_mute_state_async(self, mute: bool) -> None:
+        logger.debug(f'{__class__.__name__}.{self._set_mute_state_async.__name__}: Setting mute state to {mute} at tv {self.ip}')
         client = await WebOsClient.create(self.ip)
         await client.connect()
         await client.set_muted_state(mute)
@@ -45,6 +49,7 @@ class WebOSTV:
         return asyncio.run(self._set_mute_state_async(mute))
 
     async def _set_power_off_async(self) -> None:
+        logger.debug(f'{__class__.__name__}.{self._set_power_off_async.__name__}: Setting power off at tv {self.ip}')
         client = await WebOsClient.create(self.ip)
         await client.connect()
         await client.power_off()
@@ -135,6 +140,7 @@ class WebOSTV:
                 "9"
         :return:
         """
+        logger.debug(f'{__class__.__name__}.{self._press_button_async.__name__}: Pressing button {button} at tv {self.ip}')
 
         client = await WebOsClient.create(self.ip)
         await client.connect()
@@ -144,8 +150,25 @@ class WebOSTV:
     def press_button(self, button: str) -> None:
         return asyncio.run(self._press_button_async(button))
 
+    async def _is_online_async(self) -> bool:
+        logger.debug(f'{__class__.__name__}.{self._is_online_async.__name__}: Getting online state at tv {self.ip}')
+        try:
+            client = await WebOsClient.create(self.ip)
+            await client.connect()
+            state = await client.get_power_state()
+            await client.disconnect()
+
+            if state['returnValue']:
+                return True
+        except TimeoutError:
+            logger.info(f'{__class__.__name__}.{self._is_online_async.__name__}: Tv at {self.ip} is offline')
+            return False
+
+    def is_online(self) -> bool:
+        return asyncio.run(self._is_online_async())
+
 if __name__ == '__main__':
     tv = WebOSTV('10.1.60.90')
-    tv.press_button('BACK')
+    tv.set_volume(25)
 
 
