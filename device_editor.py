@@ -1351,7 +1351,7 @@ class DeviceEditor:
                 to_add = {
                     'type': 'webostv',
                     'user_name': name_entry.get(),
-                    'ip': ip_address_entry.get()
+                    'ip_address': ip_address_entry.get()
                 }
 
                 self._add_device(device=to_add)
