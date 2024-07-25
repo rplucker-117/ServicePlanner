@@ -27,6 +27,7 @@ from pco_plan import PcoPlan
 from general_networking import is_host_online
 from propresenter import ProPresenter
 import tkinter.messagebox
+from webos_tv import WebOSTV
 
 import pprint
 
@@ -331,6 +332,24 @@ class CueHandler:
                         cue_verbose = f"{device['user_name']}: Cue Macro {propresenter_macro_name}"
                     cues_verbose_list.append(cue_verbose)
 
+                if device['type'] == 'webostv':
+                    cue_verbose = f'{device["user_name"]}: '
+                    if cue['command_type'] == 'change_to_input':
+                        cue_verbose += f'Switch to input {cue["input_label"]}'
+                    if cue['command_type'] == 'set_volume':
+                        cue_verbose += f'Set volume to {cue["volume"]}%'
+                    if cue['command_type'] == 'mute':
+                        if cue['state'] is True:
+                            cue_verbose += 'Set mute to ON'
+                        if cue['state'] is False:
+                            cue_verbose += 'Set mute state to OFF'
+                    if cue['command_type'] == 'power_off':
+                        cue_verbose += 'Power Off'
+                    if cue['command_type'] == 'press_button':
+                        cue_verbose += f'Press {cue["button_name"]} button'
+
+                    cues_verbose_list.append(cue_verbose)
+
             return cues_verbose_list
         else:
             logger.debug(f'{__class__.__name__}.{self.verbose_decode_cues.__name__}: returning empty cuelist')
@@ -573,6 +592,21 @@ class CueHandler:
                         if cue['command_type'] == 'trigger_macro':
                             pp.cue_macro(cue['macro_uuid'])
 
+                    elif device['type'] == 'webostv':
+                        logger.debug(f'{__class__.__name__}.{self.activate_cues.__name__} : webostv : {cue["command_type"]} : {device["ip_address"]}')
+                        tv = WebOSTV(device['ip_address'])
+                        if cue['command_type'] == 'change_to_input':
+                            tv.switch_to_input(cue['input_id'])
+                        if cue['command_type'] == 'set_volume':
+                            tv.set_volume(cue['volume'])
+                        if cue['command_type'] == 'mute':
+                            tv.set_mute_state(cue['state'])
+                        if cue['command_type'] == 'power_off':
+                            tv.set_power_off()
+                        if cue['command_type'] == 'press_button':
+                            tv.press_button(cue['button_id'])
+
+
                     elif device['uuid'] == reminder_uuid:
                         pass
 
@@ -690,7 +724,8 @@ class CueHandler:
                                  'ah_dlive',
                                  'pvp',
                                  'obs',
-                                 'propresenter']
+                                 'propresenter',
+                                 'webostv']
 
         for i, cue in enumerate(cuelist):
             output.append({True: None})
