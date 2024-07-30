@@ -435,6 +435,8 @@ class CueCreator:
                 self._add_propresenter(device)
             elif device['type'] == 'webostv':
                 self._add_webos_tv(device)
+            elif device['type'] == 'wakeonlan':
+                self._add_wakeonlan(device)
 
         # if the device is not pause, reminder, or kipro, create a button for it. Also looks to see if a kipro exists
         # will not create a button for each kipro, but will instead create a button to control ALL kipros, or 1, if
@@ -2146,6 +2148,18 @@ class CueCreator:
 
         press_button_frame.grid(row=4, column=0, sticky='w', pady=6)
 
+    def _add_wakeonlan(self, device):
+        add_wakeonlan = Tk()
+        add_wakeonlan.configure(bg=bg_color)
+
+        def add():
+            self.current_cues['action_cues'].append({
+                'uuid': device['uuid'],
+            })
+            self._update_cues_display()
+            add_wakeonlan.destroy()
+
+        Button(add_wakeonlan, bg=bg_color, fg=text_color, font=(font, plan_text_size), text=f'{device["user_name"]}: Send Wake On Lan Packet', command=add).pack()
 
     def _add_reminder_cue_clicked(self):
         # creates a new window for adding a reminder with minutes, seconds, reminder text, and okay.
