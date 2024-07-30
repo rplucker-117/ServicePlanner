@@ -46,7 +46,7 @@ packages = ['Babel',
             'soupsieve',
             'typing-extensions',
             'urllib3',
-            'wakeonlan'
+            'wakeonlan',
             'wget',
             'wheel',
             'wsproto',
