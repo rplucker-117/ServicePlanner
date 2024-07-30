@@ -1,5 +1,6 @@
 import subprocess
 import socket
+import re
 
 
 def is_host_online(hostname: str) -> bool:
@@ -56,7 +57,14 @@ def is_remote_port_bindable(ip: str, port: int) -> bool:
     except:
         return False
 
+def is_mac_address_valid(mac: str) -> bool:
+    """
+    Determines if mac address format is valid or not
+    :param mac: mac address
+    :return: bool of result
+    """
 
+    return True if re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", mac.lower()) else False
 
 if __name__ == '__main__':
     print(is_remote_port_bindable('10.1.60.11', 7788))
