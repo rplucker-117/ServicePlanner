@@ -180,7 +180,7 @@ class DeviceEditor:
         edit_device_window.title(f'Edit {selected_device["user_name"]}')
 
         # We only want the user to be able to edit these aspects of the data
-        editable_characteristics = {'user_name', 'ip_address', 'port', 'username', 'password', 'rosstalk_port'}
+        editable_characteristics = {'user_name', 'ip_address', 'port', 'username', 'password', 'rosstalk_port', 'mac_address'}
 
         included_characteristics: set[str] = set()
 
@@ -195,6 +195,7 @@ class DeviceEditor:
             'username': 'Username',
             'password': 'Password',
             'rosstalk_port': 'Rosstalk Port',
+            'mac_address': 'MAC Address'
         }
 
         user_entry_vars = []
