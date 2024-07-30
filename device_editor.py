@@ -11,6 +11,7 @@ from datetime import datetime
 from shutil import copyfile
 from midi import Midi
 import tkinter.messagebox
+from general_networking import is_mac_address_valid
 
 
 class DeviceEditor:
@@ -74,6 +75,7 @@ class DeviceEditor:
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add MIDI Device', command=self._add_midi).pack()
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Propresenter Device', command=self._add_propresenter).pack()
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add WebOS TV Device', command=self._add_webos_tv).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Wake On Lan Device', command=self._add_wakeonlan).pack()
 
 
         self.new_device_window.withdraw()
@@ -1361,6 +1363,57 @@ class DeviceEditor:
 
         Button(add_webos_tv, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
 
+    def _add_wakeonlan(self):
+
+        self.new_device_window.withdraw()
+
+        add_wakeonlan = Tk()
+        add_wakeonlan.title = ('Add Wake On Lan')
+        add_wakeonlan.configure(bg=bg_color)
+        add_wakeonlan.geometry('500x200')
+
+        name_entry_frame = Frame(add_wakeonlan)
+        name_entry_frame.configure(bg=bg_color)
+
+        info_frame = Frame(add_wakeonlan)
+        info_frame.configure(bg=bg_color)
+
+        info_entry_frame = Frame(add_wakeonlan)
+        info_entry_frame.configure(bg=bg_color)
+
+        name_entry = Entry(name_entry_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        mac_address_entry = Entry(info_entry_frame, width=16, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+
+        name_label = Label(name_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Name:')
+        mac_label = Label(info_entry_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='MAC Address of target:')
+
+
+        Label(info_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='The destination device must be in the same broadcast domain.\nCrossing a routed network will generally not work.').pack()
+
+        name_label.pack()
+        name_entry.pack()
+
+        mac_label.pack(side=LEFT)
+        mac_address_entry.pack(side=LEFT)
+
+        name_entry_frame.pack(pady=10)
+        info_frame.pack()
+        info_entry_frame.pack(pady=10)
+
+        def add():
+            if is_mac_address_valid(mac_address_entry.get()):
+                to_add = {
+                    'type': 'wakeonlan',
+                    'user_name': name_entry.get(),
+                    'mac_address': mac_address_entry.get()
+                }
+
+                self._add_device(device=to_add)
+                add_wakeonlan.destroy()
+            else:
+                messagebox.showerror(title='Invalid MAC address', message='An invalid MAC Address was entered')
+
+        Button(add_wakeonlan, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
 
 
 if __name__ == '__main__':
