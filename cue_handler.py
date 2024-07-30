@@ -28,6 +28,7 @@ from general_networking import is_host_online
 from propresenter import ProPresenter
 import tkinter.messagebox
 from webos_tv import WebOSTV
+import wakeonlan
 
 import pprint
 
@@ -347,7 +348,10 @@ class CueHandler:
                         cue_verbose += 'Power Off'
                     if cue['command_type'] == 'press_button':
                         cue_verbose += f'Press {cue["button_name"]} button'
+                    cues_verbose_list.append(cue_verbose)
 
+                if device['type'] == 'wakeonlan':
+                    cue_verbose = f'{device["user_name"]}: Send Wake On Lan Packet'
                     cues_verbose_list.append(cue_verbose)
 
             return cues_verbose_list
@@ -606,6 +610,9 @@ class CueHandler:
                         if cue['command_type'] == 'press_button':
                             tv.press_button(cue['button_id'])
 
+                    elif device['type'] == 'wakeonlan':
+                        logger.debug(f'{__class__.__name__}.{self.activate_cues.__name__} : wakeonlan : {device["mac_address"]}')
+                        wakeonlan.send_magic_packet(device['mac_address'])
 
                     elif device['uuid'] == reminder_uuid:
                         pass
