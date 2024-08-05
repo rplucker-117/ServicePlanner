@@ -76,7 +76,7 @@ class CueCreator:
         self.cue_creator_window.title('Cue Creator')
 
         # lambda ignores the automatically passed event to the function
-        self.cue_creator_window.bind('<Control-Return>', lambda event: self._save())
+        self.cue_creator_window.bind('<Return>', lambda event: self._save())
         self.cue_creator_window.bind('<Delete>', lambda event: self._remove_selected())
 
         # -------------main item frames---------------
