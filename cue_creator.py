@@ -75,6 +75,9 @@ class CueCreator:
         self.cue_creator_window.withdraw()
         self.cue_creator_window.title('Cue Creator')
 
+        # lambda ignores the automatically passed event to the function
+        self.cue_creator_window.bind('<Control-Return>', lambda event: self._save())
+
         # -------------main item frames---------------
         # top left
         self.current_cues_frame = Frame(self.cue_creator_window, bg=bg_color, width=800, height=300)
