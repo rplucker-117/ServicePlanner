@@ -78,6 +78,9 @@ class CueCreator:
         # lambda ignores the automatically passed event to the function
         self.cue_creator_window.bind('<Return>', lambda event: self._save())
         self.cue_creator_window.bind('<Delete>', lambda event: self._remove_selected())
+        self.cue_creator_window.bind('<Prior>', lambda event: self._move_selected_cue_up())
+        self.cue_creator_window.bind('<Next>', lambda event: self._move_selected_cue_down())
+        self.cue_creator_window.bind('<Escape>', lambda event: self._cancel())
 
         # -------------main item frames---------------
         # top left
@@ -390,10 +393,10 @@ class CueCreator:
         # move selected cue up/down
         Button(self.move_up_down_frame, bg=bg_color, fg=text_color, font=(font, options_button_text_size),
                text='Move selected cue up',
-               command=lambda: self._move_cue_up(self.current_cues_listbox.curselection()[0])).pack(padx=10)
+               command=self._move_selected_cue_up).pack(padx=10)
         Button(self.move_up_down_frame, bg=bg_color, fg=text_color, font=(font, options_button_text_size),
                text='Move selected cue down',
-               command=lambda: self._move_cue_down(self.current_cues_listbox.curselection()[0])).pack(padx=10)
+               command=lambda: self._move_selected_cue_down()).pack(padx=10)
 
         # Separator frames
         # Above bottom buttons
@@ -553,13 +556,13 @@ class CueCreator:
             for button in self.cue_preset_buttons:
                 button.pack(padx=20)
 
-    def _move_cue_up(self, cue_index: int) -> None:
+    def _move_selected_cue_up(self) -> None:
         """
         Moves a selected cue_index cue up one place in the user facing cuelist.
 
-        :param cue_index: the index of the cue in the self.current_cues['action_cues'] list that needs to be moved up.
         :return: None
         """
+        cue_index = self.current_cues_listbox.curselection()[0]
 
         logger.debug('Moving selected cue up: index %s', cue_index)
         cue_1 = self.current_cues['action_cues'][cue_index - 1]
@@ -572,13 +575,14 @@ class CueCreator:
 
         self.current_cues_listbox.select_set(cue_index-1)
 
-    def _move_cue_down(self, cue_index: int) -> None:
+    def _move_selected_cue_down(self) -> None:
         """
         Moves a selected cue_index cue down one place in the user facing cuelist.
 
-        :param cue_index: the index of the cue in the self.current_cues['action_cues'] list that needs to be moved down.
         :return: None.
         """
+
+        cue_index = self.current_cues_listbox.curselection()[0]
 
         logger.debug('Moving selected cue down: index %s', cue_index)
         cue_1 = self.current_cues['action_cues'][cue_index]
