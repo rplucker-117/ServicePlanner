@@ -26,8 +26,6 @@ class GlobalCues:
 
         self.folder_path = os.path.dirname(__file__)
 
-        test = path.join(self.folder_path, 'configs', 'global_cues.json')
-
         # if global cues file does not exist, create an empty one
         if not path.exists(path.join(self.folder_path, 'configs', 'global_cues.json')):
             self._create_empty_global_cues_file()
@@ -279,9 +277,6 @@ class GlobalCues:
                 return ''
 
             Thread(target=lambda: app.run('0.0.0.0', webserver_port)).start()
-
-        else:
-            logger.info('Primary application is using port 7777, not starting separate server for global cues')
 
 
 if __name__ == '__main__':
