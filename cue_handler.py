@@ -700,7 +700,7 @@ class CueHandler:
         logger.warning(f'did not find device from uuid {uuid}')
 
         tkinter.messagebox.showerror('Device not found',
-                                     message=f'Device with uuid {uuid} not found. You either have a mismatched devices.json file or are loading a plan/globals/presets that contains a device from an old show. Recommend manually deleting cue data from the PCO plan you are trying to load from.')
+                                     message=f'Device with uuid {uuid} not found. You either have a mismatched devices.json file or are loading a plan/globals/presets that contains a device that no longer exists in devices.json. Recommend manually deleting cue data from the PCO plan you are trying to load from or deleting global_cues.json.')
 
         return {'type': None}
 
