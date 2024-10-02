@@ -260,7 +260,9 @@ class GlobalCues:
         :return: None
         """
 
-        if not is_local_port_in_use(80):
+        webserver_port = 7777
+
+        if not is_local_port_in_use(webserver_port):
             logger.debug('Starting global cues webserver')
             app = Flask(__name__)
 
@@ -276,10 +278,10 @@ class GlobalCues:
 
                 return ''
 
-            Thread(target=lambda: app.run('0.0.0.0', 7777)).start()
+            Thread(target=lambda: app.run('0.0.0.0', webserver_port)).start()
 
         else:
-            logger.info('Primary application is using port 80, not starting separate server for global cues')
+            logger.info('Primary application is using port 7777, not starting separate server for global cues')
 
 
 if __name__ == '__main__':
