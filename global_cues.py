@@ -276,7 +276,7 @@ class GlobalCues:
 
                 return ''
 
-            Thread(target=lambda: app.run('0.0.0.0', 80)).start()
+            Thread(target=lambda: app.run('0.0.0.0', 7777)).start()
 
         else:
             logger.info('Primary application is using port 80, not starting separate server for global cues')
