@@ -240,7 +240,32 @@ class CueCreator:
         copy_from_plan_item_window = Tk()
         copy_from_plan_item_window.configure(bg=bg_color)
 
+        # Create main frame to hold everything that scrolls
+        canvas_holder_frame = Frame(copy_from_plan_item_window, bg=bg_color)
+        canvas_holder_frame.pack(fill=BOTH, expand=1)
 
+        # create canvas inside of main frame
+        container_canvas = Canvas(canvas_holder_frame, bg=bg_color, height=900, width=650)
+        container_canvas.pack(side=LEFT, fill=BOTH, expand=1)
+
+        def _on_mouse_wheel(event):
+            """Mouse scroll event handler"""
+            container_canvas.yview_scroll(-1 * int((event.delta / 120)), 'units')
+
+        # add scrollbar to canvas
+        scrollbar = Scrollbar(canvas_holder_frame, orient=VERTICAL, command=container_canvas.yview)
+        scrollbar.pack(side=RIGHT, fill=Y)
+
+        # configure canvas and set scrollbar binding
+        container_canvas.configure(yscrollcommand=scrollbar.set)
+        container_canvas.bind('<Configure>', lambda e: container_canvas.configure(scrollregion=container_canvas.bbox('all')))
+        container_canvas.bind_all('<MouseWheel>', _on_mouse_wheel)
+
+        # Create another frame inside of canvas. All scroll-able content goes in this frame
+        primary_content_frame = Frame(container_canvas, bg=bg_color)
+
+        # add above frame to new window inside of canvas
+        container_canvas.create_window((0, 0), window=primary_content_frame, anchor='nw')
 
         def select(item):
             copy_from_plan_item_window.destroy()
@@ -260,7 +285,7 @@ class CueCreator:
         item_separators = []
         for iteration, item in enumerate(from_pco_plan_items):
             if item['type'] != 'header' and 'App Cues' in (item['notes'].keys()):
-                frame = Frame(copy_from_plan_item_window, bg=bg_color)
+                frame = Frame(primary_content_frame, bg=bg_color)
                 item_frames.append(frame)
 
                 Label(frame, bg=bg_color, fg=text_color, font=(font, 12), text=item['title'], justify=LEFT).pack(
@@ -273,7 +298,7 @@ class CueCreator:
                 Button(frame, bg=bg_color, fg=text_color, text='Select', font=(font, 12),
                        command=lambda item=item: select(item)).pack(side=RIGHT, padx=10, anchor='e')
 
-                separator = Frame(copy_from_plan_item_window, bg=separator_color, width=500, height=1)
+                separator = Frame(primary_content_frame, bg=separator_color, width=500, height=1)
                 separator.pack_propagate(False)
                 item_separators.append(separator)
 
@@ -2359,7 +2384,7 @@ class CueCreator:
         :return: None
         """
 
-        logger.debug('add cues button pressed')
+        self.cue_creator_window.withdraw()
 
         if self.type_of_cues_being_edited == 'item':
             if bool(self.update_item_length.get()):
@@ -2395,8 +2420,8 @@ class CueCreator:
 
             self.global_cue_shotbox_init._reload()
 
-
         self.cue_creator_window.destroy()
+
 
     def _cancel(self) -> None:
         """
