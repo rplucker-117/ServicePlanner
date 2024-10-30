@@ -97,8 +97,8 @@ class DeviceEditor:
         move_up_down_frame = Frame(self.devices_listbox_frame, bg=bg_color)
         move_up_down_frame.grid(row=0, column=0, padx=20)
 
-        Button(move_up_down_frame, text='Move selected device up', command=self._move_selected_device_up).pack()
-        Button(move_up_down_frame, text='Move selected device dowm', command=self._move_selected_device_down).pack()
+        Button(move_up_down_frame, text='Move selected device up', bg=bg_color, fg=text_color, font=(font, other_text_size-2), command=self._move_selected_device_up).pack()
+        Button(move_up_down_frame, text='Move selected device down', bg=bg_color, fg=text_color, font=(font, other_text_size-2), command=self._move_selected_device_down).pack()
 
         Button(self.bottom_buttons_frame, text='Add New Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._add_new_device_window).pack(side=LEFT, padx=10)
         Button(self.bottom_buttons_frame, text='Remove Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._remove_device).pack(side=LEFT, padx=10)
