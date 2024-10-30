@@ -12,6 +12,7 @@ from shutil import copyfile
 from midi import Midi
 import tkinter.messagebox
 from general_networking import is_mac_address_valid
+from pprint import pprint
 
 
 class DeviceEditor:
@@ -54,12 +55,14 @@ class DeviceEditor:
         self.root = Tk()
         self.root.withdraw()
         self.device_editor_window = Toplevel(self.root)
-        self.devices_listbox = Listbox(self.device_editor_window)
-
 
         self.new_device_window = Tk()
-        self.new_device_window.configure(bg=bg_color)
-        self.new_device_window.title('Select a device type to add')
+
+        self.description_frame = Frame(self.device_editor_window, bg=bg_color)
+        self.devices_listbox_frame = Frame(self.device_editor_window, bg=bg_color)
+        self.bottom_buttons_frame = Frame(self.device_editor_window, bg=bg_color)
+
+        self.devices_listbox = Listbox(self.devices_listbox_frame)
 
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add ProVideoPlayer', command=self._add_pvp).pack()
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Ross Carbonite', command=self._add_ross_carbonite).pack()
@@ -77,27 +80,38 @@ class DeviceEditor:
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add WebOS TV Device', command=self._add_webos_tv).pack()
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Wake On Lan Device', command=self._add_wakeonlan).pack()
 
-
         self.new_device_window.withdraw()
 
     def build_ui(self):
         self.device_editor_window.configure(bg=bg_color)
         self._update_existing_devices()
 
-        Label(self.device_editor_window, bg=bg_color, fg=text_color, font=(font, other_text_size - 2),
+        Label(self.description_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2),
               text="Use this menu to add or remove physical devices. Removing/re-adding an existing will device break it in any existing shows that you have saved!\n\n"
-                   "-It's recommended that you make a backup of your devices.json file. One will be made for you in devices_backup/ upon save.\n"
                    "-When finished, reload the program for your changes to take effect.\n"
                    "-You can use a devices file from a different machine or program version if you wish, just make sure it's named devices.json and in the same directory.\n", justify=LEFT).pack()
 
         self.devices_listbox.configure(bg=bg_color, fg=text_color, font=(font, current_cues_text_size), width=50, height=40)
-        self.devices_listbox.pack(pady=20)
+        self.devices_listbox.grid(row=0, column=1)
 
-        Button(self.device_editor_window, text='Add New Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._add_new_device_window).pack(side=LEFT, padx=10)
-        Button(self.device_editor_window, text='Remove Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._remove_device).pack(side=LEFT, padx=10)
-        Button(self.device_editor_window, text='Show details', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._show_details).pack(side=LEFT, padx=10)
-        Button(self.device_editor_window, text='Edit Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._edit_device).pack(side=LEFT, padx=10)
-        Button(self.device_editor_window, text='Save', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._update_devices_file).pack(side=RIGHT, padx=10)
+        move_up_down_frame = Frame(self.devices_listbox_frame, bg=bg_color)
+        move_up_down_frame.grid(row=0, column=0, padx=20)
+
+        Button(move_up_down_frame, text='Move selected device up', command=self._move_selected_device_up).pack()
+        Button(move_up_down_frame, text='Move selected device dowm', command=self._move_selected_device_down).pack()
+
+        Button(self.bottom_buttons_frame, text='Add New Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._add_new_device_window).pack(side=LEFT, padx=10)
+        Button(self.bottom_buttons_frame, text='Remove Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._remove_device).pack(side=LEFT, padx=10)
+        Button(self.bottom_buttons_frame, text='Show details', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._show_details).pack(side=LEFT, padx=10)
+        Button(self.bottom_buttons_frame, text='Edit Device', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._edit_device).pack(side=LEFT, padx=10)
+        Button(self.bottom_buttons_frame, text='Save', bg=bg_color, fg=text_color, font=(font, other_text_size), padx=5, command=self._update_devices_file).pack(side=RIGHT, padx=10)
+
+        self.description_frame.grid(row=0, column=0)
+        self.devices_listbox_frame.grid(row=1, column=0)
+        self.bottom_buttons_frame.grid(row=2, column=0)
+
+        self.new_device_window.configure(bg=bg_color)
+        self.new_device_window.title('Select a device type to add')
 
         self.root.mainloop()
 
@@ -160,7 +174,8 @@ class DeviceEditor:
         details_window.configure(bg=bg_color)
         details_window.geometry('450x250')
 
-        selected_device_index = self.devices_listbox.curselection()[0]+3
+        selected_device_index = self._get_selected_device_index()
+
         for field in self.devices[selected_device_index].keys():
             Label(details_window, bg=bg_color, fg=text_color,
                   text=f'{field} : {self.devices[selected_device_index][field]}', font=(font, other_text_size)).pack()
@@ -237,6 +252,49 @@ class DeviceEditor:
             edit_device_window.destroy()
 
         Button(edit_device_window, bg=bg_color, fg=text_color, font=(font, 13), text='Okay', command=okay).pack()
+
+    def _move_selected_device_up(self):
+        """
+        Move the selected device up in the devices list. Useful for rearranging existing devices & reorganizing them in a more readable way.
+        :return: None
+        """
+        device_index = self._get_selected_device_index()
+
+        device_1 = self.devices[device_index - 1]
+        device_2 = self.devices[device_index]
+
+        self.devices[device_index] = device_1
+        self.devices[device_index - 1] = device_2
+
+        self._update_existing_devices()
+        self.devices_listbox.select_set(device_index - 4)
+
+    def _move_selected_device_down(self):
+
+        """
+        Move the selected device down in the device list. Useful for rearranging the existing devices & reorganizing them in a more readable way.
+        :return:
+        """
+
+        device_index = self._get_selected_device_index()
+
+        device_1 = self.devices[device_index]
+        device_2 = self.devices[device_index + 1]
+
+        self.devices[device_index] = device_2
+        self.devices[device_index + 1] = device_1
+
+        self._update_existing_devices()
+        self.devices_listbox.select_set(device_index - 2)
+
+
+    def _get_selected_device_index(self) -> int:
+        """
+        Get the index of the currently selected device, without the boilerplate pause, reminder, and all kipros devices.
+        Bottom line, this will return the user-visible index device that's listed in the listbox.
+        :return: user-visible index device that's listed in the listbox
+        """
+        return self.devices_listbox.curselection()[0] + 3
 
     def _verify_ip(self, ip):
         try:
