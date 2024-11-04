@@ -2438,7 +2438,7 @@ class CueCreator:
 
         logger.debug('Testing current cues')
 
-        threading.Thread(target=self.cue_handler.activate_cues(cuelist=self.current_cues['action_cues'])).start()
+        threading.Thread(target=self.cue_handler.activate_cues, kwargs={'cuelist':self.current_cues['action_cues']}).start()
 
     def _copy_cues_from_plan_item(self) -> None:
         """
