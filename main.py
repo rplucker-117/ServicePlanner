@@ -89,7 +89,7 @@ class UtilitiesMenu:
         if self.contains_kipro:
             Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Format Kipros', font=(font, other_text_size), command=self._format_kipros).pack()
             Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Download Kipro Clips', font=(font, other_text_size), command=self._download_kipro_clips).pack()
-        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Update switcher cam names from PCO positions (Lakeland)', font=(font, other_text_size), command=self._update_cam_names).pack()
+        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Update switcher cam names from PCO positions', font=(font, other_text_size), command=self._update_cam_names).pack()
 
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Open PCO plan in browser', font=(font, other_text_size), command=self._open_pco_plan_in_browser).pack()
 
@@ -220,8 +220,8 @@ class UtilitiesMenu:
 
 
         self.pco_live.go_to_next_service()
-        self.pco_live.go_to_previous_item()
         self.utilities_menu.destroy()
+        self.main_ui_window.update_live()
 
     def _format_kipros(self):
         yes_no = messagebox.askyesno('Format KiPros', message="Are you sure you want to format ALL KiPros?")
@@ -724,7 +724,7 @@ class MainUI:
         if service_time:
             self._build_current_service_time()
 
-    def update_kipro_status(self, kipro_unit, status):
+    def update_kipro_status(self, kipro_unit, status): # colors the kipro button color
         # logger.debug('Got kipro status: unit: %s, status: %s', kipro_unit, status)
         try:
             if status == 1:
@@ -1250,7 +1250,7 @@ class MainUI:
                     cue_name = cue[0]
                     cue_data = cue[1]
                     button = Button(self.plan_cues_frame, bg=bg_color, fg=text_color, font=(font, other_text_size),
-                           text=cue_name, command=lambda cue_data=cue_data: threading.Thread(target=self.cue_handler.activate_cues(cue_data['action_cues'])).start())
+                           text=cue_name, command=lambda cue_data=cue_data: threading.Thread(target=self.cue_handler.activate_cues, args=(cue_data['action_cues'],)).start())
                     button.grid(row=0, column=iteration, padx=plan_cue_pad_x, pady=10)
                     self.plan_cue_buttons.append(button)
 
@@ -1358,9 +1358,9 @@ class MainUI:
 
             if self.sound_check_mode:
                 logger.info(f'{__class__.__name__}.{self._cue.__name__}: Sound check mode is active. Ignoring cues from {len(ignored_devices)} devices.')
-                threading.Thread(target=lambda: self.cue_handler.activate_cues(cuelist=cuelist_minus_ignored)).start()
+                threading.Thread(target=self.cue_handler.activate_cues, kwargs={'cuelist': cuelist_minus_ignored}).start()
             else:
-                threading.Thread(target=lambda: self.cue_handler.activate_cues(cuelist=cuelist)).start()
+                threading.Thread(target=self.cue_handler.activate_cues, kwargs={'cuelist': cuelist}).start()
 
 
         if is_next:
@@ -1409,13 +1409,12 @@ class KiProUi:
 
     def update_kipro_status(self, ui):
         for iteration, kipro_unit in enumerate(ui.all_kipros):
+            # ui is the main ui class
 
             status = int(self.kipro.get_status(ip=kipro_unit['ip_address']))
-            # logger.debug('update_kipro_status: status is %s for kipro %s', status, kipro_unit['name'])
             ui.update_kipro_status(kipro_unit=iteration, status=status)
 
             percent = int(self.kipro.get_remaining_storage(ip=kipro_unit['ip_address']))
-            # logger.debug('update_kipro_status: storage is %s percent for kipro %s', percent, kipro_unit['name'])
             ui.update_kipro_storage(kipro_unit=iteration, percent=percent)
 
         if interval_update_kipros:
@@ -1428,7 +1427,7 @@ class KiProUi:
         if not self.exit_event.is_set():
             self.update_kipro_status(ui=ui)
         else:
-            logger.debug('KiProUi.__refresh: exit event set, stopping loop')
+            logger.debug('KiProUi._refresh: exit event set, stopping loop')
 
 
 class ShureQLXDUi:
