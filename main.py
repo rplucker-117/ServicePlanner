@@ -81,8 +81,7 @@ class UtilitiesMenu:
 
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Advance to Next Service', font=(font, other_text_size), command=self._advance_to_next_service).pack()
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Add Plan Cue', font=(font, other_text_size), command=self._add_plan_cue).pack()
-        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Edit Plan Cue', font=(font, other_text_size), command=self._edit_plan_cue).pack()
-        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Remove Plan Cue', font=(font, other_text_size), command=self._remove_plan_cue).pack()
+        Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Edit Plan Cues', font=(font, other_text_size), command=self._edit_plan_cue).pack()
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Open Device Editor', font=(font, other_text_size), command=self._open_device_editor).pack()
         Button(self.utilities_menu, bg=bg_color, fg=text_color, text='Hard Reload App', font=(font, other_text_size), command=self._hard_reload_app).pack()
 
@@ -267,54 +266,80 @@ class UtilitiesMenu:
 
     def _edit_plan_cue(self):
         self.utilities_menu.destroy()
-        logger.debug('Utilities._edit_plan_cue clicked.')
         if len(self.main_ui_window.plan_cues) > 0:
             current_plan_cues = self.main_ui_window.plan_cues
 
             edit_plan_cue_window = Tk()
             edit_plan_cue_window.configure(bg=bg_color)
-            listbox = Listbox(edit_plan_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size))
-            listbox.pack()
 
-            for iteration, item in enumerate(current_plan_cues):
-                name = item[0]
-                listbox.insert(iteration, name)
+            listbox_frame = Frame(edit_plan_cue_window, bg=bg_color)
+            listbox_frame.grid(row=0, column=1)
+
+            bottom_buttons_frame = Frame(edit_plan_cue_window, bg=bg_color)
+            bottom_buttons_frame.grid(row=1, column=0)
+
+            left_butons_frame = Frame(edit_plan_cue_window, bg=bg_color)
+            left_butons_frame.grid(row=0, column=0)
+
+            listbox = Listbox(listbox_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), height=20)
+            listbox.grid(row=0, column=1)
+
+            def populate_listbox() -> None:
+                listbox.select_clear(0, 'end')  # clear listbox selection
+                listbox.delete(0, 'end')  # delete all items from listbox
+
+                for iteration, item in enumerate(current_plan_cues):
+                    name = item[0]
+                    listbox.insert(iteration, name)
+
+            def move_selected_cue_up() -> None:
+                selected_cue_index = listbox.curselection()[0]
+                to_move = current_plan_cues[selected_cue_index]
+
+                current_plan_cues[selected_cue_index] = current_plan_cues[selected_cue_index - 1]
+                current_plan_cues[selected_cue_index - 1] = to_move
+
+                populate_listbox()
+
+                listbox.select_set(selected_cue_index - 1) # select the previously selected item so user doesn't have to reclick every time after clicking "move up"
+
+            def move_selected_cue_down() -> None:
+                selected_cue_index = listbox.curselection()[0]
+                to_move = current_plan_cues[selected_cue_index]
+
+                current_plan_cues[selected_cue_index] = current_plan_cues[selected_cue_index + 1]
+                current_plan_cues[selected_cue_index + 1] = to_move
+
+                populate_listbox()
+
+                listbox.select_set(selected_cue_index + 1)
+
+            def remove_selected_cue() -> None:
+                selected_cue_index = listbox.curselection()[0]
+                current_plan_cues.pop(selected_cue_index)
+
+                populate_listbox()
+
+            def push_edits() -> None:
+                self.main_ui_window.pco_plan.create_and_update_plan_app_cues(json.dumps(current_plan_cues))
+                self.main_ui_window.update_plan_cues()
+                edit_plan_cue_window.destroy()
 
             def edit(index: int) -> None:
                 logger.debug(f'_edit_plan_cue: editing item {current_plan_cues[index][0]}')
                 edit_plan_cue_window.destroy()
                 CueCreator(startup=self.startup, ui=self.main_ui_window, devices=self.startup.devices).edit_plan_cue(cuelist=self.main_ui_window.plan_cues, cue_index=index)
 
-            Button(edit_plan_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Edit',
-                   command=lambda: edit(listbox.curselection()[0])).pack(side=LEFT)
-            Button(edit_plan_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Cancel',
-                   command=lambda: edit_plan_cue_window.destroy()).pack(side=RIGHT)
+            Button(bottom_buttons_frame, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Cancel',
+                   command=lambda: edit_plan_cue_window.destroy()).grid(row=0, column=1, padx=10)
 
-    def _remove_plan_cue(self):
-        logger.debug('Utilities.__remove_plan_cue clicked')
-        self.utilities_menu.destroy()
-        if len(self.main_ui_window.plan_cues) > 0:
-            current_plan_cues = self.main_ui_window.plan_cues
+            Button(left_butons_frame, bg=bg_color, fg=text_color, font=(font, other_text_size-2), text='Move selected cue up', command=move_selected_cue_up).grid(row=0, column=0)
+            Button(left_butons_frame, bg=bg_color, fg=text_color, font=(font, other_text_size-2), text='Move selected cue up down', command=move_selected_cue_down).grid(row=1, column=0)
+            Button(left_butons_frame, bg=bg_color, fg=text_color, font=(font, other_text_size-2), text='Remove selected cue', command=remove_selected_cue).grid(row=2, column=0)
+            Button(left_butons_frame, bg=bg_color, fg=text_color, font=(font, other_text_size-2), text='Edit selected cue', command=lambda: edit(listbox.curselection()[0])).grid(row=3, column=0)
+            Button(left_butons_frame, bg=bg_color, fg=text_color, font=(font, other_text_size-2), text='Done editing cues', command=push_edits).grid(row=4, column=0)
 
-            remove_plan_cue_window = Tk()
-            remove_plan_cue_window.configure(bg=bg_color)
-            listbox = Listbox(remove_plan_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size))
-            listbox.pack()
-
-            for iteration, item in enumerate(current_plan_cues):
-                name = item[0]
-                listbox.insert(iteration, name)
-
-            def okay():
-                logger.debug('Utilities.__remove_plan: sending updated cues: %s', current_plan_cues)
-                remove_plan_cue_window.destroy()
-                self.pco_plan.create_and_update_plan_app_cues(app_cue=json.dumps(current_plan_cues))
-                self.main_ui_window.update_plan_cues()
-
-            Button(remove_plan_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Remove',
-                   command=lambda: (current_plan_cues.pop(listbox.curselection()[0]), listbox.delete(first=listbox.curselection()[0]))).pack(side=LEFT)
-            Button(remove_plan_cue_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Okay',
-                   command=okay).pack(side=RIGHT)
+            populate_listbox()
 
     def _remove_global_cue(self):
         logger.debug('Utilities.__remove_global_cue clicked')
