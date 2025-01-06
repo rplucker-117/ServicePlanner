@@ -70,6 +70,62 @@ class ProPresenter:
             logger.warning(f'{__class__.__name__}.{self._make_get_request.__name__}: Propresenter machine at {self.ip}:{self.port} is offline.')
             return None
 
+    def _make_delete_request(self, endpoint: str) -> None:
+        """
+        Make a delete request to an endpoint
+        :param endpoint: endpoint, exactly as it is listed in the documentation, including the leading /
+        :return: None
+        """
+
+        try:
+            r = requests.delete(f'{self.API_BASE_URL}{endpoint}')
+
+            if r.status_code == 404:
+                logger.warning(f'{__class__.__name__}.{self._make_delete_request.__name__}: Propresenter machine at {self.ip}:{self.port} does not have network enabled or the requested path was not found.')
+
+            elif r.status_code != 204:
+                logger.warning(f'{__class__.__name__}.{self._make_delete_request.__name__}: Delete request to endpoint {endpoint} returned status code {r.status_code}')
+
+        except (urllib3.exceptions.MaxRetryError,
+                requests.exceptions.ConnectionError,
+                urllib3.exceptions.NewConnectionError,
+                ConnectionRefusedError):
+
+            logger.warning(f'{__class__.__name__}.{self._make_delete_request.__name__} Propresenter machine at {self.ip}:{self.port} is offline.')
+        finally:
+            return None
+
+    def _make_put_request(self, endpoint, payload: str) -> None:
+        """
+        Make a put request to an endpoint
+        :param endpoint: endpoint, exactly as it is listed in the documentation, including the leading /
+        :param payload: Desired payload
+        :return: None
+        """
+        try:
+            r = requests.put(f'{self.API_BASE_URL}{endpoint}', json=payload)
+
+            if r.status_code == 400:
+                logger.warning(f'{__class__.__name__}.{self._make_put_request.__name__}: Invalid request.')
+
+            if r.status_code == 404:
+                logger.warning(
+                    f'{__class__.__name__}.{self._make_put_request.__name__}: Propresenter machine at {self.ip}:{self.port} does not have network enabled or the requested path was not found.')
+
+            elif r.status_code != 204:
+                logger.warning(
+                    f'{__class__.__name__}.{self._make_put_request.__name__}: Delete request to endpoint {endpoint} returned status code {r.status_code}')
+
+        except (urllib3.exceptions.MaxRetryError,
+                requests.exceptions.ConnectionError,
+                urllib3.exceptions.NewConnectionError,
+                ConnectionRefusedError):
+
+            logger.warning(
+                f'{__class__.__name__}.{self._make_put_request.__name__} Propresenter machine at {self.ip}:{self.port} is offline.')
+        finally:
+            return None
+
     def get_macros(self) -> List[Dict[str, Dict[str, Union[float, str, int]]]]:
         """
         Retrieves a list of macros that are currently in Propresenter
@@ -107,6 +163,38 @@ class ProPresenter:
 
         return self._make_get_request(endpoint=f'/v1/macro/{macro_uuid}')
 
+    def get_current_active_stage_message(self) -> Union[None, str]:
+        """
+        Gets the current active stage message. Only returns stage message if it is currently active. If the message is hidden, return None.
+        :return:
+        """
+
+        logger.debug(f'{__class__.__name__}.{self.get_current_active_stage_message.__name__}')
+
+        r = self._make_get_request(endpoint=f'/v1/stage/message')
+        return None if r == '' else r
+
+    def hide_current_stage_message(self) -> None:
+        """
+        Hides currently active stage message. Keeps text in stage message text field in place
+        :return: None
+        """
+
+        logger.debug(f'{__class__.__name__}.{self.hide_current_stage_message.__name__}')
+
+        self._make_delete_request('/v1/stage/message')
+
+    def show_stage_message(self, message: str) -> None:
+        """
+        Sets and shows stage message.
+        :param message: User facing message to display
+        :return: None
+        """
+
+        logger.debug(f'{__class__.__name__}.{self.show_stage_message.__name__} : {message}')
+
+        self._make_put_request(endpoint='/v1/stage/message', payload=message)
+
 
     def cue_macro(self, macro_uuid: str) -> None:
         """
@@ -119,9 +207,11 @@ class ProPresenter:
         self._make_get_request(endpoint=f'/v1/macro/{macro_uuid}/trigger')
 
 if __name__ == '__main__':
-    pp = ProPresenter(ip='10.1.60.109', port=61167)
+    pp = ProPresenter(ip='10.1.51.21', port=1025)
     # pprint(pp.get_macros())
     # pprint(pp.does_macro_exist('C9930416-4902-4AB8-9B67-65175473F6BA'))
     # pprint(pp.cue_macro('C9930416-4902-4AB8-9B67-65175473F6BA'))
     # pprint(pp.get_macro_details_from_uuid('C9930416-4902-4AB8-9B67-65175473F6BA'))
     # pp.is_online()
+    # pp.show_stage_message('this is a stage message')
+    pp.hide_current_stage_message()
