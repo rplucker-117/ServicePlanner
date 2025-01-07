@@ -331,6 +331,13 @@ class CueHandler:
                         else:
                             propresenter_macro_name = pp.get_macro_details_from_uuid(cue['macro_uuid'])['id']['name']
                         cue_verbose = f"{device['user_name']}: Cue Macro {propresenter_macro_name}"
+
+                    if cue['command_type'] == 'show_stage_display_message':
+                        cue_verbose = f"{device['user_name']}: Show Stage Display Message: {cue['stage_display_message']}"
+
+                    if cue['command_type'] == 'hide_stage_display_message':
+                        cue_verbose = f"{device['user_name']}: Hide currently active stage display message"
+
                     cues_verbose_list.append(cue_verbose)
 
                 if device['type'] == 'webostv':
@@ -595,6 +602,10 @@ class CueHandler:
                         pp = ProPresenter(ip=device['ip_address'], port=device['port'])
                         if cue['command_type'] == 'trigger_macro':
                             pp.cue_macro(cue['macro_uuid'])
+                        if cue['command_type'] == 'show_stage_display_message':
+                            pp.show_stage_message(message=cue['stage_display_message'])
+                        if cue['command_type'] == 'hide_stage_display_message':
+                            pp.hide_current_stage_message()
 
                     elif device['type'] == 'webostv':
                         logger.debug(f'{__class__.__name__}.{self.activate_cues.__name__} : webostv : {cue["command_type"]} : {device["ip_address"]}')
