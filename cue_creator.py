@@ -2050,6 +2050,8 @@ class CueCreator:
             show_stage_display_message = Tk()
             show_stage_display_message.configure(bg=bg_color)
 
+            Label(show_stage_display_message, text='Your stage display message:', bg=bg_color, fg=text_color, font=(font, current_cues_text_size)).pack()
+
             stage_message_entry = Entry(show_stage_display_message, width=100, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
             stage_message_entry.pack(pady=5)
 
