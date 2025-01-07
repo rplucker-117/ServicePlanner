@@ -2032,10 +2032,48 @@ class CueCreator:
                 frame_bg_color = rgb_to_hex(red=macro_color['red'], green=macro_color['green'], blue=macro_color['blue'])
                 Frame(add_macro, bg=frame_bg_color, width=5).grid(row=i, column=0, sticky='news')
 
+        def show_stage_display_message_clicked():
+            def okay():
+                stage_message_text: str = stage_message_entry.get()
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'command_type': 'show_stage_display_message',
+                    'stage_display_message': stage_message_text
+                })
+                self._update_cues_display()
+
+                show_stage_display_message.destroy()
+
+            add_propresenter.destroy()
+
+            show_stage_display_message = Tk()
+            show_stage_display_message.configure(bg=bg_color)
+
+            stage_message_entry = Entry(show_stage_display_message, width=100, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+            stage_message_entry.pack(pady=5)
+
+            Button(show_stage_display_message, text='Okay', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), command=okay).pack(pady=5)
+
+        def hide_stage_display_message_clicked():
+            self.current_cues['action_cues'].append({
+                'uuid': device['uuid'],
+                'command_type': 'hide_stage_display_message'
+            })
+
+            self._update_cues_display()
+            add_propresenter.destroy()
+
         add_macro_button = Button(add_propresenter, bg=bg_color, fg=text_color, font=(font, plan_text_size),
                                   text='Add Macro Cue', command=add_macro_button_clicked)
+        show_stage_display_message = Button(add_propresenter, bg=bg_color, fg=text_color, font=(font, plan_text_size),
+                                  text='Show a stage display message', command=show_stage_display_message_clicked)
+        hide_stage_display_message = Button(add_propresenter, bg=bg_color, fg=text_color, font=(font, plan_text_size),
+                                            text='Hide current stage display message', command=hide_stage_display_message_clicked)
 
         add_macro_button.pack()
+        show_stage_display_message.pack()
+        hide_stage_display_message.pack()
 
     def _add_webos_tv(self, device):
         tv = WebOSTV(device['ip_address'])
