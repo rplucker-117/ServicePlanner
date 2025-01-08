@@ -77,6 +77,7 @@ class DeviceEditor:
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Allen & Heath DLive Mixrack', command=self._add_ah_dlive).pack()
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add MIDI Device', command=self._add_midi).pack()
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Propresenter Device', command=self._add_propresenter).pack()
+        Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add OBS Device', command=self._add_obs).pack()
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add WebOS TV Device', command=self._add_webos_tv).pack()
         Button(self.new_device_window, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add Wake On Lan Device', command=self._add_wakeonlan).pack()
 
@@ -1377,6 +1378,47 @@ class DeviceEditor:
                 logger.error('__add_pvp: IP address or port not valid: %s, %s', ip_address_entry.get(), port_entry.get())
 
         Button(add_propresenter, bg=bg_color, fg=text_color, font=(font, other_text_size), text='Add', command=add).pack()
+
+    def _add_obs(self):
+        self.new_device_window.withdraw()
+
+        add_obs = Tk()
+        add_obs.title('Add OBS device')
+        add_obs.configure(bg=bg_color)
+        add_obs.geometry('400x180')
+
+        name_frame = Frame(add_obs, bg=bg_color)
+        ip_address_frame = Frame(add_obs, bg=bg_color)
+
+        name_entry = Entry(name_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+        ip_address_entry = Entry(ip_address_frame, width=30, bg=text_entry_box_bg_color, fg=text_color, font=(font, current_cues_text_size))
+
+        name_label = Label(name_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='Name:')
+        ip_label = Label(ip_address_frame, bg=bg_color, fg=text_color, font=(font, other_text_size - 2), text='IP Address:')
+
+        name_label.pack(side=LEFT)
+        name_entry.pack(side=RIGHT)
+
+        ip_label.pack(side=LEFT)
+        ip_address_entry.pack(side=RIGHT)
+
+        name_frame.pack(pady=20)
+        ip_address_frame.pack(pady=20)
+
+        def okay():
+            if self._verify_ip(ip=ip_address_entry.get()):
+                to_add = {
+                    'type': 'obs',
+                    'user_name': name_entry.get(),
+                    'ip_address': ip_address_entry.get()
+                }
+                self._add_device(device=to_add)
+                add_obs.destroy()
+            else:
+                messagebox.showerror(title='Invalid IP address', message='An Invalid IP address was entered')
+
+        Button(add_obs, text='Okay', bg=bg_color, fg=text_color, font=(font, current_cues_text_size), command=okay).pack()
+
 
     def _add_webos_tv(self):
         self.new_device_window.withdraw()
