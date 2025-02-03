@@ -1267,14 +1267,26 @@ class MainUI:
 
             # pco_plan.validate_plan_cues can return none if invalid data is found
             if plan_app_cues_validated is not None:
-                self.plan_cues_frame.grid(row=5, column=0)
+                self.plan_cues_frame.grid(row=5, column=0, pady=20)
 
                 self.plan_cues = self.convert_plan_app_cues_to_dict(plan_app_cues_validated)
 
                 for iteration, cue in enumerate(self.plan_cues):
                     cue_name = cue[0]
                     cue_data = cue[1]
-                    button = Button(self.plan_cues_frame, bg=bg_color, fg=text_color, font=(font, other_text_size),
+
+                    #if button color has not been selected yet, button_color key does not exist yet in data
+                    if 'button_color' not in cue_data.keys():
+                        button_color = bg_color
+                    else:
+                        button_color = cue_data['button_color']
+
+                    if button_color == bg_color:
+                        button_foreground_color = text_color
+                    else:
+                        button_foreground_color = bg_color
+
+                    button = Button(self.plan_cues_frame, bg=button_color, fg=button_foreground_color, font=(font, other_text_size),
                            text=cue_name, command=lambda cue_data=cue_data: threading.Thread(target=self.cue_handler.activate_cues, args=(cue_data['action_cues'],)).start())
                     button.grid(row=0, column=iteration, padx=plan_cue_pad_x, pady=10)
                     self.plan_cue_buttons.append(button)
@@ -1308,7 +1320,8 @@ class MainUI:
                             is_valid = False
                     if not is_valid:
                         logger.info(f'Found invalid cues on plan cue {plan_cue[0]}')
-                        button.configure(bg='#ffc639', fg=accent_text_color)
+                        button: Button
+                        button.configure(bg='#ff0000', fg=accent_text_color, text=('[ERROR!] '+ button.cget('text')))
 
             else:
                 logger.info(f'{__class__.__name__}.{self._build_plan_cue_buttons.__name__}: Plan app cues were invalid, skipping adding buttons.')
@@ -1667,8 +1680,6 @@ class Main:   # startup
         if os.path.exists(os.path.join('configs', 'persistent_plan_data.json')):
             with open(os.path.join('configs', 'persistent_plan_data.json')) as f:
                 self.persistent_plan_data = json.loads(f.read())
-
-
 
         # qlxd initialization only happens once. Use this var to keep track of if the "main" method has been run or not.
         self.has_started = False
