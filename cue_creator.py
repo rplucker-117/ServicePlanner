@@ -55,7 +55,8 @@ class CueCreator:
         self.current_cues = {
             'action_cues': [],
             'advance_to_next_on_time': [],
-            'advance_to_next_automatically': False
+            'advance_to_next_automatically': False,
+            'button_color': bg_color
         }
 
         self.imported_plan_cues = []
@@ -188,6 +189,8 @@ class CueCreator:
 
         self.current_cues['action_cues'] = cuelist[cue_index][1]['action_cues']
         self.custom_name_entry.insert(0, cuelist[cue_index][0])
+        if 'button_color' in cuelist[cue_index][1].keys():
+            self.current_cues['button_color'] = cuelist[cue_index][1]['button_color']
 
         self._open_cue_creator()
 
@@ -420,7 +423,7 @@ class CueCreator:
 
             Label(button_color_frame, bg=bg_color, fg=text_color, font=(font, current_cues_text_size), text='Button Color:').grid(row=0, column=0, padx=10)
 
-            available_colors = (bg_color, '#ffaeae', '#ffd2b0', '#fff7b0', '#c5ffb0', '#b0ffec', '#b0c8ff', '#c3b0ff', '#ffb0e1')
+            available_colors = (bg_color, '#ff7070', '#ffaf72', '#fff172', '#98ff72', '#72ffdd', '#729dff', '#9472ff', '#ff72ca')
 
             def button_clicked(index):
                 for button in buttons:
@@ -429,8 +432,6 @@ class CueCreator:
 
                 self.current_cues['button_color'] = available_colors[index]
 
-                print(self.current_cues)
-
             buttons = []
 
             for i, color in enumerate(available_colors):
@@ -438,7 +439,12 @@ class CueCreator:
                 button.grid(row=0, column=i+1, padx=5)
                 buttons.append(button)
 
-            button_clicked(0)
+            if self.current_cues['button_color'] in available_colors:
+                index = available_colors.index(self.current_cues['button_color'])
+                button_clicked(index)
+                print(index)
+            else:
+                button_clicked(0)
 
             button_color_frame.grid(row=4, column=1, pady=20, sticky='w')
 
