@@ -442,7 +442,6 @@ class CueCreator:
             if self.current_cues['button_color'] in available_colors:
                 index = available_colors.index(self.current_cues['button_color'])
                 button_clicked(index)
-                print(index)
             else:
                 button_clicked(0)
 
