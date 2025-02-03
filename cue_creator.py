@@ -415,6 +415,33 @@ class CueCreator:
 
             Label(self.update_item_length_frame, bg=bg_color, fg=text_color, font=(font, current_cues_text_size), anchor='w', justify='left', text=':').grid(row=0, column=2)
 
+        if self.type_of_cues_being_edited == 'plan':
+            button_color_frame = Frame(self.current_cues_frame, bg=bg_color)
+
+            Label(button_color_frame, bg=bg_color, fg=text_color, font=(font, current_cues_text_size), text='Button Color:').grid(row=0, column=0, padx=10)
+
+            available_colors = (bg_color, '#ffaeae', '#ffd2b0', '#fff7b0', '#c5ffb0', '#b0ffec', '#b0c8ff', '#c3b0ff', '#ffb0e1')
+
+            def button_clicked(index):
+                for button in buttons:
+                    button.configure(bd=2)
+                buttons[index].configure(bd=4)
+
+                self.current_cues['button_color'] = available_colors[index]
+
+                print(self.current_cues)
+
+            buttons = []
+
+            for i, color in enumerate(available_colors):
+                button = Button(button_color_frame, bg=color, width=3, height=1, command=lambda i=i: button_clicked(i))
+                button.grid(row=0, column=i+1, padx=5)
+                buttons.append(button)
+
+            button_clicked(0)
+
+            button_color_frame.grid(row=4, column=1, pady=20, sticky='w')
+
         # move selected cue up/down
         Button(self.move_up_down_frame, bg=bg_color, fg=text_color, font=(font, options_button_text_size),
                text='Move selected cue up',
@@ -2683,4 +2710,5 @@ if __name__ == '__main__':
                        'id': '824628067', 'sequence': 4, 'notes': {'Stage': 'clear', 'Video': 'Pre-Service Media'}}
 
     cc = CueCreator(startup=fake_main, ui=fake_ui, devices=devices)
-    cc.create_plan_item_cue(input_item=fake_input_item)
+    # cc.create_plan_item_cue(input_item=fake_input_item)
+    cc.create_plan_cue(cuelist=[])
