@@ -3,7 +3,7 @@ import socket
 import re
 
 
-def is_host_online(hostname: str) -> bool:
+def is_host_online(hostname: str, timeout: float=1) -> bool:
     """
     Determines if a network host is online or not.
     :param hostname: ipv4 or ipv6 address. fqdn will not work.
@@ -11,7 +11,7 @@ def is_host_online(hostname: str) -> bool:
     """
 
     try:
-        command = subprocess.run(['ping', '-n', '1', hostname], check=True, capture_output=True)
+        command = subprocess.run(['ping', '-n', timeout, hostname], check=True, capture_output=True)
     except subprocess.CalledProcessError:  # process returned non-0 exit code.
         return False
     response_str = command.stdout.decode('utf-8')
