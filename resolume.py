@@ -93,7 +93,7 @@ class Resolume:
         logger.debug(f'{__class__.__name__}.{self._get_composition.__name__}: Getting Composition.')
 
         return self._make_get_request('/composition')
-    def _parse_layers_to_simplified(self, composition: dict) -> List[Dict[str, int | str]]:
+    def _parse_all_layers_simplified(self, composition: dict) -> List[Dict[str, int | str]]:
         layers = composition['layers']
 
         to_return = []
@@ -112,7 +112,7 @@ class Resolume:
         """
         logger.debug(f'{__class__.__name__}.{self.get_all_layers_simplified.__name__}: Getting all layers.')
 
-        return self._parse_layers_to_simplified(self._get_composition())
+        return self._parse_all_layers_simplified(self._get_composition())
 
     def _parse_all_layer_groups_simplified(self, composition) -> list[dict]:
         layergroups = composition['layergroups']
@@ -219,7 +219,7 @@ class Resolume:
         composition = self._get_composition()
 
         return {
-            'layers': self._parse_layers_to_simplified(composition),
+            'layers': self._parse_all_layers_simplified(composition),
             'columns': self._parse_all_columns_simplified(composition),
             'layergroups': self._parse_all_layer_groups_simplified(composition),
             'clips': self._parse_all_clips_simplified(composition)
@@ -286,11 +286,11 @@ class Resolume:
 
         self._make_post_request(f'/composition/columns/by-id/{id}/connect')
 
-    def does_clip_or_placeholder_exist_by_id(self, id: int) -> bool:
+    def get_clip_by_id(self, id: int) -> dict | None:
         """
-        Determine if a clip or placeholder exists by id
+        Get clip by id. Also Use this to check if clip exists.
         :param id: id of clip or placeholder
-        :return: result
+        :return: result, none if it does not exist.
         """
 
         logger.debug(f'{__class__.__name__}.{self.does_clip_or_placeholder_exist_by_id.__name__}: Finding if clip {id} exists.')
@@ -298,8 +298,49 @@ class Resolume:
         clips = self.get_all_clips_simplified()
         for clip in clips:
             if clip['id'] == id:
-                return True
-        return False
+                return clip
+        return None
+
+    def get_layer_by_id(self, id: int) -> dict | None:
+        """
+        Get layer by id. Also Use this to check if layer exists.
+        :param id: id of layer
+        :return: result, none if it does not exist.
+        """
+
+        resolume_layers = self.get_all_layers_simplified()
+        for layer in resolume_layers:
+            if layer['id'] == id:
+                return layer
+        return None
+
+    def get_layer_group_by_id(self, id: int) -> dict | None:
+        """
+        Get layer group by id. Also Use this to check if layer group exists.
+        :param id: id of layer group
+        :return: result, none if it does not exist.
+        """
+
+        resolume_layer_groups = self.get_all_layer_groups_simplified()
+
+        for layer_group in resolume_layer_groups:
+            if layer_group['id'] == id:
+                return layer_group
+        return None
+
+    def does_column_exist_by_id(self, id: int) -> dict | None:
+        """
+        Get column by id. Also Use this to check if column exists.
+        :param id: id of column
+        :return: result, none if it does not exist.
+        """
+
+        resolume_columns = self.get_all_columns_simplified()
+
+        for column in resolume_columns:
+            if column['id'] == id:
+                return column
+        return None
 
 if __name__ == '__main__':
     resolume = Resolume('10.30.0.21', 8080)
