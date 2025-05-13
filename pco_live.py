@@ -426,7 +426,7 @@ class PcoLive:
 
         r = self.make_get_request_to_endpoint(endpoint=f'/services/v2/service_types/{self.service_type_id}/plans/{self.plan_id}/live/controller', expect_404=True)
 
-        controller_id: Union[None|int] = None
+        controller_id: Union[None | int] = None
         try:
             controller_id = int(r['data']['id'])
             logger.debug(f'{__class__.__name__}.{self.get_live_controller.__name__}: Found live controller with id {controller_id}')
@@ -456,7 +456,6 @@ class PcoLive:
         return id
 
 
-
 if __name__ == '__main__':
     live = PcoLive(service_type_id=824571, plan_id=78022135)
-    print(live.get_my_id())
+
