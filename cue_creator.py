@@ -1,3 +1,5 @@
+import base64
+import io
 import math
 import pprint
 import threading
@@ -22,7 +24,8 @@ from propresenter import ProPresenter
 from webos_tv import WebOSTV
 from general_networking import is_host_online
 import tkinter.messagebox
-
+from resolume import Resolume
+import urllib
 
 class CueCreator:
     def __init__(self, startup, ui, devices: List[dict]):
@@ -501,6 +504,8 @@ class CueCreator:
                 self._add_webos_tv(device)
             elif device['type'] == 'wakeonlan':
                 self._add_wakeonlan(device)
+            elif device['type'] == 'resolume':
+                self._add_resolume(device)
 
         # if the device is not pause, reminder, or kipro, create a button for it. Also looks to see if a kipro exists
         # will not create a button for each kipro, but will instead create a button to control ALL kipros, or 1, if
@@ -2265,6 +2270,204 @@ class CueCreator:
             add_wakeonlan.destroy()
 
         Button(add_wakeonlan, bg=bg_color, fg=text_color, font=(font, plan_text_size), text=f'{device["user_name"]}: Send Wake On Lan Packet', command=add).pack()
+
+    def _add_resolume(self, device):
+        add_resolume = Tk()
+        add_resolume.configure(bg=bg_color)
+
+        resolume = Resolume(ip=device['ip_address'], port=device['port'])
+
+        if not resolume.is_online():
+            add_resolume.destroy()
+            messagebox.showerror("Offline!", message=f"Resolume device at {device['ip_address']}:{device['port']} is offline.")
+            add_resolume.destroy()
+
+        resolume_data = resolume.get_all_needed_info_simplified()
+        resolume_layers = resolume_data['layers']
+        resolume_columns = resolume_data['columns']
+        resolume_layer_groups = resolume_data['layergroups']
+        resolume_clips = resolume_data['clips']
+
+        def disconnect_composition_clicked():
+            self.current_cues['action_cues'].append({
+                'uuid': device['uuid'],
+                'command_type': 'disconnect_composition'
+            })
+            self._update_cues_display()
+            add_resolume.destroy()
+
+        def disconnect_layer_clicked():
+            if not len(d_layer_listbox.curselection()) == 0:
+                selected_index = d_layer_listbox.curselection()[0]
+                layer_id = resolume_layers[selected_index]['id']
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'command_type': 'disconnect_layer',
+                    'layer_id': layer_id
+                })
+                self._update_cues_display()
+                add_resolume.destroy()
+
+        def disconnect_layer_group_clicked():
+            if not len(d_layer_group_listbox.curselection()) == 0:
+                selected_index = d_layer_group_listbox.curselection()[0]
+                layer_group_id = resolume_layer_groups[selected_index]['id']
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'command_type': 'disconnect_layer_group',
+                    'layer_group_id': layer_group_id
+                })
+                self._update_cues_display()
+                add_resolume.destroy()
+        
+        def connect_clip_clicked():
+            if not len(c_clip_listbox.curselection()) == 0:
+                selected_index = c_clip_listbox.curselection()[0]
+                clip_id = resolume_clips[selected_index]['id']
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'command_type': 'connect_clip',
+                    'clip_id': clip_id
+                })
+                self._update_cues_display()
+                add_resolume.destroy()
+        
+        def connect_column_clicked():
+            if not len(c_column_listbox.curselection()) == 0:
+                selected_index = c_column_listbox.curselection()[0]
+                column_id = resolume_columns[selected_index]['id']
+
+                self.current_cues['action_cues'].append({
+                    'uuid': device['uuid'],
+                    'command_type': 'connect_column',
+                    'column_id': column_id
+                })
+                self._update_cues_display()
+                add_resolume.destroy()
+
+        disconnect_frame = Frame(add_resolume, bg=bg_color)
+        disconnect_frame.grid(row=0, column=0, padx=10)
+        connect_frame = Frame(add_resolume, bg=bg_color)
+        connect_frame.grid(row=0, column=1, padx=10)
+        preview_frame = Frame(add_resolume, bg=bg_color, height=400, width=500)
+        preview_frame.grid(row=0, column=2)
+
+        d_disconnect_label_frame = Frame(disconnect_frame, bg=bg_color)
+        d_columns_frame = Frame(disconnect_frame, bg=bg_color)
+
+        d_disconnect_label_frame.grid(row=0, column=0, pady=10)
+        d_columns_frame.grid(row=2, column=0, pady=10)
+
+        Button(d_columns_frame, text='Disconnect Composition', bg=bg_color, fg=text_color, font=(font, 10), command=disconnect_composition_clicked).grid(row=0, column=0, padx=40)
+        Button(d_columns_frame, text='Disconnect Layer', bg=bg_color, fg=text_color, font=(font, 10), command=disconnect_layer_clicked).grid(row=0, column=1, padx=40)
+        Button(d_columns_frame, text='Disconnect Layer Group', bg=bg_color, fg=text_color, font=(font, 10), command=disconnect_layer_group_clicked).grid(row=0, column=2, padx=40)
+
+        d_layer_listbox = Listbox(d_columns_frame, bg=bg_color, fg=text_color, font=(font, 10))
+        d_layer_listbox.grid(row=1, column=1, padx=40, pady=10, sticky='e')
+
+        d_layer_group_listbox = Listbox(d_columns_frame, bg=bg_color, fg=text_color, font=(font, 10))
+        d_layer_group_listbox.grid(row=1, column=2, padx=40, pady=10, sticky='e')
+
+        c_connect_label_frame = Frame(connect_frame, bg=bg_color)
+        c_columns_frame = Frame(connect_frame, bg=bg_color)
+
+        c_connect_label_frame.grid(row=0, column=0, pady=10)
+        c_columns_frame.grid(row=1, column=1, pady=10)
+
+        Button(c_columns_frame, text='Connect Clip', bg=bg_color, fg=text_color, font=(font, 10), command=connect_clip_clicked).grid(row=0, column=0, padx=40)
+        Button(c_columns_frame, text='Connect Column', bg=bg_color, fg=text_color, font=(font, 10), command=connect_column_clicked).grid(row=0, column=1, padx=40)
+
+        c_clip_listbox = Listbox(c_columns_frame, bg=bg_color, fg=text_color, font=(font, 10), width=40)
+        c_clip_listbox.grid(row=1, column=0, padx=40, pady=10, sticky='e')
+
+        c_column_listbox = Listbox(c_columns_frame, bg=bg_color, fg=text_color, font=(font, 10))
+        c_column_listbox.grid(row=1, column=1, padx=40, pady=10, sticky='e')
+
+        preview_frame_text = Label(preview_frame, font=(font, 10), bg=bg_color, fg=text_color, justify=LEFT)
+        preview_frame_text.pack()
+
+        preview_frame_image_label = Label(preview_frame)
+        preview_frame_image_label.pack()
+
+        for i, layer in enumerate(resolume_layers):
+            d_layer_listbox.insert(i, layer['name'])
+
+        for i, layer_group in enumerate(resolume_layer_groups):
+            d_layer_group_listbox.insert(i, layer_group['name'])
+
+        for i, clip in enumerate(resolume_clips):
+            name = clip['name']
+
+            if name == '':
+                name = '[No name]'
+            c_clip_listbox.insert(i, name)
+
+        for i, column in enumerate(resolume_columns):
+            c_column_listbox.insert(i, column['name'])
+        def d_layer_listbox_selected(event):
+            if not len(event.widget.curselection()) == 0: # returns empty if deselecting
+                preview_frame_text.configure(text='')
+                preview_frame_image_label.pack_forget()
+        def d_layer_group_listbox_selected(event):
+            if not len(event.widget.curselection()) == 0:  # returns empty if deselecting
+                selection_index: int = event.widget.curselection()[0]
+                layer_group = resolume_layer_groups[selection_index]
+
+                containing_layers = layer_group['containing_layers']
+
+                output_string = f'Layers: \n'
+                for layer in containing_layers:
+                    output_string = output_string + layer['name'] + '\n'
+
+                preview_frame_text.configure(text=output_string)
+                preview_frame_image_label.pack_forget()
+        def c_clip_listbox_selected(event):
+            if not len(event.widget.curselection()) == 0:
+                selection_index: int = event.widget.curselection()[0]
+                clip = resolume_clips[selection_index]
+
+                clip_name: str = clip['name']
+                exists: bool = clip['exists']
+
+                output_string = 'Empty Cue'
+                preview_frame_image_label.pack_forget()
+
+                if exists:
+                    clip_description: str = clip['description']
+                    clip_description_parted = clip_description.split('\n')
+                    clip_file_name = clip_description_parted[0]
+                    clip_format = clip_description_parted[1]
+                    clip_length = clip_description_parted[2]
+                    clip_thumbnail_path = f'http://{resolume.ip}:{resolume.port}{clip["thumbnail_path"]}'
+
+                    output_string = f'Name: {clip_name}\n' \
+                                    f'Filename: {clip_file_name} \n' \
+                                    f'Format: {clip_format} \n' \
+                                    f'Length: {clip_length}'
+
+                    with urllib.request.urlopen(clip_thumbnail_path) as u:
+                        raw_thumbnail_data = u.read()
+
+                    photo = PhotoImage(master=preview_frame, data=base64.encodebytes(raw_thumbnail_data))
+
+                    preview_frame_image_label.photo = photo #This is needed to create a reference to stop garbage collection
+                    preview_frame_image_label.configure(image=photo)
+                    preview_frame_image_label.pack()
+
+                preview_frame_text.configure(text=output_string)
+        def c_column_listbox_selected(event):
+            if not len(event.widget.curselection()) == 0:
+                preview_frame_text.configure(text='')
+                preview_frame_image_label.pack_forget()
+
+        d_layer_listbox.bind("<<ListboxSelect>>", d_layer_listbox_selected)
+        d_layer_group_listbox.bind("<<ListboxSelect>>", d_layer_group_listbox_selected)
+        c_clip_listbox.bind("<<ListboxSelect>>", c_clip_listbox_selected)
+        c_column_listbox.bind("<<ListboxSelect>>", c_column_listbox_selected)
+
 
     def _add_reminder_cue_clicked(self):
         # creates a new window for adding a reminder with minutes, seconds, reminder text, and okay.
