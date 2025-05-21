@@ -29,6 +29,7 @@ from propresenter import ProPresenter
 import tkinter.messagebox
 from webos_tv import WebOSTV
 import wakeonlan
+from resolume import Resolume
 
 import pprint
 
@@ -361,6 +362,48 @@ class CueHandler:
                     cue_verbose = f'{device["user_name"]}: Send Wake On Lan Packet'
                     cues_verbose_list.append(cue_verbose)
 
+                if device['type'] == 'resolume':
+                    resolume = Resolume(ip=device['ip_address'], port=device['port'])
+
+                    cue_verbose = f'{device["user_name"]}: '
+                    if not resolume.is_online():
+                        cues_verbose_list.append(cue_verbose)
+                        continue
+
+                    if cue['command_type'] == 'disconnect_composition':
+                        cue_verbose += 'Disconnect Composition'
+                    if cue['command_type'] == 'disconnect_layer':
+                        layer = resolume.get_layer_by_id(cue['layer_id'])
+                        if layer is None:
+                            cue_verbose += 'Disconnect layer [Layer Removed]'
+                        else: cue_verbose += 'Disconnect layer ' + layer['name']
+                    if cue['command_type'] == 'disconnect_layer_group':
+                        layer_group = resolume.get_layer_group_by_id(cue['layer_group_id'])
+                        if layer_group is None:
+                            cue_verbose += 'Disconnect layer group [Layer Group Removed]'
+                        else:
+                            cue_verbose += 'Disconnect layer group '+ layer_group['name']
+                    if cue['command_type'] == 'connect_clip':
+                        clip = resolume.get_clip_by_id(cue['clip_id'])
+                        if clip is None:
+                            cue_verbose += 'Connect clip [Clip Removed]'
+                        elif clip['exists'] is False and clip['name'] == '':
+                            cue_verbose += 'Connect Clip [Empty Name] [Clip Does Not Exist]'
+                        elif clip['exists'] is True and clip['name'] == '':
+                            cue_verbose += f'Connect Clip [Empty Name] [Clip Exists]'
+                        elif clip['exists'] is False and clip['name'] != '':
+                            cue_verbose += f'Connect clip {clip["name"]} [Clip Does Not Exist]'
+                        else:
+                            cue_verbose += f'Connect Clip {clip["name"]}'
+                    if cue['command_type'] == 'connect_column':
+                        column = resolume.get_column_by_id(cue['column_id'])
+                        if column is None:
+                            cue_verbose += 'Connect Column [Column Removed]'
+                        else:
+                            cue_verbose += f'Connect Colunn {column["name"]}'
+
+                    cues_verbose_list.append(cue_verbose)
+
             return cues_verbose_list
         else:
             logger.debug(f'{__class__.__name__}.{self.verbose_decode_cues.__name__}: returning empty cuelist')
@@ -625,6 +668,21 @@ class CueHandler:
                         logger.debug(f'{__class__.__name__}.{self.activate_cues.__name__} : wakeonlan : {device["mac_address"]}')
                         wakeonlan.send_magic_packet(device['mac_address'])
 
+                    elif device['type'] == 'resolume':
+                        logger.debug(f'{__class__.__name__}.{self.activate_cues.__name__} : resolume : {device["ip_address"]}:{device["port"]}')
+                        resolume = Resolume(ip=device['ip_address'], port=device['port'])
+
+                        if cue['command_type'] == 'disconnect_composition':
+                            resolume.disconnect_composition()
+                        if cue['command_type'] == 'disconnect_layer':
+                            resolume.disconnect_layer_by_id(cue['layer_id'])
+                        if cue['command_type'] == 'disconnect_layer_group':
+                            resolume.disconnect_layer_group_by_id(cue['layer_group_id'])
+                        if cue['command_type'] == 'connect_clip':
+                            resolume.connect_clip_by_id(cue['clip_id'])
+                        if cue['command_type'] == 'connect_column':
+                            resolume.connect_column_by_id(cue['column_id'])
+
                     elif device['uuid'] == reminder_uuid:
                         pass
 
@@ -690,7 +748,7 @@ class CueHandler:
 
         for plan_item in plan_items:
             if 'App Cues' in plan_item['notes']:
-                if type(plan_item['notes']['App Cues']) == list:
+                if type(plan_item['notes']['App Cues']) is list:
                     logger.info('Found app cue to update on item: %s', plan_item['title'])
 
                     updated_item = CueHandler.update_october_2022_cue(cuelist=plan_item['notes']['App Cues'])
@@ -793,6 +851,29 @@ class CueHandler:
                         logger.info(f'{__class__.__name__}.{self.cues_are_valid.__name__} : Propresenter macro does not exist. {cue_device["ip_address"]}:{cue_device["port"]}')
                         output[i] = {False: 'ProPresenter Macro does not exist!'}
                         continue
+
+            if cue_device['type'] == 'resolume':
+                resolume = Resolume(ip=cue_device['ip_address'], port=cue_device['port'])
+                if not resolume.is_online():
+                    output[i] = {False: 'Resolume offline. Check resolume API settings.'}
+                if cue['command_type'] == 'disconnect_layer':
+                    layer = resolume.get_layer_by_id(cue['layer_id'])
+                    if layer is None:
+                        output[i] = {False: 'Layer Deleted!'}
+                if cue['command_type'] == 'disconnect_layer_group':
+                    layer_group = resolume.get_layer_group_by_id(cue['layer_group_id'])
+                    if layer_group is None:
+                        output[i] = {False: 'Layer Group Deleted!'}
+                if cue['command_type'] == 'connect_clip':
+                    clip = resolume.get_clip_by_id(cue['clip_id'])
+                    if clip is None:
+                        output[i] = {False: 'Clip Deleted!'}
+                if cue['command_type'] == 'connect_column':
+                    column = resolume.get_column_by_id(cue['column_id'])
+                    if column is None:
+                        output[i] = {False: 'Column Deleted!'}
+                continue
+
 
         return output
 
