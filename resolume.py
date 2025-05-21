@@ -225,13 +225,13 @@ class Resolume:
             'clips': self._parse_all_clips_simplified(composition)
         }
 
-    def disconnect_all(self) -> None:
+    def disconnect_composition(self) -> None:
         """
         Disconnect all clips in composition
         :return:
         """
 
-        logger.debug(f'{__class__.__name__}.{self.disconnect_all.__name__}: Disconnecting all.')
+        logger.debug(f'{__class__.__name__}.{self.disconnect_composition.__name__}: Disconnecting all.')
 
         self._make_post_request(f'/composition/disconnect-all')
 
@@ -245,14 +245,14 @@ class Resolume:
 
         self._make_post_request(f'/composition/layers/by-id/{id}/clear')
 
-    def disconnect_layergroup_by_id(self, id: int) -> None:
+    def disconnect_layer_group_by_id(self, id: int) -> None:
         """
         Disconnect all layers in a layer group
         :param id: id of layer group
         :return: None
         """
 
-        logger.debug(f'{__class__.__name__}.{self.disconnect_layergroup_by_id.__name__}: Disconnecting layergroup {id}.')
+        logger.debug(f'{__class__.__name__}.{self.disconnect_layer_group_by_id.__name__}: Disconnecting layergroup {id}.')
 
         layergroups = self.get_all_layer_groups_simplified()
         layers_to_disconnect: list[int] = []
@@ -293,8 +293,6 @@ class Resolume:
         :return: result, none if it does not exist.
         """
 
-        logger.debug(f'{__class__.__name__}.{self.does_clip_or_placeholder_exist_by_id.__name__}: Finding if clip {id} exists.')
-
         clips = self.get_all_clips_simplified()
         for clip in clips:
             if clip['id'] == id:
@@ -328,7 +326,7 @@ class Resolume:
                 return layer_group
         return None
 
-    def does_column_exist_by_id(self, id: int) -> dict | None:
+    def get_column_by_id(self, id: int) -> dict | None:
         """
         Get column by id. Also Use this to check if column exists.
         :param id: id of column
