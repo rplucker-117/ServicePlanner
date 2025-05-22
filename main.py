@@ -622,6 +622,7 @@ class MainUI:
 
         self.auto_advance_on_time_cancelled_by_user = False
         self.auto_advance_automatically_cancelled_by_user = False
+        self.auto_advance_reminder_frame.place_forget()
 
 
         if cue_items:
@@ -637,6 +638,7 @@ class MainUI:
 
         self.auto_advance_on_time_cancelled_by_user = False
         self.auto_advance_automatically_cancelled_by_user = False
+        self.auto_advance_reminder_frame.place_forget()
 
         self.update_item_timer(time_value=self.plan_items[self.previous_item_index]['length'])
 
@@ -684,7 +686,7 @@ class MainUI:
 
         def find_previous_item(i):
             if not self.plan_items[i-1]['type'] == 'header':
-                logger.debug('__update_live: find_previous_item: returning %s', i)
+                logger.debug('update_live: find_previous_item: returning %s', i)
                 return i-1
             else:
                 return find_previous_item(i-1)
@@ -810,6 +812,9 @@ class MainUI:
             for button in self.plan_cue_buttons:
                 button.destroy()
         self.plan_cue_buttons.clear()
+
+        for child in self.plan_cues_frame.winfo_children():
+            child.destroy()
 
         self._build_plan_cue_buttons()
 
@@ -1034,6 +1039,7 @@ class MainUI:
 
         tick()
 
+
     def _build_auto_advance_reminder_ui(self):
         self.auto_advance_reminder_frame = Frame(self.plan_window, bg=accent_color_1)
         self.auto_advance_reminder_label = Label(self.auto_advance_reminder_frame, fg=reminder_color, bg=accent_color_1, font=(font, reminder_font_size))
@@ -1167,7 +1173,7 @@ class MainUI:
                 label = Label(frame, bg=bg_color, fg=text_color, text=label_text, justify=LEFT,
                       font=(font, app_cue_font_size))
                 self.item_app_cue_labels.append(label)
-                label.place(anchor='nw', x=1050)
+                label.place(anchor='nw', x=1250)
 
                 # if number of cues on an item is greater than 4, increase height of item frame so nothing is cut off
                 number_of_cues = len(self.cue_handler.verbose_decode_cues(cuelist=item['notes']['App Cues']['action_cues']))
@@ -1188,7 +1194,7 @@ class MainUI:
                     #create label with no text
                     auto_advance_label = Label(frame, bg=bg_color, fg=text_color, font=(font, app_cue_font_size + 1),
                                                justify=LEFT)
-                    auto_advance_label.place(anchor='nw', x=900)
+                    auto_advance_label.place(anchor='nw', x=1100)
 
                 if len(advance_cue_times) == 0:
                     self.item_advance_cue_labels.append(None)
@@ -1210,7 +1216,7 @@ class MainUI:
             if 'App Cues' in item['notes'] and item['notes']['App Cues']['advance_to_next_automatically']:
                 logger.debug('Placing advance to next arrow on item %s', item['title'])
                 advance_label = Label(frame, bg=bg_color, fg=text_color, justify=LEFT, image=self.auto_advance_arrow_image)
-                advance_label.place(anchor='nw', x=1345)
+                advance_label.place(anchor='nw', x=1545)
                 self.item_advance_to_next_automatically_arrow_images.append(advance_label)
             else:
                 self.item_advance_to_next_automatically_arrow_images.append(None)
@@ -1267,11 +1273,16 @@ class MainUI:
 
             # pco_plan.validate_plan_cues can return none if invalid data is found
             if plan_app_cues_validated is not None:
-                self.plan_cues_frame.grid(row=5, column=0, pady=20)
+                self.plan_cues_frame.grid(row=6, column=0, pady=20)
 
                 self.plan_cues = self.convert_plan_app_cues_to_dict(plan_app_cues_validated)
 
-                for iteration, cue in enumerate(self.plan_cues):
+                plan_cue_frames: list[Frame] = []
+
+                for _ in range(math.ceil(len(self.plan_cues)/12)):
+                    plan_cue_frames.append(Frame(self.plan_cues_frame, bg=bg_color))
+
+                for i, cue in enumerate(self.plan_cues):
                     cue_name = cue[0]
                     cue_data = cue[1]
 
@@ -1281,15 +1292,20 @@ class MainUI:
                     else:
                         button_color = cue_data['button_color']
 
+                    #Set text FG to light, unless custom color is used.
                     if button_color == bg_color:
                         button_foreground_color = text_color
                     else:
                         button_foreground_color = bg_color
 
-                    button = Button(self.plan_cues_frame, bg=button_color, fg=button_foreground_color, font=(font, other_text_size),
+                    button = Button(plan_cue_frames[math.ceil((i+1)/12)-1], bg=button_color, fg=button_foreground_color, font=(font, other_text_size),
                            text=cue_name, command=lambda cue_data=cue_data: threading.Thread(target=self.cue_handler.activate_cues, args=(cue_data['action_cues'],)).start())
-                    button.grid(row=0, column=iteration, padx=plan_cue_pad_x, pady=10)
+
+                    button.grid(row=0, column=i, padx=plan_cue_pad_x, pady=10)
                     self.plan_cue_buttons.append(button)
+
+                for frame in plan_cue_frames:
+                    frame.pack()
 
                 #fix old pvp cues as of may 30, 2024. This must be done outside of the below loop
                 to_upload_new_plan_cues: list = [False]
@@ -1333,7 +1349,7 @@ class MainUI:
         Builds buttons for next/previous
         :return: None.
         """
-        self.aux_controls_frame.grid(row=6, column=0)
+        self.aux_controls_frame.grid(row=5, column=0)
         self.aux_controls_frame.configure(height=60, width=plan_item_frame_width)
 
         Button(self.aux_controls_frame, bg=accent_color_1, fg=accent_text_color, text='Previous (no actions)', font=(accent_text_font, 10), command=lambda: self.previous(cue_items=False)).grid(row=1, column=1, padx=next_previous_pad_x)
